@@ -46,7 +46,8 @@ import {
   LayoutDashboard, BookOpen, BrainCircuit, Calendar, User as UserIcon, Users,
   HelpCircle, Link, ShieldCheck, ThumbsUp, Sparkles, Activity, Handshake, Info, X, Hash,
   Pencil, Lock, Globe, TrendingUp, TrendingDown, Clock, ShieldAlert, Send, MapPin, LogOut,
-  Settings, Newspaper, MoreHorizontal, ExternalLink, ChevronUp, ChevronDown, SquarePen, ArrowUp
+  Settings, Newspaper, MoreHorizontal, ExternalLink, ChevronUp, ChevronDown, SquarePen, ArrowUp,
+  Award
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from 'recharts';
@@ -182,6 +183,7 @@ function MainAppLayout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isTopFeedDropdownOpen, setIsTopFeedDropdownOpen] = useState(false);
   const [isMobileFeedDropdownOpen, setIsMobileFeedDropdownOpen] = useState(false);
+  const [feedFilter, setFeedFilter] = useState<'latest' | 'top' | 'milestones'>('latest');
   const [searchResults, setSearchResults] = useState<{ users: any[], posts: any[] }>({ users: [], posts: [] });
 
   // PWA Install Event simulation
@@ -782,7 +784,7 @@ function MainAppLayout() {
   const isFullWidthDesktopView = ['journal', 'outlook', 'account'].includes(activeView);
 
   return (
-    <div className={`${activeView !== 'messages' ? 'h-screen overflow-hidden' : 'h-[100dvh] overflow-hidden'} bg-white text-black flex flex-col font-sans w-full relative`}>
+    <div className={`${activeView !== 'messages' ? 'h-screen overflow-hidden' : 'h-[100dvh] overflow-hidden'} ${activeView === 'feed' ? 'bg-[#f0f2f5]' : 'bg-white'} text-black flex flex-col font-sans w-full relative`}>
       {/* Real-time Notification Floating Banner */}
       <RealtimeNotificationBanner event={latestRealtimeEvent} onDismiss={clearRealtimeEvent} />
       
@@ -805,7 +807,7 @@ function MainAppLayout() {
           </div>
 
           {/* DESKTOP ONLY: Navigation Menu in Header Center */}
-          <nav className="hidden md:flex items-center justify-center gap-2 lg:gap-3 text-xs font-bold text-slate-500 select-none absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10">
+          <nav className="hidden md:flex items-center justify-center gap-2 lg:gap-3 text-xs font-bold text-slate-500 select-none absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-40">
               {[
                 { id: 'feed', label: t('nav.feed'), isDropdown: true },
                 { id: 'network', label: t('nav.network') },
@@ -851,6 +853,7 @@ function MainAppLayout() {
                               <button
                                 onClick={() => {
                                   setIsTopFeedDropdownOpen(false);
+                                  setFeedFilter('latest');
                                   setActiveView('feed');
                                 }}
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
@@ -1653,7 +1656,7 @@ function MainAppLayout() {
           >
             <div className="bg-white lg:bg-transparent flex flex-col">
               
-              <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-slate-100 mb-2">
+              <div className="flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-slate-100 lg:border lg:border-slate-200 lg:rounded-2xl lg:shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-2 lg:mb-4">
                 <span className="text-xs font-black uppercase text-slate-700 tracking-wider">Trading Feed</span>
                 <SponsoredBadge />
               </div>
@@ -1664,59 +1667,116 @@ function MainAppLayout() {
               </div>
 
               {/* Create Post */}
-              <div className="sticky top-0 z-20 pb-2 bg-white">
+              <div className="sticky top-0 z-20 pb-2 bg-white lg:bg-transparent">
                 <CreatePost onPostCreated={fetchPosts} />
               </div>
 
-              {/* Feed items list */}
-              <AnimatePresence>
-                {newPostsQueue && newPostsQueue.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="sticky top-0 z-10 flex justify-center pb-3"
-                  >
-                    <button
-                      onClick={flushNewPostsQueue}
-                      className="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg shadow-indigo-600/30 text-xs font-bold flex items-center gap-2 hover:bg-indigo-700 transition active:scale-95 cursor-pointer filter drop-shadow"
-                    >
-                      <ArrowUp size={16} />
-                      {newPostsQueue.length} {t('common.post.newPosts', 'Postingan Baru')}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <div className="space-y-3 bg-white lg:bg-transparent flex flex-col p-2 lg:p-0">
-                {loadingPosts && posts.length === 0 ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm animate-pulse">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-100" />
-                          <div className="space-y-2 flex-1">
-                            <div className="h-3 bg-slate-100 rounded w-24" />
-                            <div className="h-2 bg-slate-50 rounded w-16" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="h-3 bg-slate-100 rounded w-full" />
-                          <div className="h-3 bg-slate-100 rounded w-5/6" />
-                        </div>
-                        <div className="h-40 bg-slate-50 rounded-xl" />
-                      </div>
-                    ))}
-                  </div>
-                ) : posts.length === 0 ? (
-                  <div className="bg-white p-12 text-center text-gray-500 text-xs">
-                    Feed is empty. Be the first to share your trading setups!
-                  </div>
-                ) : (
-                  posts.map((post) => (
-                    <PostCard key={post.id} post={post} onPostUpdated={() => {}} />
-                  ))
-                )}
+              {/* Feed Filter Tabs */}
+              <div className="bg-white border border-slate-200/85 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-1.5 mb-3 flex items-center justify-between gap-1 mx-2 lg:mx-0">
+                <button
+                  onClick={() => setFeedFilter('latest')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    feedFilter === 'latest'
+                      ? 'bg-indigo-50 text-indigo-600 shadow-2xs border border-indigo-100/50'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                  }`}
+                >
+                  <Clock size={13} />
+                  <span>Latest Posts</span>
+                </button>
+                <button
+                  onClick={() => setFeedFilter('top')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    feedFilter === 'top'
+                      ? 'bg-indigo-50 text-indigo-600 shadow-2xs border border-indigo-100/50'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                  }`}
+                >
+                  <TrendingUp size={13} />
+                  <span>Top Discussions</span>
+                </button>
+                <button
+                  onClick={() => setFeedFilter('milestones')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    feedFilter === 'milestones'
+                      ? 'bg-indigo-50 text-indigo-600 shadow-2xs border border-indigo-100/50'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                  }`}
+                >
+                  <Award size={13} />
+                  <span className="truncate">Member Milestones</span>
+                </button>
               </div>
+
+              {/* Feed items list */}
+              {(() => {
+                const filteredPosts = (() => {
+                  let feedPosts = [...posts];
+                  if (feedFilter === 'top') {
+                    feedPosts.sort((a, b) => ((b.likesCount || 0) + (b.commentsCount || 0)) - ((a.likesCount || 0) + (a.commentsCount || 0)));
+                  } else if (feedFilter === 'milestones') {
+                    feedPosts = feedPosts.filter(p => p.isOfficial || (p.content && p.content.toLowerCase().match(/milestone|achieve|target|profit|win|success|welcome|verified/)));
+                  }
+                  return feedPosts;
+                })();
+
+                return (
+                  <>
+                    <AnimatePresence>
+                      {newPostsQueue && newPostsQueue.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="sticky top-0 z-10 flex justify-center pb-3"
+                        >
+                          <button
+                            onClick={flushNewPostsQueue}
+                            className="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg shadow-indigo-600/30 text-xs font-bold flex items-center gap-2 hover:bg-indigo-700 transition active:scale-95 cursor-pointer filter drop-shadow"
+                          >
+                            <ArrowUp size={16} />
+                            {newPostsQueue.length} {t('common.post.newPosts', 'Postingan Baru')}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <div className="space-y-3 bg-white lg:bg-transparent flex flex-col p-2 lg:p-0">
+                      {loadingPosts && posts.length === 0 ? (
+                        <div className="space-y-4">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 space-y-4 shadow-sm animate-pulse">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-slate-100" />
+                                <div className="space-y-2 flex-1">
+                                  <div className="h-3 bg-slate-100 rounded w-24" />
+                                  <div className="h-2 bg-slate-50 rounded w-16" />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="h-3 bg-slate-100 rounded w-full" />
+                                <div className="h-3 bg-slate-100 rounded w-5/6" />
+                              </div>
+                              <div className="h-40 bg-slate-50 rounded-xl" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : filteredPosts.length === 0 ? (
+                        <div className="bg-white p-12 text-center text-gray-500 text-xs rounded-2xl border border-slate-200 shadow-sm mx-2 lg:mx-0">
+                          {feedFilter === 'milestones' 
+                            ? 'Tidak ada milestone anggota saat ini.' 
+                            : feedFilter === 'top' 
+                            ? 'Tidak ada diskusi populer saat ini.' 
+                            : 'Feed is empty. Be the first to share your trading setups!'}
+                        </div>
+                      ) : (
+                        filteredPosts.map((post) => (
+                          <PostCard key={post.id} post={post} onPostUpdated={() => {}} />
+                        ))
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
 
             </div>
           </div>

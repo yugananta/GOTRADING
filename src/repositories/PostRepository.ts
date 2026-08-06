@@ -79,43 +79,6 @@ const FALLBACK_POSTS: Post[] = [
 ];
 
 export class PostRepository implements IPostRepository {
-    private getLocalPosts(): Post[] {
-        try {
-            const raw = localStorage.getItem('tarapti_local_posts');
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) return parsed;
-            }
-        } catch (err) {
-            // ignore
-        }
-        return [];
-    }
-
-    private saveLocalPost(post: Post): void {
-        try {
-            const local = this.getLocalPosts();
-            const existingIndex = local.findIndex(p => p.id === post.id);
-            if (existingIndex >= 0) {
-                local[existingIndex] = post;
-            } else {
-                local.unshift(post);
-            }
-            localStorage.setItem('tarapti_local_posts', JSON.stringify(local));
-        } catch (err) {
-            // ignore
-        }
-    }
-
-    private deleteLocalPost(id: string): void {
-        try {
-            const local = this.getLocalPosts().filter(p => p.id !== id);
-            localStorage.setItem('tarapti_local_posts', JSON.stringify(local));
-        } catch (err) {
-            // ignore
-        }
-    }
-
     async list(
         limit?: number, 
         groupId?: string, 
@@ -167,14 +130,11 @@ export class PostRepository implements IPostRepository {
             console.warn('Supabase list posts warning:', e?.message || e);
         }
 
-        // Merge remote posts, local posts, and fallback posts
-        const local = this.getLocalPosts();
+        // Merge remote posts and fallback posts if empty
         const map = new Map<string, Post>();
         
         // Add remote posts first
         remotePosts.forEach(p => map.set(p.id, p));
-        // Overlay local posts (user created / updated)
-        local.forEach(p => map.set(p.id, p));
         // Add fallback posts if map is empty
         if (map.size === 0) {
             FALLBACK_POSTS.forEach(p => map.set(p.id, p));
@@ -251,9 +211,6 @@ export class PostRepository implements IPostRepository {
             originalAuthorName: (post as any).originalAuthorName
         };
 
-        // Save to local storage immediately
-        this.saveLocalPost(newPost);
-
         try {
             const dbRecord: any = { ...newPost };
             const { data, error } = await supabase
@@ -266,16 +223,13 @@ export class PostRepository implements IPostRepository {
                 return deserializePost(data);
             }
         } catch (e: any) {
-            console.warn('Supabase create post fallback to local:', e?.message || e);
+            console.warn('Supabase create post fallback:', e?.message || e);
         }
 
         return newPost;
     }
 
     async findById(id: string): Promise<Post | null> {
-        const local = this.getLocalPosts().find(p => p.id === id);
-        if (local) return local;
-
         const fallback = FALLBACK_POSTS.find(p => p.id === id);
         if (fallback) return fallback;
 
@@ -294,7 +248,6 @@ export class PostRepository implements IPostRepository {
     }
 
     async delete(id: string): Promise<void> {
-        this.deleteLocalPost(id);
         try {
             await supabase
                 .from('Post')
@@ -306,7 +259,6 @@ export class PostRepository implements IPostRepository {
     }
 
     async update(post: Post): Promise<void> {
-        this.saveLocalPost(post);
         try {
             const dbUpdate = {
                 userId: post.userId,
