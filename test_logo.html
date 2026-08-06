@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap');
+  body { background: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+  svg { height: 100px; border: 1px solid #eee; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 450 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="go-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#6b38fb" />
+      <stop offset="100%" stopColor="#0b63f6" />
+    </linearGradient>
+  </defs>
+  
+  <g fontFamily="'Montserrat', sans-serif" fontWeight="800" fontSize="76" letterSpacing="-2">
+    <!-- "go" with gradient -->
+    <text x="10" y="80" fill="url(#go-gradient)">go</text>
+    
+    <!-- smile under first 'g' -->
+    <path d="M 18 85 Q 40 105 62 85" fill="none" stroke="url(#go-gradient)" stroke-width="8" stroke-linecap="round" />
+    
+    <!-- "trad" -->
+    <text x="105" y="80" fill="#040b16">trad</text>
+    
+    <!-- "ı" (dotless i) -->
+    <text x="275" y="80" fill="#040b16">ı</text>
+    
+    <!-- Star above 'ı' -->
+    <path d="M 287 18 Q 287 30 275 30 Q 287 30 287 42 Q 287 30 299 30 Q 287 30 287 18 Z" fill="url(#go-gradient)" />
+    
+    <!-- "ng" -->
+    <text x="300" y="80" fill="#040b16">ng</text>
+    
+    <!-- smile under last 'g' -->
+    <path d="M 358 85 Q 380 105 402 85" fill="none" stroke="#040b16" stroke-width="8" stroke-linecap="round" />
+  </g>
+</svg>
+</body>
+</html>
