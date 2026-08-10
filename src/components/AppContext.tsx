@@ -36,8 +36,8 @@ interface AppContextType {
   fetchChatHistory: (partnerId: string) => Promise<void>;
   sendMessage: (partnerId: string, content: string, image?: string, fileUrl?: string, fileName?: string) => Promise<void>;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
-  connectedBroker: { broker: string; accountId: string; platform?: string } | null;
-  connectBroker: (broker: string, accountId: string, platform?: string, password?: string) => Promise<void> | void;
+  connectedBroker: { broker: string; accountId: string; platform?: string; server?: string } | null;
+  connectBroker: (broker: string, accountId: string, platform?: string, password?: string, server?: string) => Promise<void> | void;
   disconnectBroker: () => Promise<void> | void;
   syncMetaTrader: () => Promise<void>;
   tradingStats: {
@@ -69,8 +69,8 @@ interface AppContextType {
   setActiveView: (view: any) => void;
   journalInitialTab: 'goals' | 'ledger' | 'history';
   setJournalInitialTab: (tab: 'goals' | 'ledger' | 'history') => void;
-  outlookInitialTab: 'news' | 'technical';
-  setOutlookInitialTab: (tab: 'news' | 'technical') => void;
+  outlookInitialTab: 'news';
+  setOutlookInitialTab: (tab: 'news') => void;
   selectedUserId: string | null;
   setSelectedUserId: (id: string | null) => void;
   viewUserProfile: (userId: string) => void;
@@ -127,10 +127,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeChatPartnerId, setActiveChatPartnerId] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
-  const [connectedBroker, setConnectedBroker] = useState<{ broker: string; accountId: string; platform?: string } | null>(null);
+  const [connectedBroker, setConnectedBroker] = useState<{ broker: string; accountId: string; platform?: string; server?: string } | null>(null);
   const [activeView, setActiveView] = useState<string>('feed');
   const [journalInitialTab, setJournalInitialTab] = useState<'goals' | 'ledger' | 'history'>('goals');
-  const [outlookInitialTab, setOutlookInitialTab] = useState<'news' | 'technical'>('news');
+  const [outlookInitialTab, setOutlookInitialTab] = useState<'news'>('news');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [latestRealtimeEvent, setLatestRealtimeEvent] = useState<{ id: string; type: 'FRIEND_REQUEST' | 'FRIEND_ACCEPTED' | 'NEW_MESSAGE' | 'NOTIFICATION'; notification: Notification; timestamp: number } | null>(null);
 
@@ -392,7 +392,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const data = await res.json();
         if (data && data.account) {
           const account = data.account;
-          setConnectedBroker({ broker: account.server, accountId: account.login, platform: account.platform });
+          const brokerName = account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader');
+          setConnectedBroker({ broker: brokerName, accountId: account.login, platform: account.platform, server: account.server });
           
           // Fetch synced trades to calculate real-time stats
           const tradesRes = await apiFetch('/api/metatrader/trades');
@@ -617,12 +618,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const connectBroker = async (broker: string, accountId: string, platform = 'MT5', password = 'password') => {
+  const connectBroker = async (broker: string, accountId: string, platform = 'MT5', password = 'password', server = '') => {
     try {
       const res = await apiFetch('/api/metatrader/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform, login: accountId, password, server: broker })
+        body: JSON.stringify({ platform, login: accountId, password, server: server || broker, broker })
       });
       if (res.ok) {
         await fetchMetaTraderData();

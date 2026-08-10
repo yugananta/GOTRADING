@@ -489,31 +489,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
 
   // Seeded Official and Community Posts for Groups
   const getSeededGroupPosts = (groupId: string, groupName: string, locationName: string): Post[] => {
-    return [
-      {
-        id: `post_official_${groupId}_1`,
-        groupId: groupId,
-        userId: 'gotrading_official_admin',
-        authorName: 'GoTrading Hub',
-        authorUsername: 'gotradinghub',
-        authorAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&h=150&q=80',
-        authorRole: 'Official Admin',
-        authorCity: locationName,
-        authorCountry: 'Indonesia',
-        isOfficial: true,
-        isPinned: true,
-        content: `📌 OFFICIAL ANNOUNCEMENT FROM GOTRADING HUB (VERIFIED ✓)\n\nWelcome to ${groupName}! 🚀\n\nThis group is the official space for gathering, discussing technical analysis, sharing knowledge, and getting financial market updates for traders in the ${locationName} region.\n\nCommunity Rules:\n1. Discuss politely and respect each other's opinions.\n2. Include Risk Management (Stop Loss & Take Profit) when sharing signals/analysis.\n3. Strictly no spamming, scamming, or illegal promotions.\n\nLet's build a healthy and consistently profitable trading environment together! 🔥`,
-        likesCount: 0,
-        commentsCount: 0,
-        bookmarksCount: 0,
-        repostsCount: 0,
-        likedBy: [],
-        bookmarkedBy: [],
-        repostedBy: [],
-        timestamp: new Date().toISOString(),
-        tags: ['GoTradingHub', 'TraderCommunity', locationName.replace(/\s+/g, '')]
-      }
-    ];
+    return [];
   };
 
   // Handle create new post in group

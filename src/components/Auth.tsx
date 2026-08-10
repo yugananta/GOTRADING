@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.tsx';
-import { Key, Mail, ShieldAlert, User, Smartphone, Globe, Landmark, Check, MapPin } from 'lucide-react';
+import { Key, Mail, ShieldAlert, User, Smartphone, Globe, Landmark, Check, MapPin, Upload } from 'lucide-react';
 import { TaraptiLogo } from './TaraptiLogo.tsx';
 import { useLocationCascade } from '../hooks/useLocationCascade.ts';
 import { LocationDropdown } from './LocationDropdown.tsx';
@@ -11,8 +11,79 @@ import { apiFetch } from '../utils/apiFetch';
 export const Auth: React.FC = () => {
   const { t } = useTranslation();
   const { setCurrentUser, logApiDiagnostic } = useApp();
-  const [mode, setMode] = useState<'login' | 'register_1' | 'register_2' | 'forgot' | 'reset'>('login');
+  const [mode, setMode] = useState<'login' | 'register_1' | 'register_2' | 'forgot' | 'reset' | 'upload_logo'>('login');
   
+  // Logo Upload States & Functions
+  const [isUploading, setIsUploading] = useState(false);
+
+  const getLogoName = (type: 'main' | 'login' | 'chat') => {
+    if (type === 'chat') return 'Floating Chat';
+    if (type === 'login') return 'Halaman Login';
+    return 'Utama (Menu)';
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'login' | 'chat') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsUploading(true);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string;
+      try {
+        const res = await apiFetch('/api/upload-logo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ image: base64, type })
+        });
+        if (res.ok) {
+          setSuccessMsg(`Logo ${getLogoName(type)} berhasil diunggah! Memuat ulang...`);
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          setErrorMsg(`Gagal mengunggah logo ${getLogoName(type)}.`);
+        }
+      } catch (err) {
+        setErrorMsg('Terjadi kesalahan saat mengunggah.');
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleLogoDelete = async (type: 'main' | 'login' | 'chat') => {
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsUploading(true);
+
+    try {
+      const res = await apiFetch('/api/delete-logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      });
+      if (res.ok) {
+        setSuccessMsg(`Logo ${getLogoName(type)} berhasil dihapus! Memuat ulang...`);
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        setErrorMsg(`Gagal menghapus logo ${getLogoName(type)}.`);
+      }
+    } catch (err) {
+      setErrorMsg('Terjadi kesalahan saat menghapus logo.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Registration States
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -308,7 +379,7 @@ export const Auth: React.FC = () => {
         
         {/* Branding Logo & Header */}
         <div className="flex flex-col items-center text-center space-y-1 select-none animate-in fade-in slide-in-from-top-4 duration-700">
-          <TaraptiLogo height={96} textColor="#ffffff" />
+          <TaraptiLogo height={96} textColor="#ffffff" type="login" />
         </div>
 
         {/* Deep Dark Glassmorphic Card - Now with darker base */}
@@ -343,6 +414,7 @@ export const Auth: React.FC = () => {
               {mode === 'register_2' && t('auth.locationStep2')}
               {mode === 'forgot' && t('auth.forgotTitle')}
               {mode === 'reset' && t('auth.resetTitle')}
+              {mode === 'upload_logo' && 'Upload & Kelola Logo'}
             </h2>
             <p className="text-[11px] leading-relaxed text-slate-400 mt-1.5 font-medium">
               {mode === 'login' && t('auth.loginDesc')}
@@ -350,6 +422,7 @@ export const Auth: React.FC = () => {
               {mode === 'register_2' && t('auth.register2Desc')}
               {mode === 'forgot' && t('auth.forgotDesc')}
               {mode === 'reset' && t('auth.resetDesc')}
+              {mode === 'upload_logo' && 'Ubah logo utama atau logo floating chat agar sesuai dengan brand Anda.'}
             </p>
           </div>
 
@@ -650,6 +723,108 @@ export const Auth: React.FC = () => {
             </form>
           )}
 
+          {/* LOGO UPLOAD & MANAGEMENT */}
+          {mode === 'upload_logo' && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* Main Logo Section */}
+              <div className="space-y-2 p-3 bg-white/[0.03] border border-white/5 rounded-2xl relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-indigo-400 tracking-wider">Logo Utama (Menu)</span>
+                  <span className="text-[8px] text-slate-500 font-bold">PNG, JPG, SVG</span>
+                </div>
+                <p className="text-[9px] text-slate-400 leading-normal">Logo ini ditampilkan di bagian header aplikasi utama (dengan background terang).</p>
+                <div className="flex gap-2 pt-1">
+                  <label className="flex-1 block bg-indigo-600 hover:bg-indigo-500 text-white font-black text-center py-2 px-3 rounded-xl cursor-pointer transition text-[9px] uppercase tracking-wider select-none">
+                    Upload Baru
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg, image/svg+xml" 
+                      className="hidden" 
+                      disabled={isUploading}
+                      onChange={(e) => handleLogoUpload(e, 'main')} 
+                    />
+                  </label>
+                  <button 
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => handleLogoDelete('main')}
+                    className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold rounded-xl transition text-[9px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+
+              {/* Login Page Logo Section */}
+              <div className="space-y-2 p-3 bg-white/[0.03] border border-white/5 rounded-2xl relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-indigo-400 tracking-wider">Logo Halaman Login</span>
+                  <span className="text-[8px] text-slate-500 font-bold">PNG, JPG, SVG</span>
+                </div>
+                <p className="text-[9px] text-slate-400 leading-normal">Logo ini ditampilkan di atas form login (dengan background gelap).</p>
+                <div className="flex gap-2 pt-1">
+                  <label className="flex-1 block bg-indigo-600 hover:bg-indigo-500 text-white font-black text-center py-2 px-3 rounded-xl cursor-pointer transition text-[9px] uppercase tracking-wider select-none">
+                    Upload Baru
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg, image/svg+xml" 
+                      className="hidden" 
+                      disabled={isUploading}
+                      onChange={(e) => handleLogoUpload(e, 'login')} 
+                    />
+                  </label>
+                  <button 
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => handleLogoDelete('login')}
+                    className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold rounded-xl transition text-[9px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+
+              {/* Chat Logo Section */}
+              <div className="space-y-2 p-3 bg-white/[0.03] border border-white/5 rounded-2xl relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-indigo-400 tracking-wider">Logo Floating Chat</span>
+                  <span className="text-[8px] text-slate-500 font-bold">PNG, JPG, SVG</span>
+                </div>
+                <p className="text-[9px] text-slate-400 leading-normal">Logo ini digunakan untuk floating chat asisten di pojok kanan bawah.</p>
+                <div className="flex gap-2 pt-1">
+                  <label className="flex-1 block bg-indigo-600 hover:bg-indigo-500 text-white font-black text-center py-2 px-3 rounded-xl cursor-pointer transition text-[9px] uppercase tracking-wider select-none">
+                    Upload Baru
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg, image/svg+xml" 
+                      className="hidden" 
+                      disabled={isUploading}
+                      onChange={(e) => handleLogoUpload(e, 'chat')} 
+                    />
+                  </label>
+                  <button 
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => handleLogoDelete('chat')}
+                    className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold rounded-xl transition text-[9px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+
+              {/* Back button */}
+              <button
+                type="button"
+                disabled={isUploading}
+                onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
+                className="w-full text-center text-[10px] text-slate-400 hover:text-white pt-1 block font-black transition-colors uppercase tracking-widest cursor-pointer disabled:opacity-40"
+              >
+                ← Kembali ke Login
+              </button>
+            </div>
+          )}
+
           {/* Bottom navigation switches */}
           {mode === 'login' && (
             <div className="space-y-3.5 mt-5 text-center">
@@ -663,33 +838,22 @@ export const Auth: React.FC = () => {
                   Register
                 </button>
               </p>
-              <div className="border-t border-white/5 pt-3.5">
-                <a 
-                  href="/admin"
-                  className="text-[9px] text-indigo-300/60 hover:text-indigo-300 font-black inline-flex items-center space-x-1 transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.history.pushState({}, '', '/admin');
-                    window.dispatchEvent(new PopStateEvent('popstate'));
-                  }}
-                >
-                  <span>Admin Terminal ↗</span>
-                </a>
-              </div>
             </div>
           )}
 
           {mode.startsWith('register') && (
-            <p className="text-[10px] text-slate-400 text-center mt-5 font-medium">
-              Already a member?{' '}
-              <button
-                type="button"
-                onClick={() => { setMode('login'); setErrorMsg(''); }}
-                className="text-indigo-400 font-black hover:text-indigo-300"
-              >
-                Log In
-              </button>
-            </p>
+            <div className="space-y-3 mt-5 text-center">
+              <p className="text-[10px] text-slate-400 font-medium">
+                Already a member?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setErrorMsg(''); }}
+                  className="text-indigo-400 font-black hover:text-indigo-300"
+                >
+                  Log In
+                </button>
+              </p>
+            </div>
           )}
 
         </div>

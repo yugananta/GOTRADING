@@ -17,7 +17,8 @@ const BROKERS: Record<string, string[]> = {
     'Axi-US53-Live',
     'Axi-US54-Live',
     'Axi-US88-Live'
-  ]
+  ],
+  'Other': []
 };
 
 export const Account: React.FC = () => {
@@ -92,20 +93,12 @@ export const Account: React.FC = () => {
     e.preventDefault();
     setError(null);
     setIsConnecting(true);
-    setConnectStepText(t('account.validatingAccount') || 'Validating Account...');
+    setConnectStepText(t('account.connecting') || 'Connecting to MT5...');
 
     try {
-      // Simulate validation request delay
-      await new Promise(r => setTimeout(r, 1500));
+      // Simulate connecting delay
+      await new Promise(r => setTimeout(r, 1000));
 
-      if (!currentUser?.isVerified) {
-         setError('Unverified account. Your account is not registered under Tarapti Group.');
-         setIsConnecting(false);
-         return;
-      }
-
-      setConnectStepText(t('account.connecting') || 'Connecting to MT5...');
-      
       const res = await apiFetch('/api/metatrader/connect', {
         method: 'POST',
         body: JSON.stringify({ 
@@ -341,12 +334,14 @@ export const Account: React.FC = () => {
         <div className="flex items-start justify-between relative z-10 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-base font-black text-slate-900 tracking-tight">MetaTrader 5</h2>
+              <h2 className="text-base font-black text-slate-900 tracking-tight">
+                {account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader')} ({account.platform || 'MT5'})
+              </h2>
               <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
                 <CheckCircle2 size={10} /> Connected
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">{account.login} • {account.server}</p>
+            <p className="text-[11px] text-slate-500 font-medium">Account ID: <span className="font-bold text-slate-800">{account.login}</span> • Server: <span className="font-bold text-slate-800">{account.server}</span></p>
           </div>
           <div className="flex gap-2">
             <button
@@ -459,7 +454,7 @@ export const Account: React.FC = () => {
         <div className="bg-[#EFF2F6]/90 dark:bg-slate-900/60 backdrop-blur-md border border-[#E2E8F0] dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl shadow-xs border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-               <img src="/axi_logo.svg" alt="Broker" className="h-full w-full object-cover" onError={(e) => { e.currentTarget.src = '/axi_test1.png'; }} />
+               <img src="/axi_logo.svg" alt="Axi" className="h-full w-full object-cover" onError={(e) => { e.currentTarget.src = '/axi_test1.png'; }} />
             </div>
             <div>
               <h3 className="text-xs font-black text-slate-900 dark:text-white tracking-tight">{t('account.connectTradingAccount')}</h3>

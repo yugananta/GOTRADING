@@ -107,6 +107,38 @@ async function startServer() {
   const app = express();
   const httpServer = createHttpServer(app);
 
+  // Restore logos from persistent assets folder to public and dist directories on boot
+  try {
+    const logoFiles = ['gotrading_logo.png', 'chat_logo.png', 'login_logo.png', 'company_logo.png'];
+    const assetsDir = path.join(process.cwd(), 'assets');
+    const publicDir = path.join(process.cwd(), 'public');
+    const distDir = path.join(process.cwd(), 'dist');
+
+    // Ensure directories exist
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+
+    logoFiles.forEach(file => {
+      const assetPath = path.join(assetsDir, file);
+      if (fs.existsSync(assetPath)) {
+        // Copy to public
+        const pubPath = path.join(publicDir, file);
+        fs.copyFileSync(assetPath, pubPath);
+        console.log(`[BOOT] Restored ${file} from assets/ to public/`);
+
+        // Copy to dist if dist exists
+        if (fs.existsSync(distDir)) {
+          const distPath = path.join(distDir, file);
+          fs.copyFileSync(assetPath, distPath);
+          console.log(`[BOOT] Restored ${file} from assets/ to dist/`);
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Error restoring logos from assets on boot:", err);
+  }
+
   app.use(express.json({ limit: '50mb' }));
 
   // Middleware to initialize basic req properties
@@ -119,76 +151,6 @@ async function startServer() {
   // API: Health / Ping
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", time: new Date().toISOString() });
-  });
-
-  // --- TECHNICAL ANALYSIS EDGE FUNCTIONS MOCK ---
-  
-  // Storage for our simulated Technical Analysis data to simulate a DB
-  const mockTechnicalDB = new Map<string, { sentiment: any, indicators: any }>();
-
-  // POST /api/analysis/sync
-  // Simulates an Edge Function that calculates indicators using Twelve Data & Market Sentiment Engine
-  app.post("/api/analysis/sync", async (req, res) => {
-    const { symbol } = req.body;
-    if (!symbol) return res.status(400).json({ error: "Symbol required" });
-    
-    // In a real Edge Function:
-    // 1. Call Twelve Data to get latest OHLCV
-    // 2. Calculate Indicators (EMA, RSI, MACD, etc.)
-    // 3. Compute Market Sentiment using rules
-    // 4. Update Supabase tables 'market_indicators' and 'market_sentiment'
-    // 5. Ask AI to generate an explanation based on the computed data
-
-    // MOCK IMPLEMENTATION:
-    const basePrice = symbol.includes("XAUUSD") ? 2350 : 1.08;
-    
-    const indicators = {
-      ema20: basePrice * (1 + (Math.random() * 0.002 - 0.001)),
-      ema50: basePrice * (1 + (Math.random() * 0.004 - 0.002)),
-      ema200: basePrice * (1 + (Math.random() * 0.01 - 0.005)),
-      rsi: 30 + Math.random() * 40,
-      macd: (Math.random() * 2 - 1).toFixed(4),
-      adx: 15 + Math.random() * 30,
-      vwap: basePrice,
-      atr: (basePrice * 0.002).toFixed(4),
-      support: (basePrice * 0.995).toFixed(4),
-      resistance: (basePrice * 1.005).toFixed(4),
-    };
-
-    const isBullish = indicators.rsi > 50 && indicators.ema20 > indicators.ema50;
-    
-    const sentiment = {
-      sentiment: isBullish ? (indicators.rsi > 70 ? 'Strong Bullish' : 'Bullish') : (indicators.rsi < 30 ? 'Strong Bearish' : 'Bearish'),
-      confidence: Math.floor(60 + Math.random() * 35),
-      technicalScore: Math.floor(40 + Math.random() * 50),
-      trendStrength: indicators.adx > 25 ? 'Strong' : 'Weak',
-      riskLevel: Number(indicators.atr) > 5 ? 'High' : 'Medium',
-      signal: isBullish ? 'Potential Buy' : 'Potential Sell',
-      aiExplanation: `Based on the latest data from the Market Sentiment Engine, ${symbol} is showing a ${isBullish ? 'bullish' : 'bearish'} structure. The price is ${isBullish ? 'above' : 'below'} the EMA 50, and RSI indicates ${isBullish ? 'upward' : 'downward'} momentum. The nearest support is at ${indicators.support} with resistance near ${indicators.resistance}.`,
-      updatedAt: new Date().toISOString()
-    };
-
-    mockTechnicalDB.set(symbol, { sentiment, indicators });
-
-    res.json({ success: true, message: "Sync complete" });
-  });
-
-  // GET /api/analysis/sentiment/:symbol
-  // Simulates fetching the latest calculated sentiment from Supabase
-  app.get("/api/analysis/sentiment/:symbol", async (req, res) => {
-    const symbol = req.params.symbol;
-    if (!mockTechnicalDB.has(symbol)) {
-      // Auto-sync if not found
-      mockTechnicalDB.set(symbol, {
-        sentiment: {
-          sentiment: 'Neutral', confidence: 50, technicalScore: 50, trendStrength: 'Neutral', riskLevel: 'Medium', signal: 'WAIT', aiExplanation: 'Initializing analysis...', updatedAt: new Date().toISOString()
-        },
-        indicators: {
-          ema20: 0, ema50: 0, ema200: 0, rsi: 50, macd: 0, adx: 20, vwap: 0, atr: 0, support: 0, resistance: 0
-        }
-      });
-    }
-    res.json({ success: true, ...mockTechnicalDB.get(symbol) });
   });
 
   // Debug route to test async error handling
@@ -1090,10 +1052,20 @@ async function startServer() {
       const { image, type } = req.body;
       if (!image) return res.status(400).json({ error: 'No image provided' });
       const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-      const fileName = type === 'chat' ? 'chat_logo.png' : 'gotrading_logo.png';
+      
+      let fileName = 'gotrading_logo.png';
+      if (type === 'chat') {
+        fileName = 'chat_logo.png';
+      } else if (type === 'login') {
+        fileName = 'login_logo.png';
+      }
+
       const pubPath = path.join(process.cwd(), 'public', fileName);
       const distPath = path.join(process.cwd(), 'dist', fileName);
+      const assetsPath = path.join(process.cwd(), 'assets', fileName);
+      
       fs.writeFileSync(pubPath, base64Data, { encoding: 'base64' });
+      fs.writeFileSync(assetsPath, base64Data, { encoding: 'base64' });
       if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
         fs.writeFileSync(distPath, base64Data, { encoding: 'base64' });
       }
@@ -1107,11 +1079,21 @@ async function startServer() {
   app.post('/api/delete-logo', async (req: any, res) => {
     try {
       const { type } = req.body;
-      const fileName = type === 'chat' ? 'chat_logo.png' : 'gotrading_logo.png';
+      
+      let fileName = 'gotrading_logo.png';
+      if (type === 'chat') {
+        fileName = 'chat_logo.png';
+      } else if (type === 'login') {
+        fileName = 'login_logo.png';
+      }
+
       const pubPath = path.join(process.cwd(), 'public', fileName);
       const distPath = path.join(process.cwd(), 'dist', fileName);
+      const assetsPath = path.join(process.cwd(), 'assets', fileName);
+
       if (fs.existsSync(pubPath)) fs.unlinkSync(pubPath);
       if (fs.existsSync(distPath)) fs.unlinkSync(distPath);
+      if (fs.existsSync(assetsPath)) fs.unlinkSync(assetsPath);
       res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -3338,13 +3320,13 @@ async function startServer() {
 
   // POST /api/metatrader/connect - Connect a MetaTrader account
   app.post("/api/metatrader/connect", authenticate, async (req: any, res) => {
-    const { platform, login, password, server } = req.body;
+    const { platform, login, password, server, broker } = req.body;
     if (!platform || !login || !password || !server) {
       return res.status(400).json({ error: "Missing required connection details" });
     }
     try {
       const mtService = new MetaTraderService();
-      const account = await mtService.connectAccount(req.userId, platform, login, server);
+      const account = await mtService.connectAccount(req.userId, platform, login, server, broker);
 
       // Notify followers of MT5 connection activity
       try {

@@ -22,7 +22,8 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose }) =
     e.preventDefault();
     if (!accountId) return;
 
-    connectBroker(broker, accountId);
+    const platform = broker === 'metatrader4' ? 'MT4' : 'MT5';
+    connectBroker(broker, accountId, platform, password, server);
     setSuccessMsg('Successfully synchronized live credentials. Your statistics are now active.');
     setTimeout(() => {
       setSuccessMsg('');
@@ -63,11 +64,17 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose }) =
           <div className="space-y-4">
             <div className="bg-[#1a2030] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400">Broker Platform</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">Broker Platform</span>
                 <span className="text-sm font-semibold text-gray-900 dark:text-white uppercase">{connectedBroker.broker}</span>
               </div>
+              {connectedBroker.server && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">Trading Server</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{connectedBroker.server}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400">Account ID</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">Account ID</span>
                 <span className="text-sm font-mono text-indigo-400 font-semibold">{connectedBroker.accountId}</span>
               </div>
               <div className="flex items-center justify-between">

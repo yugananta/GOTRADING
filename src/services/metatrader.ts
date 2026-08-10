@@ -6,6 +6,7 @@ export interface MetaTraderAccount {
   platform: 'MT4' | 'MT5';
   login: string;
   server: string;
+  broker?: string;
   balance: number;
   equity: number;
   margin: number;
@@ -57,6 +58,7 @@ export class MetaTraderService {
           platform: account.platform || 'MT5',
           login: account.login || '',
           server: account.server || '',
+          broker: account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader'),
           balance: Number(account.balance) || 50000,
           equity: Number(account.equity) || 50000,
           margin: Number(account.margin) || 0,
@@ -78,13 +80,16 @@ export class MetaTraderService {
   /**
    * Save or update connected MetaTrader account details in Supabase
    */
-  async connectAccount(userId: string, platform: 'MT4' | 'MT5', login: string, server: string): Promise<MetaTraderAccount> {
+  async connectAccount(userId: string, platform: 'MT4' | 'MT5', login: string, server: string, broker?: string): Promise<MetaTraderAccount> {
     const existing = await this.getConnectedAccount(userId);
+
+    const derivedBroker = broker || (server.toLowerCase().includes('axi') ? 'Axi' : server.split('-')[0] || 'MetaTrader');
 
     const accountData = {
       platform,
       login,
       server,
+      broker: derivedBroker,
       balance: existing?.balance || 50000.0,
       equity: existing?.equity || 50000.0,
       margin: existing?.margin || 0.0,

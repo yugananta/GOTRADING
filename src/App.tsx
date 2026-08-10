@@ -811,8 +811,7 @@ function MainAppLayout() {
               {[
                 { id: 'feed', label: t('nav.feed'), isDropdown: true },
                 { id: 'network', label: t('nav.network') },
-                { id: 'groups', label: t('nav.community'), isCommunity: true },
-                ...(currentUser?.role === 'admin' ? [{ id: 'admin', label: t('nav.admin') }] : [])
+                { id: 'groups', label: t('nav.community'), isCommunity: true }
               ].map(tab => {
                 if (tab.isDropdown) {
                   const isFeedActive = activeView === 'feed' || activeView === 'journal' || activeView === 'outlook' || activeView === 'account' || activeView === 'leaderboard';
@@ -924,17 +923,6 @@ function MainAppLayout() {
                               >
                                 <div className="w-2 h-2 rounded-full bg-amber-500" />
                                 <span>News & Calendar</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setIsTopFeedDropdownOpen(false);
-                                  setOutlookInitialTab('technical');
-                                  setActiveView('outlook');
-                                }}
-                                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
-                              >
-                                <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                                <span>Technical Analysis</span>
                               </button>
                             </motion.div>
                           </>
@@ -1155,8 +1143,7 @@ function MainAppLayout() {
               {[
                 { id: 'feed', label: t('nav.feed'), isDropdown: true },
                 { id: 'network', label: t('nav.network') },
-                { id: 'groups', label: t('nav.community'), isCommunity: true },
-                ...(currentUser?.role === 'admin' ? [{ id: 'admin', label: t('nav.admin') }] : [])
+                { id: 'groups', label: t('nav.community'), isCommunity: true }
               ].map(tab => {
                 if (tab.isDropdown) {
                   const isFeedActive = activeView === 'feed' || activeView === 'journal' || activeView === 'outlook' || activeView === 'account' || activeView === 'leaderboard';
@@ -1298,17 +1285,6 @@ function MainAppLayout() {
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                     <span>News & Calendar</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsMobileFeedDropdownOpen(false);
-                      setOutlookInitialTab('technical');
-                      setActiveView('outlook');
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
-                  >
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
-                    <span>Technical Analysis</span>
                   </button>
                 </motion.div>
               </>
@@ -1652,7 +1628,7 @@ function MainAppLayout() {
         {/* VIEW 1: HOME FEED */}
         {activeView === 'feed' && (
           <div
-            className="pb-20 lg:pb-0 bg-white lg:bg-transparent lg:rounded-2xl overflow-hidden"
+            className="pb-20 lg:pb-0 bg-white lg:bg-transparent lg:rounded-2xl"
           >
             <div className="bg-white lg:bg-transparent flex flex-col">
               
@@ -1667,44 +1643,44 @@ function MainAppLayout() {
               </div>
 
               {/* Create Post */}
-              <div className="sticky top-0 z-20 pb-2 bg-white lg:bg-transparent">
+              <div className="pb-2 bg-white lg:bg-transparent">
                 <CreatePost onPostCreated={fetchPosts} />
               </div>
 
               {/* Feed Filter Tabs */}
-              <div className="bg-white border border-slate-200/85 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-1.5 mb-3 flex items-center justify-between gap-1 mx-2 lg:mx-0">
+              <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200/85 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-1.5 mb-3 flex items-center justify-between gap-1 mx-2 lg:mx-0">
                 <button
                   onClick={() => setFeedFilter('latest')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-1.5 sm:px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                     feedFilter === 'latest'
                       ? 'bg-indigo-50 text-indigo-600 shadow-2xs border border-indigo-100/50'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
                   }`}
                 >
-                  <Clock size={13} />
-                  <span>Latest Posts</span>
+                  <Clock size={13} className="shrink-0" />
+                  <span className="whitespace-nowrap">Latest Posts</span>
                 </button>
                 <button
                   onClick={() => setFeedFilter('top')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-1.5 sm:px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                     feedFilter === 'top'
                       ? 'bg-indigo-50 text-indigo-600 shadow-2xs border border-indigo-100/50'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
                   }`}
                 >
-                  <TrendingUp size={13} />
-                  <span>Top Discussions</span>
+                  <TrendingUp size={13} className="shrink-0" />
+                  <span className="whitespace-nowrap">Top Discussions</span>
                 </button>
                 <button
                   onClick={() => setFeedFilter('milestones')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-1.5 sm:px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                     feedFilter === 'milestones'
                       ? 'bg-indigo-50 text-indigo-600 shadow-2xs border border-indigo-100/50'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
                   }`}
                 >
-                  <Award size={13} />
-                  <span className="truncate">Member Milestones</span>
+                  <Award size={13} className="shrink-0" />
+                  <span className="truncate whitespace-nowrap">Member Milestones</span>
                 </button>
               </div>
 

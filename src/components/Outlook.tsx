@@ -6,7 +6,6 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { useApp } from './AppContext.js';
 import { poll } from '../utils/polling';
 import { TradingViewCalendar } from './TradingViewCalendar.js';
-import { TechnicalAnalysis } from './TechnicalAnalysis';
 import { apiFetch } from '../utils/apiFetch';
 import { parseUTCDate } from '../utils/dateUtils.ts';
 
@@ -510,15 +509,8 @@ const MarketClock = () => {
 
 export const Outlook: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { showToast, outlookInitialTab } = useApp();
+  const { showToast } = useApp();
   
-  const [activeTab, setActiveTab] = useState<'technical' | 'news'>(() => outlookInitialTab || 'news');
-
-  useEffect(() => {
-    if (outlookInitialTab) {
-      setActiveTab(outlookInitialTab);
-    }
-  }, [outlookInitialTab]);
   const [newsFilter, setNewsFilter] = useState<'ALL' | 'High' | 'Medium' | 'Low'>('High');
   
   const [selectedNewsId, setSelectedNewsId] = useState<any>(1);
@@ -1102,10 +1094,6 @@ export const Outlook: React.FC = () => {
     </div>
   );
 
-  const renderTechnicalSection = () => (
-    <TechnicalAnalysis />
-  );
-
   const renderNewsSection = () => (
     <div className="space-y-6">
       {/* Session Clock & Countdown */}
@@ -1573,7 +1561,7 @@ export const Outlook: React.FC = () => {
       </div>
 
       {/* Live Finnhub Market News Feed */}
-      <div className="lg:hidden">
+      <div>
         {renderLiveMarketIntelligenceCard()}
       </div>
     </div>
@@ -1581,94 +1569,8 @@ export const Outlook: React.FC = () => {
 
   return (
     <div className="py-2 w-full max-w-none relative">
-      <div className="w-full animate-in fade-in duration-300">
-      
-        {/* MOBILE SELECTOR CARDS (VISIBLE ONLY ON MOBILE) */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 mb-5 lg:hidden">
-          
-          {/* CARD 1: NEWS & CALENDAR */}
-          <div
-            onClick={() => setActiveTab('news')}
-            className={`group relative overflow-hidden rounded-2xl p-2.5 sm:p-3 transition-all duration-300 cursor-pointer select-none flex flex-col justify-between border ${
-              activeTab === 'news'
-                ? 'bg-indigo-600 border-indigo-400 text-white shadow-[inset_0_2px_6px_rgba(255,255,255,0.3),0_6px_12px_rgba(0,0,0,0.3)] scale-[1.02] ring-2 ring-white/30 z-10'
-                : 'bg-indigo-600/90 border-indigo-500 text-indigo-50 hover:bg-indigo-600 shadow-sm opacity-85 hover:opacity-100'
-            }`}
-          >
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-1">
-                <div className="flex items-center gap-1 min-w-0">
-                  <Calendar size={13} className='text-indigo-200 shrink-0' />
-                  <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>{t('common.outlook.newsAndCalendar')}</span>
-                </div>
-                {activeTab === 'news' && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
-                )}
-              </div>
-
-              <p className='text-[9px] sm:text-[10px] leading-tight font-medium line-clamp-2 text-indigo-100'>
-                {t('common.outlook.newsAndCalendarDesc')}
-              </p>
-            </div>
-
-            <div className='pt-1.5 flex items-center justify-between text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-indigo-200'>
-              <span>News</span>
-              <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
-            </div>
-          </div>
-
-          {/* CARD 2: TECHNICAL ANALYSIS */}
-          <div
-            onClick={() => setActiveTab('technical')}
-            className={`group relative overflow-hidden rounded-2xl p-2.5 sm:p-3 transition-all duration-300 cursor-pointer select-none flex flex-col justify-between border ${
-              activeTab === 'technical'
-                ? 'bg-violet-600 border-violet-400 text-white shadow-[inset_0_2px_6px_rgba(255,255,255,0.3),0_6px_12px_rgba(0,0,0,0.3)] scale-[1.02] ring-2 ring-white/30 z-10'
-                : 'bg-violet-600/90 border-violet-500 text-violet-50 hover:bg-violet-600 shadow-sm opacity-85 hover:opacity-100'
-            }`}
-          >
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-1">
-                <div className="flex items-center gap-1 min-w-0">
-                  <TrendingUp size={13} className='text-violet-200 shrink-0' />
-                  <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>{t('common.outlook.technicalAnalysis')}</span>
-                </div>
-                {activeTab === 'technical' && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
-                )}
-              </div>
-
-              <p className='text-[9px] sm:text-[10px] leading-tight font-medium line-clamp-2 text-violet-100'>
-                {t('common.outlook.technicalAnalysisDesc')}
-              </p>
-            </div>
-
-            <div className='pt-1.5 flex items-center justify-between text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-violet-200'>
-              <span>Chart</span>
-              <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
-            </div>
-          </div>
-
-        </div>
-
-        {/* MOBILE VIEW (< lg): SINGLE TAB DISPLAY */}
-        <div className="lg:hidden space-y-6">
-          {activeTab === 'technical' && renderTechnicalSection()}
-          {activeTab === 'news' && renderNewsSection()}
-        </div>
-
-        {/* DESKTOP / WEB PROPORTIONAL VIEW (>= lg): BOTH SECTIONS SIDE-BY-SIDE */}
-        <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 items-start mt-3">
-          {/* LEFT COLUMN: TECHNICAL ANALYSIS & LIVE CHART */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-            {renderTechnicalSection()}
-          </div>
-
-          {/* RIGHT COLUMN: NEWS, MARKET CLOCKS & CALENDAR */}
-          <div className="lg:col-span-5 xl:col-span-4 space-y-6 sticky top-4">
-            {renderNewsSection()}
-          </div>
-        </div>
-
+      <div className="w-full animate-in fade-in duration-300 space-y-6">
+        {renderNewsSection()}
       </div>
     </div>
   );
