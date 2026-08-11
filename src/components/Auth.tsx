@@ -145,8 +145,13 @@ export const Auth: React.FC = () => {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.token) {
-          localStorage.setItem('accessToken', data.token);
+        const token = data.token || data.accessToken;
+        const refreshToken = data.refreshToken;
+        if (token) {
+          localStorage.setItem('accessToken', token);
+        }
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
         }
         setCurrentUser(data.user);
       } else {
@@ -256,8 +261,13 @@ export const Auth: React.FC = () => {
       }, res, resData);
 
       if (res.ok) {
-        if (resData.token) {
-          localStorage.setItem('accessToken', resData.token);
+        const token = resData.token || resData.accessToken;
+        const refreshToken = resData.refreshToken;
+        if (token) {
+          localStorage.setItem('accessToken', token);
+        }
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
         }
         setSuccessMsg('Registration successful! Welcome to Tarapti...');
         setTimeout(() => {
