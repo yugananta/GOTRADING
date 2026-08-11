@@ -24,7 +24,7 @@ const BROKERS: Record<string, string[]> = {
 export const Account: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { currentUser, setCurrentUser } = useApp();
-  
+
   const [selectedSubView, setSelectedSubView] = useState<'main' | 'partners_detail'>('main');
   const [account, setAccount] = useState<any>(null);
   const [trades, setTrades] = useState<any[]>([]);
@@ -60,6 +60,14 @@ export const Account: React.FC = () => {
         const data = await res.json();
         if (data.account) {
           setAccount(data.account);
+          // Credential invalid/expired -> tampilkan pesan & form connect ulang.
+          if (data.account.conn_status === 'error') {
+            setError(data.account.error_message || 'Koneksi MT5 gagal. Silakan hubungkan ulang akun Anda.');
+            setShowConnectForm(true);
+          }
+          if (data.account.conn_status === 'connected') {
+            setError(null);
+          }
           fetchTrades();
         } else {
           setAccount(null);
@@ -87,7 +95,7 @@ export const Account: React.FC = () => {
     }
   };
 
-  
+
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,12 +109,12 @@ export const Account: React.FC = () => {
 
       const res = await apiFetch('/api/metatrader/connect', {
         method: 'POST',
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           platform: 'MT5',
-          login, 
-          password, 
-          server: server === 'Other' ? customServer : server, 
-          broker: broker === 'Other' ? customBroker : broker 
+          login,
+          password,
+          server: server === 'Other' ? customServer : server,
+          broker: broker === 'Other' ? customBroker : broker
         }),
       });
       const data = await res.json();
@@ -154,16 +162,37 @@ export const Account: React.FC = () => {
     }
   };
 
+  const retryReconnect = async () => {
+    try {
+      const res = await apiFetch('/api/metatrader/reconnect', { method: 'POST' });
+      if (res.ok) await fetchAccountStatus();
+    } catch (err) {
+      console.error('Reconnect retry failed', err);
+    }
+  };
+
+  // Status koneksi akun (dari backend, kolom conn_status):
+  // 'connected' | 'reconnecting' | 'disconnected' | 'error'
+  const connStatus = account?.conn_status || (account ? 'connected' : 'disconnected');
+
+  // Polling otomatis saat belum CONNECTED, agar status RECONNECTING berubah
+  // menjadi CONNECTED kembali tanpa perlu refresh manual.
+  useEffect(() => {
+    if (!account || connStatus === 'connected') return;
+    const id = setInterval(() => fetchAccountStatus(), 15000);
+    return () => clearInterval(id);
+  }, [account?.id, connStatus]);
+
   const formatCurrency = (val: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);
   };
 
-  
+
 
   const renderConnectForm = () => (
     <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/15 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-      
+
       <div className="relative z-10 mb-4">
         <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
           {t('account.connectTradingAccount')}
@@ -330,16 +359,50 @@ export const Account: React.FC = () => {
       {/* Overview Card */}
       <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-        
+
+        {connStatus === 'reconnecting' && (
+          <div className="relative z-10 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2">
+            <div className="flex items-start gap-2 text-amber-700 text-xs">
+              <RefreshCw size={14} className="shrink-0 mt-0.5 animate-spin" />
+              <p>Koneksi MT5 terputus. Sistem sedang menghubungkan ulang secara otomatis...</p>
+            </div>
+            <button
+              onClick={retryReconnect}
+              className="shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-[10px] font-bold rounded-lg transition cursor-pointer"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        )}
+
+        {connStatus === 'error' && (
+          <div className="relative z-10 mb-3 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between gap-2">
+            <div className="flex items-start gap-2 text-rose-700 text-xs">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+              <p>{account?.error_message || 'Koneksi MT5 gagal. Silakan hubungkan ulang akun Anda.'}</p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-start justify-between relative z-10 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h2 className="text-base font-black text-slate-900 tracking-tight">
                 {account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader')} ({account.platform || 'MT5'})
               </h2>
-              <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
-                <CheckCircle2 size={10} /> Connected
-              </span>
+              {connStatus === 'reconnecting' ? (
+                <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10" title="MT5 Gateway is reconnecting automatically">
+                  <RefreshCw size={10} /> Reconnecting...
+                </span>
+              ) : connStatus === 'error' ? (
+                <span className="bg-rose-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-rose-500/10" title="Connection error. Reconnect your MT5 account.">
+                  <AlertCircle size={10} /> Connection Error
+                </span>
+              ) : (
+                <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
+                  <CheckCircle2 size={10} /> Connected
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-slate-500 font-medium">Account ID: <span className="font-bold text-slate-800">{account.login}</span> • Server: <span className="font-bold text-slate-800">{account.server}</span></p>
           </div>
@@ -389,7 +452,7 @@ export const Account: React.FC = () => {
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
           <Activity size={12} /> Recent Trades
         </h3>
-        
+
         {trades.length === 0 ? (
           <div className="text-center py-6 text-slate-400 text-xs font-medium bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed">
             No recent trades found
@@ -438,15 +501,26 @@ export const Account: React.FC = () => {
           </div>
         </div>
         <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${
-          account 
-            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300/50' 
+          connStatus === 'connected'
+            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300/50'
+            : connStatus === 'reconnecting'
+            ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300/50'
+            : connStatus === 'error'
+            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border-rose-300/50'
             : 'bg-amber-50 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300/50'
         }`}>
-          {account ? 'Connected' : 'Not Connected'}
+          {connStatus === 'connected' ? 'Connected'
+            : connStatus === 'reconnecting' ? 'Reconnecting...'
+            : connStatus === 'error' ? 'Connection Error'
+            : 'Not Connected'}
         </span>
       </div>
 
-      {account ? (
+      {account && connStatus === 'error' ? (
+        // Credential invalid/expired -> error state sudah diset di
+        // fetchAccountStatus; tampilkan form supaya user connect ulang.
+        renderConnectForm()
+      ) : account && connStatus !== 'disconnected' ? (
         renderConnectedOverview()
       ) : showConnectForm ? (
         renderConnectForm()
@@ -477,7 +551,7 @@ export const Account: React.FC = () => {
 
   return (
     <div className="py-4 space-y-6 w-full max-w-none relative px-2">
-      
+
       {/* Detail Page Mode: Tarapti Partners */}
       {selectedSubView === 'partners_detail' ? (
         <div className="space-y-4">
@@ -493,7 +567,7 @@ export const Account: React.FC = () => {
       ) : (
         /* Main 2-Card Redesign View */
         <div className="space-y-6">
-          
+
           {/* Header Title */}
           <div className="bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -513,7 +587,7 @@ export const Account: React.FC = () => {
 
           {/* EXACTLY 2 CARDS GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
-            
+
             {/* CARD 1: CONNECT ACCOUNT (RESTORED ORIGINAL LAYOUT) */}
             <div>
               {account ? (
@@ -523,7 +597,7 @@ export const Account: React.FC = () => {
               ) : (
                 <div className="h-full bg-[#EFF2F6]/90 dark:bg-slate-900/60 backdrop-blur-md border border-[#E2E8F0] dark:border-slate-800 rounded-3xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden flex flex-col items-center text-center justify-between">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-                  
+
                   <div className="flex flex-col items-center text-center my-auto">
                     <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-xs border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-4 overflow-hidden">
                        <img src="/axi_logo.svg" alt="Axi" className="h-full w-full object-cover" onError={(e) => { e.currentTarget.src = '/axi_test1.png'; }} />
@@ -547,7 +621,7 @@ export const Account: React.FC = () => {
             </div>
 
             {/* CARD 2: TARAPTI PARTNERS (CLEAN, ELEGANT & SIMPLES) */}
-            <div 
+            <div
               onClick={() => setSelectedSubView('partners_detail')}
               className="bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xs flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-600 transition h-full"
             >
