@@ -104,13 +104,6 @@ export const Account: React.FC = () => {
       // Simulate connecting delay
       await new Promise(r => setTimeout(r, 1000));
 
-      if (!currentUser?.isVerified) {
-         setError('Unverified account. Your account is not registered under Tarapti Group.');
-         setIsConnecting(false);
-         clearTimeout(timeoutId);
-         return;
-      }
-
       setConnectStepText(t('account.connecting') || 'Connecting to MT5...');
       
       const res = await apiFetch('/api/metatrader/connect', {
@@ -310,7 +303,7 @@ export const Account: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-              {t('account.investorPasswordLabel')}
+              Investor Password *
             </label>
             <span className="text-[8px] text-indigo-500 uppercase font-bold tracking-wider flex items-center gap-1"><Lock size={8}/> {t('account.readOnly')}</span>
           </div>
@@ -322,6 +315,9 @@ export const Account: React.FC = () => {
             className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
             required
           />
+          <p className="text-[10px] text-slate-500 mt-1 leading-normal">
+            Use your MT5 Investor Password (read-only). Master/Trading Password is not allowed.
+          </p>
         </div>
 
         <div className="pt-2 flex items-center gap-2">
