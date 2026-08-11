@@ -23,7 +23,7 @@ const BROKERS: Record<string, string[]> = {
 
 export const Account: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { currentUser, setCurrentUser } = useApp();
+  const { currentUser, setCurrentUser, syncMetaTrader } = useApp();
   
   const [selectedSubView, setSelectedSubView] = useState<'main' | 'partners_detail'>('main');
   const [account, setAccount] = useState<any>(null);
@@ -127,6 +127,7 @@ export const Account: React.FC = () => {
         setSuccessMessage('MetaTrader 5 Account Connected Successfully!');
         setTimeout(() => setSuccessMessage(null), 5000);
         fetchTrades();
+        if (syncMetaTrader) await syncMetaTrader();
       } else {
         const errorMsg = typeof data.error === 'string' ? data.error : (data.error?.message || 'Failed to connect account. Please check credentials.');
         setError(errorMsg);
@@ -166,6 +167,7 @@ export const Account: React.FC = () => {
         setAccount(null);
         setTrades([]);
         setShowConnectForm(false);
+        if (syncMetaTrader) await syncMetaTrader();
       }
     } catch (err) {
       console.error('Disconnect failed', err);

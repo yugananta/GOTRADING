@@ -395,6 +395,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const brokerName = account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader');
           setConnectedBroker({ broker: brokerName, accountId: account.login, platform: account.platform, server: account.server });
           
+          setCurrentUser(prev => prev ? { ...prev, mt5Connected: true } : prev);
+
           // Fetch synced trades to calculate real-time stats
           const tradesRes = await apiFetch('/api/metatrader/trades');
           if (tradesRes.ok) {
@@ -420,6 +422,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         } else {
           setConnectedBroker(null);
+          setCurrentUser(prev => prev ? { ...prev, mt5Connected: false } : prev);
         }
       }
     } catch (e) {
