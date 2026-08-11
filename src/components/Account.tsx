@@ -428,8 +428,8 @@ export const Account: React.FC = () => {
             {trades.map(trade => (
               <div key={trade.id} className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 hover:border-indigo-100 transition">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${trade.type.includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                    {trade.type.includes('BUY') ? 'BUY' : 'SELL'}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${(trade.type || '').includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                    {(trade.type || '').includes('BUY') ? 'BUY' : 'SELL'}
                   </div>
                   <div>
                     <div className="text-xs font-bold text-slate-800">{trade.symbol}</div>

@@ -47,8 +47,8 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
   const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(true);
 
   const [likesCount, setLikesCount] = useState(post.likesCount);
-  const [liked, setLiked] = useState(currentUser ? post.likedBy.includes(currentUser.id) : false);
-  const [bookmarked, setBookmarked] = useState(currentUser ? post.bookmarkedBy?.includes(currentUser.id) : false);
+  const [liked, setLiked] = useState(currentUser ? post.likedBy?.includes(currentUser.id) ?? false : false);
+  const [bookmarked, setBookmarked] = useState(currentUser ? post.bookmarkedBy?.includes(currentUser.id) ?? false : false);
   const [isHeartPopping, setIsHeartPopping] = useState(false);
   const [heartBurst, setHeartBurst] = useState<Array<{ id: number; x: number; y: number; scale: number; rot: number }>>([]);
 
@@ -79,8 +79,8 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
 
   useEffect(() => {
     setLikesCount(post.likesCount);
-    setLiked(currentUser ? post.likedBy.includes(currentUser.id) : false);
-    setBookmarked(currentUser ? post.bookmarkedBy?.includes(currentUser.id) : false);
+    setLiked(currentUser ? post.likedBy?.includes(currentUser.id) ?? false : false);
+    setBookmarked(currentUser ? post.bookmarkedBy?.includes(currentUser.id) ?? false : false);
   }, [post, currentUser]);
 
   useEffect(() => {
