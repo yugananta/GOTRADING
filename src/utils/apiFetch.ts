@@ -6,6 +6,18 @@
 // requests will always get 401 once the real backend is wired up. If
 // there's no token yet (not logged in), the Authorization header is
 // simply omitted — safe to use for public endpoints too (login, register, etc).
+const getBackendUrl = (): string => {
+  if (typeof process !== 'undefined' && process.env && process.env.VITE_BACKEND_API_URL) {
+    return process.env.VITE_BACKEND_API_URL;
+  }
+  try {
+    const metaEnv = (Function('return import.meta.env')()) as Record<string, string>;
+    return metaEnv?.['VITE_BACKEND_API_URL'] || '';
+  } catch {
+    return '';
+  }
+};
+
 export function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = localStorage.getItem('accessToken');
   const lang = localStorage.getItem('i18nextLng') || 'en';
@@ -17,5 +29,7 @@ export function apiFetch(url: string, options: RequestInit = {}): Promise<Respon
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  return fetch(url, { ...options, headers });
+  const baseUrl = getBackendUrl();
+  const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+  return fetch(fullUrl, { ...options, headers });
 }
