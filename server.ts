@@ -1336,14 +1336,16 @@ async function startServer() {
       if (!refreshToken) {
         return res.status(400).json({ error: "Refresh token is required" });
       }
-      const payload = verifyRefreshToken(refreshToken);
-      if (!payload) {
-        return res.status(401).json({ error: "Invalid or expired refresh token" });
-      }
-      const newAccessToken = generateAccessToken(payload.userId);
-      res.json({ success: true, accessToken: newAccessToken, token: newAccessToken });
+      const result = await authService.refreshToken(refreshToken);
+      res.json({
+        success: true,
+        accessToken: result.accessToken,
+        token: result.accessToken,
+        refreshToken: result.refreshToken
+      });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error('Refresh token error:', error);
+      res.status(401).json({ error: error.message || "Invalid or expired refresh token" });
     }
   });
 
