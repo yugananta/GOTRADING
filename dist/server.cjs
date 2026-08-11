@@ -1318,6 +1318,13 @@ var verifyAccessToken = (token) => {
     return null;
   }
 };
+var verifyRefreshToken = (token) => {
+  try {
+    return import_jsonwebtoken.default.verify(token, REFRESH_SECRET);
+  } catch {
+    return null;
+  }
+};
 
 // src/services/AuthService.ts
 var AuthService = class {
@@ -2988,6 +2995,22 @@ async function startServer() {
     } catch (error) {
       console.error("Login error:", error);
       res.status(400).json({ error: error.message || "Invalid email or password" });
+    }
+  });
+  app.post("/api/auth/refresh", async (req, res) => {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        return res.status(400).json({ error: "Refresh token is required" });
+      }
+      const payload = verifyRefreshToken(refreshToken);
+      if (!payload) {
+        return res.status(401).json({ error: "Invalid or expired refresh token" });
+      }
+      const newAccessToken = generateAccessToken(payload.userId);
+      res.json({ success: true, accessToken: newAccessToken, token: newAccessToken });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
   });
   app.post("/api/auth/logout", async (req, res) => {

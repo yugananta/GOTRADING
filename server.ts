@@ -19,7 +19,7 @@ import { ConnectionRepository } from './src/repositories/ConnectionRepository.ts
 import { StoryRepository } from './src/repositories/StoryRepository.ts';
 import { AuthService } from './src/services/AuthService.ts';
 import { authenticate } from './src/middleware/authMiddleware.ts';
-import { generateAccessToken } from './src/utils/auth.ts';
+import { generateAccessToken, verifyRefreshToken } from './src/utils/auth.ts';
 import { supabase } from './src/lib/supabaseClient.ts';
 import { LocationRepository } from './src/repositories/LocationRepository.ts';
 import { GroupRepository } from './src/repositories/GroupRepository.ts';
@@ -1327,6 +1327,23 @@ async function startServer() {
     } catch (error: any) {
       console.error('Login error:', error);
       res.status(400).json({ error: error.message || "Invalid email or password" });
+    }
+  });
+
+  app.post("/api/auth/refresh", async (req: any, res) => {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        return res.status(400).json({ error: "Refresh token is required" });
+      }
+      const payload = verifyRefreshToken(refreshToken);
+      if (!payload) {
+        return res.status(401).json({ error: "Invalid or expired refresh token" });
+      }
+      const newAccessToken = generateAccessToken(payload.userId);
+      res.json({ success: true, accessToken: newAccessToken, token: newAccessToken });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
