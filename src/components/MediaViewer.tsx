@@ -34,14 +34,14 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   const [submittingComment, setSubmittingComment] = useState(false);
   
   // Likes local state
-  const [liked, setLiked] = useState(currentUser ? post.likedBy?.includes(currentUser.id) ?? false : false);
+  const [liked, setLiked] = useState(currentUser ? post.likedBy.includes(currentUser.id) : false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [isHeartPopping, setIsHeartPopping] = useState(false);
 
   // Sync post updates
   useEffect(() => {
     setPost(initialPost);
-    setLiked(currentUser ? initialPost.likedBy?.includes(currentUser.id) ?? false : false);
+    setLiked(currentUser ? initialPost.likedBy.includes(currentUser.id) : false);
     setLikesCount(initialPost.likesCount);
   }, [initialPost, currentUser]);
 
@@ -56,7 +56,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
       })
       .then((data) => {
         if (data && Array.isArray(data.following)) {
-          setIsFollowing(data.following?.includes(post.userId) ?? false);
+          setIsFollowing(data.following.includes(post.userId));
         }
       })
       .catch((err) => console.error('Error checking follow state in viewer:', err));

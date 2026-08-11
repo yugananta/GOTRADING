@@ -143,9 +143,7 @@ export class MetaTraderService {
         console.error('Error creating MetaTrader account in Supabase:', error);
       }
 
-      // Automatically generate professional seed trades for this new account
-      await this.generateSeedTrades(userId);
-
+      // Account connected successfully
       return {
         id,
         userId,
@@ -259,7 +257,7 @@ export class MetaTraderService {
   }
 
   /**
-   * Perform real-time sync (calculates and updates live values, opens or closes active trades)
+   * Perform real-time sync (recalculates account equity and summary metrics from actual stored trades)
    */
   async syncTrades(userId: string): Promise<{ account: MetaTraderAccount | null; trades: MetaTraderTrade[] }> {
     const account = await this.getConnectedAccount(userId);
@@ -269,147 +267,22 @@ export class MetaTraderService {
 
     const trades = await this.getTrades(userId);
 
-    // Filter open/closed trades
-    // Let's assume some trades are closed and we simulate updating/syncing live fluctuations
-    // Generate a new trade with a small probability to simulate real-time live trading
-    const now = new Date();
-    let updated = false;
+    // Recalculate real account values based strictly on actual stored trades
+    let currentUnrealized = 0;
+    let margin = 0;
 
-    // Simulate small balance fluctuations based on last trades or random positive bias
-    const latestClosedTrade = trades.filter(t => t.closeTime).sort((a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime())[0];
-    
-    // Add a brand-new live trade occasionally (e.g. 35% chance when sync is called and no open trades)
-    const openTrades = trades.filter(t => !t.closeTime);
-    if (openTrades.length === 0 && Math.random() < 0.35) {
-      const symbols = ['XAU/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY'];
-      const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      const type = Math.random() > 0.4 ? 'BUY' : 'SELL';
-      const lots = Number((0.1 + Math.random() * 1.5).toFixed(2));
-      const openPrices: { [key: string]: number } = {
-        'XAU/USD': 2342.10,
-        'EUR/USD': 1.0820,
-        'GBP/USD': 1.2540,
-        'USD/JPY': 158.45
-      };
-      const openPrice = openPrices[symbol] || 1.0000;
-
-      const newOpenTrade: MetaTraderTrade = {
-        id: 'T-' + Math.floor(100000 + Math.random() * 900000),
-        symbol,
-        type,
-        lots,
-        openPrice,
-        closePrice: 0,
-        openTime: now.toISOString(),
-        closeTime: '',
-        pl: 0,
-        comment: 'Live synced trade'
-      };
-
-      trades.push(newOpenTrade);
-      updated = true;
-    }
-
-    // Simulate pricing and close any open trade that has been running for a bit
-    for (const trade of trades) {
-      if (!trade.closeTime) {
-        const openedAt = new Date(trade.openTime);
-        const minutesRunning = (now.getTime() - openedAt.getTime()) / 60000;
-
-        // Fluctuating unrealized P&L
-        const delta = (Math.random() - 0.48) * (trade.symbol.includes('XAU') ? 8 : 0.005) * trade.lots * 100;
-        trade.pl = Number((trade.pl + delta).toFixed(2));
-
-        // 50% chance to close trade if it has been running for more than 1 minute
-        if (minutesRunning > 1 && Math.random() < 0.5) {
-          trade.closeTime = now.toISOString();
-          const pips = trade.type === 'BUY' ? (trade.pl / (trade.lots * 10)) : -(trade.pl / (trade.lots * 10));
-          trade.closePrice = Number((trade.openPrice + pips).toFixed(5));
-          account.balance = Number((account.balance + trade.pl).toFixed(2));
-        }
-        updated = true;
+    trades.forEach(t => {
+      if (!t.closeTime) {
+        currentUnrealized += (t.pl || 0);
+        margin += (t.lots || 0) * 200;
       }
-    }
+    });
 
-    if (updated) {
-      // Recalculate account values
-      let currentUnrealized = 0;
-      let margin = 0;
-
-      trades.forEach(t => {
-        if (!t.closeTime) {
-          currentUnrealized += t.pl;
-          // Standard margin calculation: 1 lot EURUSD = $200 margin at 1:500 leverage
-          margin += t.lots * 200;
-        }
-      });
-
-      account.equity = Number((account.balance + currentUnrealized).toFixed(2));
-      account.profit = Number(currentUnrealized.toFixed(2));
-      account.margin = Number(margin.toFixed(2));
-      account.freeMargin = Number((account.equity - margin).toFixed(2));
-
-      await this.saveTrades(userId, trades);
-      await this.connectAccount(userId, account.platform, account.login, account.server);
-    }
+    account.equity = Number((account.balance + currentUnrealized).toFixed(2));
+    account.profit = Number(currentUnrealized.toFixed(2));
+    account.margin = Number(margin.toFixed(2));
+    account.freeMargin = Number((account.equity - margin).toFixed(2));
 
     return { account, trades };
-  }
-
-  /**
-   * Generate realistic mock seed trades to populate the journal instantly
-   */
-  private async generateSeedTrades(userId: string): Promise<void> {
-    const trades: MetaTraderTrade[] = [];
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 20); // Go back 20 days
-
-    const symbols = ['XAU/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY'];
-    const basePrices: { [key: string]: number } = {
-      'XAU/USD': 2340.50,
-      'EUR/USD': 1.0825,
-      'GBP/USD': 1.2545,
-      'USD/JPY': 158.40
-    };
-
-    // Generate 15-20 beautiful, realistic trades spread across different days
-    for (let i = 0; i < 18; i++) {
-      const tradeDate = new Date(startDate);
-      tradeDate.setDate(startDate.getDate() + Math.floor(i * 1.1));
-      tradeDate.setHours(9 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
-
-      const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      const type = Math.random() > 0.4 ? 'BUY' : 'SELL';
-      const lots = Number((0.2 + Math.random() * 1.8).toFixed(2));
-      const openPrice = basePrices[symbol] * (1 + (Math.random() - 0.5) * 0.01);
-
-      // Win rate ~ 65% for a professional-looking profile
-      const isWin = Math.random() < 0.65;
-      const pipMultiplier = symbol.includes('XAU') ? 10 : 0.001;
-      const pipChange = isWin ? (5 + Math.random() * 25) : -(3 + Math.random() * 15);
-      const pl = Number((lots * pipChange * (symbol.includes('XAU') ? 100 : 10)).toFixed(2));
-
-      const closePrice = type === 'BUY' 
-        ? openPrice + (pipChange * pipMultiplier)
-        : openPrice - (pipChange * pipMultiplier);
-
-      const closeTime = new Date(tradeDate);
-      closeTime.setHours(tradeDate.getHours() + 1 + Math.floor(Math.random() * 4), tradeDate.getMinutes() + Math.floor(Math.random() * 60));
-
-      trades.push({
-        id: 'T-' + Math.floor(100000 + Math.random() * 900000),
-        symbol,
-        type,
-        lots,
-        openPrice: Number(openPrice.toFixed(symbol.includes('XAU') ? 2 : 5)),
-        closePrice: Number(closePrice.toFixed(symbol.includes('XAU') ? 2 : 5)),
-        openTime: tradeDate.toISOString(),
-        closeTime: closeTime.toISOString(),
-        pl,
-        comment: 'Historical synced trade'
-      });
-    }
-
-    await this.saveTrades(userId, trades);
   }
 }

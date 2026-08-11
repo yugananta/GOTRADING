@@ -19,7 +19,7 @@ import {
 
 export const Profile: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { currentUser, setCurrentUser, posts, fetchPosts, setActiveView, setActiveChatPartnerId, viewUserProfile, tradingStats, connectedBroker } = useApp();
+  const { currentUser, setCurrentUser, posts, fetchPosts, setActiveView, setActiveChatPartnerId, viewUserProfile } = useApp();
   const [ownPosts, setOwnPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState<'posts' | 'media' | 'partners' | 'settings'>('posts');
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
@@ -461,7 +461,7 @@ export const Profile: React.FC = () => {
 
             {/* Subtitle status: Verified / Unverified Member */}
             <div className="flex items-center gap-1.5 pt-0.5">
-              {(currentUser.mt5Connected || currentUser.isVerified || connectedBroker) ? (
+              {(currentUser.mt5Connected || currentUser.isVerified) ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
                   <CheckCircle size={13} className="text-emerald-500" />
                   {t('profile.verified_member')}
@@ -533,85 +533,6 @@ export const Profile: React.FC = () => {
 
         </div>
 
-      </div>
-
-      {/* ====== PERFORMANCE SECTION ====== */}
-      <div className="bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-            <Activity size={13} className="text-indigo-500 animate-pulse" />
-            Performance
-          </h4>
-          {(currentUser.mt5Connected || connectedBroker) && (
-            <button
-              onClick={() => setActiveView('journal')}
-              className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 uppercase tracking-wider transition"
-            >
-              Lihat Detail →
-            </button>
-          )}
-        </div>
-
-        {(currentUser.mt5Connected || connectedBroker) ? (
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Portfolio / Equity */}
-            <button
-              onClick={() => setActiveView('journal')}
-              className="bg-slate-50 dark:bg-slate-900/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 rounded-xl p-3 text-left transition-all group active:scale-95 cursor-pointer"
-            >
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Portfolio</span>
-              <span className="text-sm font-black text-slate-800 dark:text-white mt-0.5 block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
-                {tradingStats.portfolio}
-              </span>
-            </button>
-
-            {/* Today P/L */}
-            <button
-              onClick={() => setActiveView('journal')}
-              className="bg-slate-50 dark:bg-slate-900/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-800 rounded-xl p-3 text-left transition-all group active:scale-95 cursor-pointer"
-            >
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Today P/L</span>
-              <span className={`text-sm font-black mt-0.5 block transition ${
-                tradingStats.todayPL.startsWith('+') ? 'text-emerald-600 dark:text-emerald-400' :
-                tradingStats.todayPL.startsWith('-') ? 'text-rose-600 dark:text-rose-400' :
-                'text-slate-800 dark:text-white'
-              }`}>
-                {tradingStats.todayPL}
-              </span>
-            </button>
-
-            {/* Win Rate */}
-            <button
-              onClick={() => setActiveView('journal')}
-              className="bg-slate-50 dark:bg-slate-900/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 rounded-xl p-3 text-left transition-all group active:scale-95 cursor-pointer"
-            >
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Win Rate</span>
-              <span className="text-sm font-black text-slate-800 dark:text-white mt-0.5 block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
-                {tradingStats.winRate}
-              </span>
-            </button>
-
-            {/* Streak */}
-            <button
-              onClick={() => setActiveView('journal')}
-              className="bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-100 dark:border-slate-800 hover:border-amber-200 dark:hover:border-amber-800 rounded-xl p-3 text-left transition-all group active:scale-95 cursor-pointer"
-            >
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Streak</span>
-              <span className="text-sm font-black text-amber-600 dark:text-amber-400 mt-0.5 block">
-                {tradingStats.streak}
-              </span>
-            </button>
-          </div>
-        ) : (
-          /* CTA when no MT5 connected */
-          <button
-            onClick={() => setActiveView('account')}
-            className="w-full py-3 border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100/60 dark:hover:bg-indigo-950/40 transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-          >
-            <TrendingUp size={14} />
-            Hubungkan akun MT5 untuk melihat performa trading Anda
-          </button>
-        )}
       </div>
 
       {/* Tabs selectors */}

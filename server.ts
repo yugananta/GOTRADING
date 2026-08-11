@@ -24,7 +24,6 @@ import { supabase } from './src/lib/supabaseClient.ts';
 import { LocationRepository } from './src/repositories/LocationRepository.ts';
 import { GroupRepository } from './src/repositories/GroupRepository.ts';
 import { MetaTraderService } from './src/services/metatrader.ts';
-import jwt from 'jsonwebtoken';
 
 // Global error handlers to capture unhandled promise rejections and uncaught exceptions gracefully
 process.on('unhandledRejection', (reason, promise) => {
@@ -3308,55 +3307,12 @@ async function startServer() {
 
   // --- METATRADER API ENDPOINTS ---
   
-  // Helper to proxy requests to backend (BE-GOTRADING)
-  const proxyToBackend = async (req: any, path: string, method: string, customBody?: any) => {
-    const backendUrl = process.env.VITE_BACKEND_API_URL || 'http://localhost:3004';
-    
-    // Sign a JWT token using frontend secret key (so BE can decode it)
-    const userRepo = new UserRepository();
-    const user = await userRepo.findById(req.userId);
-    
-    const jwtPayload = {
-      sub: req.userId,
-      email: user?.email || '',
-      role: user?.role || 'user'
-    };
-    
-    const tokenSecret = process.env.JWT_ACCESS_SECRET || 'dev_dummy_access_secret_change_me';
-    const backendToken = jwt.sign(jwtPayload, tokenSecret, { expiresIn: '15m' });
-    
-    const url = `${backendUrl}${path}`;
-    const headers: any = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${backendToken}`
-    };
-    
-    const fetchOptions: any = {
-      method,
-      headers
-    };
-    
-    if (method !== 'GET' && method !== 'HEAD') {
-      fetchOptions.body = JSON.stringify(customBody || req.body);
-    }
-    
-    const response = await fetch(url, fetchOptions);
-    const status = response.status;
-    let data: any;
-    try {
-      data = await response.json();
-    } catch {
-      data = { error: 'Invalid response from backend' };
-    }
-    
-    return { status, data };
-  };
-
   // GET /api/metatrader/account - Get connected account details
   app.get("/api/metatrader/account", authenticate, async (req: any, res) => {
     try {
-      const { status, data } = await proxyToBackend(req, '/api/metatrader/account', 'GET');
-      res.status(status).json(data);
+      const mtService = new MetaTraderService();
+      const account = await mtService.getConnectedAccount(req.userId);
+      res.json({ account });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -3369,73 +3325,42 @@ async function startServer() {
       return res.status(400).json({ error: "Missing required connection details" });
     }
     try {
-      // Connect to the real backend
-      const { status, data } = await proxyToBackend(req, '/api/metatrader/connect', 'POST', {
-        platform,
-        login,
-        password,
-        server,
-        broker
-      });
+      const mtService = new MetaTraderService();
+      const account = await mtService.connectAccount(req.userId, platform, login, server, broker);
 
-      if (status >= 200 && status < 300) {
-        // Build placeholder/pending account details to return to the frontend React app
-        const pendingAccount = {
-          id: String(data.akun_id),
-          userId: req.userId,
-          platform: 'MT5',
-          login,
-          server,
-          broker,
-          balance: 0,
-          equity: 0,
-          margin: 0,
-          freeMargin: 0,
-          leverage: 0,
-          currency: 'USD',
-          profit: 0,
-          isVerified: false,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
-        // Notify followers of MT5 connection activity
-        try {
-          const userRepo = new UserRepository();
-          const user = await userRepo.findById(req.userId);
-          if (user) {
-            const followRepo = new FollowRepository();
-            const notifRepo = new NotificationRepository();
-            const followerIds = await followRepo.listFollowers(req.userId);
-            const authorFullName = `${user.firstName} ${user.lastName}`.trim();
-            for (const followerId of followerIds) {
-              const newNotif = {
-                id: "notify_mt5_connect_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
-                toUserId: followerId,
-                fromUserId: req.userId,
-                fromUserName: authorFullName,
-                fromUserAvatar: user.avatar || "",
-                type: "friend_post",
-                message: `${authorFullName} (yang Anda ikuti) baru saja menghubungkan akun trading MetaTrader (${platform}) baru!`,
-                isRead: false,
-                timestamp: new Date().toISOString()
-              };
-              await notifRepo.create(newNotif as any);
-              if (req.db) {
-                if (!req.db.notifications) req.db.notifications = [];
-                req.db.notifications.unshift(newNotif);
-              }
+      // Notify followers of MT5 connection activity
+      try {
+        const userRepo = new UserRepository();
+        const user = await userRepo.findById(req.userId);
+        if (user) {
+          const followRepo = new FollowRepository();
+          const notifRepo = new NotificationRepository();
+          const followerIds = await followRepo.listFollowers(req.userId);
+          const authorFullName = `${user.firstName} ${user.lastName}`.trim();
+          for (const followerId of followerIds) {
+            const newNotif = {
+              id: "notify_mt5_connect_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+              toUserId: followerId,
+              fromUserId: req.userId,
+              fromUserName: authorFullName,
+              fromUserAvatar: user.avatar || "",
+              type: "friend_post",
+              message: `${authorFullName} (yang Anda ikuti) baru saja menghubungkan akun trading MetaTrader (${platform}) baru!`,
+              isRead: false,
+              timestamp: new Date().toISOString()
+            };
+            await notifRepo.create(newNotif as any);
+            if (req.db) {
+              if (!req.db.notifications) req.db.notifications = [];
+              req.db.notifications.unshift(newNotif);
             }
           }
-        } catch (notifErr) {
-          console.warn("Error notifying followers of MT5 connection:", notifErr);
         }
-
-        res.status(status).json({ success: true, account: pendingAccount, akun_id: data.akun_id, status: data.status });
-      } else {
-        res.status(status).json(data);
+      } catch (notifErr) {
+        console.warn("Error notifying followers of MT5 connection:", notifErr);
       }
+
+      res.json({ success: true, account });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -3444,8 +3369,9 @@ async function startServer() {
   // POST /api/metatrader/disconnect - Disconnect MetaTrader account
   app.post("/api/metatrader/disconnect", authenticate, async (req: any, res) => {
     try {
-      const { status, data } = await proxyToBackend(req, '/api/metatrader/disconnect', 'POST');
-      res.status(status).json(data);
+      const mtService = new MetaTraderService();
+      await mtService.disconnectAccount(req.userId);
+      res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -3454,8 +3380,9 @@ async function startServer() {
   // GET /api/metatrader/trades - Get all trades (including historical)
   app.get("/api/metatrader/trades", authenticate, async (req: any, res) => {
     try {
-      const { status, data } = await proxyToBackend(req, `/api/metatrader/trades?${new URLSearchParams(req.query).toString()}`, 'GET');
-      res.status(status).json(data);
+      const mtService = new MetaTraderService();
+      const trades = await mtService.getTrades(req.userId);
+      res.json({ trades });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -3464,41 +3391,42 @@ async function startServer() {
   // POST /api/metatrader/sync - Sync trades & trigger pricing/new trades simulation
   app.post("/api/metatrader/sync", authenticate, async (req: any, res) => {
     try {
-      const { status, data } = await proxyToBackend(req, '/api/metatrader/sync', 'POST');
-      if (status >= 200 && status < 300) {
-        // Notify followers of trading sync activity
-        try {
-          const userRepo = new UserRepository();
-          const user = await userRepo.findById(req.userId);
-          if (user) {
-            const followRepo = new FollowRepository();
-            const notifRepo = new NotificationRepository();
-            const followerIds = await followRepo.listFollowers(req.userId);
-            const authorFullName = `${user.firstName} ${user.lastName}`.trim();
-            for (const followerId of followerIds) {
-              const newNotif = {
-                id: "notify_mt5_sync_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
-                toUserId: followerId,
-                fromUserId: req.userId,
-                fromUserName: authorFullName,
-                fromUserAvatar: user.avatar || "",
-                type: "friend_post",
-                message: `${authorFullName} (yang Anda ikuti) baru saja menyinkronkan aktivitas trading terbarunya.`,
-                isRead: false,
-                timestamp: new Date().toISOString()
-              };
-              await notifRepo.create(newNotif as any);
-              if (req.db) {
-                if (!req.db.notifications) req.db.notifications = [];
-                req.db.notifications.unshift(newNotif);
-              }
+      const mtService = new MetaTraderService();
+      const result = await mtService.syncTrades(req.userId);
+
+      // Notify followers of trading sync activity
+      try {
+        const userRepo = new UserRepository();
+        const user = await userRepo.findById(req.userId);
+        if (user) {
+          const followRepo = new FollowRepository();
+          const notifRepo = new NotificationRepository();
+          const followerIds = await followRepo.listFollowers(req.userId);
+          const authorFullName = `${user.firstName} ${user.lastName}`.trim();
+          for (const followerId of followerIds) {
+            const newNotif = {
+              id: "notify_mt5_sync_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+              toUserId: followerId,
+              fromUserId: req.userId,
+              fromUserName: authorFullName,
+              fromUserAvatar: user.avatar || "",
+              type: "friend_post",
+              message: `${authorFullName} (yang Anda ikuti) baru saja menyinkronkan aktivitas trading terbarunya.`,
+              isRead: false,
+              timestamp: new Date().toISOString()
+            };
+            await notifRepo.create(newNotif as any);
+            if (req.db) {
+              if (!req.db.notifications) req.db.notifications = [];
+              req.db.notifications.unshift(newNotif);
             }
           }
-        } catch (notifErr) {
-          console.warn("Error notifying followers of MT5 sync:", notifErr);
         }
+      } catch (notifErr) {
+        console.warn("Error notifying followers of MT5 sync:", notifErr);
       }
-      res.status(status).json(data);
+
+      res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

@@ -23,7 +23,7 @@ const BROKERS: Record<string, string[]> = {
 
 export const Account: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { currentUser, setCurrentUser, syncMetaTrader } = useApp();
+  const { currentUser, setCurrentUser } = useApp();
   
   const [selectedSubView, setSelectedSubView] = useState<'main' | 'partners_detail'>('main');
   const [account, setAccount] = useState<any>(null);
@@ -32,7 +32,6 @@ export const Account: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Form State
   const [login, setLogin] = useState('');
@@ -93,19 +92,13 @@ export const Account: React.FC = () => {
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccessMessage(null);
     setIsConnecting(true);
     setConnectStepText(t('account.connecting') || 'Connecting to MT5...');
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds connection timeout
 
     try {
       // Simulate connecting delay
       await new Promise(r => setTimeout(r, 1000));
 
-      setConnectStepText(t('account.connecting') || 'Connecting to MT5...');
-      
       const res = await apiFetch('/api/metatrader/connect', {
         method: 'POST',
         body: JSON.stringify({ 
@@ -115,30 +108,18 @@ export const Account: React.FC = () => {
           server: server === 'Other' ? customServer : server, 
           broker: broker === 'Other' ? customBroker : broker 
         }),
-        signal: controller.signal
       });
-      
-      clearTimeout(timeoutId);
       const data = await res.json();
-      
       if (res.ok && data.account) {
         setAccount(data.account);
         setShowConnectForm(false);
-        setSuccessMessage('MetaTrader 5 Account Connected Successfully!');
-        setTimeout(() => setSuccessMessage(null), 5000);
         fetchTrades();
-        if (syncMetaTrader) await syncMetaTrader();
       } else {
         const errorMsg = typeof data.error === 'string' ? data.error : (data.error?.message || 'Failed to connect account. Please check credentials.');
         setError(errorMsg);
       }
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        setError('Connection timed out. Please check your MT5 Gateway connection or try again later.');
-      } else {
-        setError('Network error occurred. Please try again later.');
-      }
+    } catch (err) {
+      setError('Network error occurred. Please try again later.');
     } finally {
       setIsConnecting(false);
       setConnectStepText('Connecting...');
@@ -167,7 +148,6 @@ export const Account: React.FC = () => {
         setAccount(null);
         setTrades([]);
         setShowConnectForm(false);
-        if (syncMetaTrader) await syncMetaTrader();
       }
     } catch (err) {
       console.error('Disconnect failed', err);
@@ -305,7 +285,7 @@ export const Account: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-              Investor Password *
+              {t('account.investorPasswordLabel')}
             </label>
             <span className="text-[8px] text-indigo-500 uppercase font-bold tracking-wider flex items-center gap-1"><Lock size={8}/> {t('account.readOnly')}</span>
           </div>
@@ -317,9 +297,6 @@ export const Account: React.FC = () => {
             className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
             required
           />
-          <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-            Use your MT5 Investor Password (read-only). Master/Trading Password is not allowed.
-          </p>
         </div>
 
         <div className="pt-2 flex items-center gap-2">
@@ -360,15 +337,9 @@ export const Account: React.FC = () => {
               <h2 className="text-base font-black text-slate-900 tracking-tight">
                 {account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader')} ({account.platform || 'MT5'})
               </h2>
-              {account?.status === 'pending' ? (
-                <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10" title="MT5 Gateway is setting up the connection">
-                  <AlertCircle size={10} /> Pending Sync
-                </span>
-              ) : (
-                <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
-                  <CheckCircle2 size={10} /> Connected
-                </span>
-              )}
+              <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
+                <CheckCircle2 size={10} /> Connected
+              </span>
             </div>
             <p className="text-[11px] text-slate-500 font-medium">Account ID: <span className="font-bold text-slate-800">{account.login}</span> • Server: <span className="font-bold text-slate-800">{account.server}</span></p>
           </div>
@@ -428,8 +399,8 @@ export const Account: React.FC = () => {
             {trades.map(trade => (
               <div key={trade.id} className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 hover:border-indigo-100 transition">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${(trade.type || '').includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                    {(trade.type || '').includes('BUY') ? 'BUY' : 'SELL'}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${(trade.type || '').toUpperCase().includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                    {(trade.type || '').toUpperCase().includes('BUY') ? 'BUY' : 'SELL'}
                   </div>
                   <div>
                     <div className="text-xs font-bold text-slate-800">{trade.symbol}</div>
@@ -474,13 +445,6 @@ export const Account: React.FC = () => {
           {account ? 'Connected' : 'Not Connected'}
         </span>
       </div>
-
-      {successMessage && (
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs">
-          <CheckCircle2 size={14} className="shrink-0" />
-          <p>{successMessage}</p>
-        </div>
-      )}
 
       {account ? (
         renderConnectedOverview()

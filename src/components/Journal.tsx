@@ -139,8 +139,8 @@ export const Journal: React.FC = () => {
   const dailyRiskLimitAmount = weeklyRiskAmount / 5;
 
   // Active year in Yearly Calendar
-  const [activeYear, setActiveYear] = useState<number>(2026);
-  const [activeMonth, setActiveMonth] = useState<number>(6); // 0-11
+  const [activeYear, setActiveYear] = useState<number>(() => new Date().getFullYear());
+  const [activeMonth, setActiveMonth] = useState<number>(() => new Date().getMonth()); // 0-11
 
   // Today's P&L value
   const todayPLValue = parseFloat(tradingStats.todayPL.replace('+$', '').replace('-$', '-').replace('$', '').replace(',', '')) || 0;
@@ -581,8 +581,11 @@ export const Journal: React.FC = () => {
     const endBal = startBal + netPL;
     const pct = startBal > 0 ? (netPL / startBal) * 100 : 0;
 
+    const clickedDate = new Date(activeYear, activeMonth, dayNum);
+    const dateFormatted = clickedDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
     const detail: MockTradeDetail = {
-      date: `Jul ${dayNum < 10 ? '0' + dayNum : dayNum}, 2026`,
+      date: dateFormatted,
       netPL,
       netPLPercent: pct,
       startBalance: startBal,
