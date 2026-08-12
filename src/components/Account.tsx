@@ -199,7 +199,11 @@ export const Account: React.FC = () => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);
   };
 
-
+  const renderLoadingCard = () => (
+    <div className="h-full bg-[#EFF2F6]/90 dark:bg-slate-900/60 backdrop-blur-md border border-[#E2E8F0] dark:border-slate-800 rounded-3xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex items-center justify-center min-h-[240px]">
+      <div className="w-6 h-6 border-2 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 rounded-full animate-spin" />
+    </div>
+  );
 
   const renderConnectForm = () => (
     <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
@@ -562,7 +566,9 @@ export const Account: React.FC = () => {
         </span>
       </div>
 
-      {account && connStatus === 'error' ? (
+      {isLoading ? (
+        renderLoadingCard()
+      ) : account && connStatus === 'error' ? (
         // Credential invalid/expired -> error state sudah diset di
         // fetchAccountStatus; tampilkan form supaya user connect ulang.
         renderConnectForm()
@@ -636,7 +642,9 @@ export const Account: React.FC = () => {
 
             {/* CARD 1: CONNECT ACCOUNT (RESTORED ORIGINAL LAYOUT) */}
             <div>
-              {showConnectForm || (account && connStatus === 'error') ? (
+              {isLoading ? (
+                renderLoadingCard()
+              ) : showConnectForm || (account && connStatus === 'error') ? (
                 renderConnectForm()
               ) : account ? (
                 renderConnectedOverview()
