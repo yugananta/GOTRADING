@@ -153,8 +153,9 @@ export class AuthService {
       if(!session || (session.revoked_at) || new Date(session.expires_at) < new Date()) throw new Error('AUTH_TOKEN_EXPIRED');
       await this.sessionRepo.revoke(session.id);
       const newRefreshToken = crypto.randomBytes(32).toString('hex');
+      const { id, ...sessionData } = session;
       await this.sessionRepo.create({
-          ...session,
+          ...sessionData,
           refresh_token_hash: crypto.createHash('sha256').update(newRefreshToken).digest('hex'),
           created_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),

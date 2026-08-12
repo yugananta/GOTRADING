@@ -229,7 +229,8 @@ export class ProfileRepository implements IProfileRepository {
 export class SessionRepository implements ISessionRepository {
   async create(session: Omit<Session, 'id'>): Promise<Session> {
     const id = crypto.randomUUID();
-    const record = { id, ...session } as Session;
+    const { id: _, ...sessionData } = session as any;
+    const record = { id, ...sessionData } as Session;
 
     try {
       const { data, error } = await supabase

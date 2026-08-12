@@ -52,7 +52,6 @@ export const Account: React.FC = () => {
 
   const fetchAccountStatus = async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const res = await apiFetch('/api/metatrader/account');
       const isJson = res.headers.get('content-type')?.includes('application/json');
@@ -64,19 +63,25 @@ export const Account: React.FC = () => {
           if (data.account.conn_status === 'error') {
             setError(data.account.error_message || 'Koneksi MT5 gagal. Silakan hubungkan ulang akun Anda.');
             setShowConnectForm(true);
-          }
-          if (data.account.conn_status === 'connected') {
+          } else if (data.account.conn_status === 'connected') {
             setError(null);
           }
           fetchTrades();
         } else {
           setAccount(null);
+          setError(null);
         }
       } else {
-        setAccount(null);
+        if (res.status === 401) {
+          setAccount(null);
+          setError('Sesi Anda telah berakhir. Silakan login kembali.');
+        } else {
+          console.warn(`Temporary server status error (${res.status}). Preserving last known account state.`);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch MT5 account:', err);
+      // Keep last known account state on network errors
     } finally {
       setIsLoading(false);
     }
@@ -175,13 +180,12 @@ export const Account: React.FC = () => {
   // 'connected' | 'reconnecting' | 'disconnected' | 'error'
   const connStatus = account?.conn_status || (account ? 'connected' : 'disconnected');
 
-  // Polling otomatis saat belum CONNECTED, agar status RECONNECTING berubah
-  // menjadi CONNECTED kembali tanpa perlu refresh manual.
+  // Polling otomatis untuk memperbarui status koneksi dan metrik akun secara real-time
   useEffect(() => {
-    if (!account || connStatus === 'connected') return;
+    if (!account) return;
     const id = setInterval(() => fetchAccountStatus(), 15000);
     return () => clearInterval(id);
-  }, [account?.id, connStatus]);
+  }, [account?.id]);
 
   const formatCurrency = (val: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);

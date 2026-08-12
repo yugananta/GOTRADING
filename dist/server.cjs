@@ -341,7 +341,8 @@ var ProfileRepository = class {
 var SessionRepository = class {
   async create(session) {
     const id = import_crypto.default.randomUUID();
-    const record = { id, ...session };
+    const { id: _, ...sessionData } = session;
+    const record = { id, ...sessionData };
     try {
       const { data, error } = await supabase.from("sessions").insert(record).select().single();
       if (!error && data) {
@@ -1460,8 +1461,9 @@ var AuthService = class {
     if (!session || session.revoked_at || new Date(session.expires_at) < /* @__PURE__ */ new Date()) throw new Error("AUTH_TOKEN_EXPIRED");
     await this.sessionRepo.revoke(session.id);
     const newRefreshToken = import_crypto3.default.randomBytes(32).toString("hex");
+    const { id, ...sessionData } = session;
     await this.sessionRepo.create({
-      ...session,
+      ...sessionData,
       refresh_token_hash: import_crypto3.default.createHash("sha256").update(newRefreshToken).digest("hex"),
       created_at: (/* @__PURE__ */ new Date()).toISOString(),
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3).toISOString(),
