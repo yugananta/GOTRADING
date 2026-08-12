@@ -59,14 +59,14 @@ export class MetaTraderService {
             login: account.login || '',
             server: account.server || '',
             broker: account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader'),
-            balance: Number(account.balance) || 50000,
-            equity: Number(account.equity) || 50000,
+            balance: Number(account.balance) || 0,
+            equity: Number(account.equity) || 0,
             margin: Number(account.margin) || 0,
-            freeMargin: Number(account.freeMargin) || 50000,
+            freeMargin: Number(account.freeMargin) || 0,
             leverage: Number(account.leverage) || 100,
             currency: account.currency || 'USD',
             profit: Number(account.profit) || 0,
-            isVerified: account.isVerified !== false,
+            isVerified: account.isVerified === true,
             createdAt: item.timestamp || new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -94,7 +94,7 @@ export class MetaTraderService {
   /**
    * Save or update connected MetaTrader account details in Supabase
    */
-  async connectAccount(userId: string, platform: 'MT4' | 'MT5', login: string, server: string, broker?: string): Promise<{ account: MetaTraderAccount; accounts: MetaTraderAccount[] }> {
+  async connectAccount(userId: string, platform: 'MT4' | 'MT5', login: string, server: string, broker?: string, realMetrics?: { balance?: number; equity?: number; margin?: number; freeMargin?: number; profit?: number; isVerified?: boolean }): Promise<{ account: MetaTraderAccount; accounts: MetaTraderAccount[] }> {
     const existingAccounts = await this.getConnectedAccounts(userId);
     const existingForLogin = existingAccounts.find(a => a.login === login);
 
@@ -105,14 +105,14 @@ export class MetaTraderService {
       login,
       server,
       broker: derivedBroker,
-      balance: existingForLogin?.balance || 50000.0,
-      equity: existingForLogin?.equity || 50000.0,
-      margin: existingForLogin?.margin || 0.0,
-      freeMargin: existingForLogin?.freeMargin || 50000.0,
-      leverage: 500,
+      balance: realMetrics?.balance ?? (existingForLogin?.balance || 0.0),
+      equity: realMetrics?.equity ?? (existingForLogin?.equity || 0.0),
+      margin: realMetrics?.margin ?? (existingForLogin?.margin || 0.0),
+      freeMargin: realMetrics?.freeMargin ?? (existingForLogin?.freeMargin || 0.0),
+      leverage: 100,
       currency: 'USD',
-      profit: existingForLogin?.profit || 0.0,
-      isVerified: true
+      profit: realMetrics?.profit ?? (existingForLogin?.profit || 0.0),
+      isVerified: realMetrics?.isVerified ?? (existingForLogin?.isVerified || false)
     };
 
     let targetId = existingForLogin?.id;
@@ -155,54 +155,6 @@ export class MetaTraderService {
 
     const allAccounts = await this.getConnectedAccounts(userId);
     const connectedAccount = allAccounts.find(a => a.id === targetId || a.login === login) || allAccounts[0];
-
-    // Ensure trade history is populated when connecting account
-    try {
-      const existingTrades = await this.getTrades(userId);
-      if (existingTrades.length === 0) {
-        const initialTrades: MetaTraderTrade[] = [
-          {
-            id: 'trd_' + Date.now() + '_1',
-            symbol: 'EURUSD',
-            type: 'BUY',
-            lots: 0.50,
-            openPrice: 1.08500,
-            closePrice: 1.08820,
-            openTime: new Date(Date.now() - 86400000 * 2).toISOString(),
-            closeTime: new Date(Date.now() - 86400000 * 2 + 3600000 * 4).toISOString(),
-            pl: 160.00,
-            comment: `Synced from ${connectedAccount.broker || 'MetaTrader'}`
-          },
-          {
-            id: 'trd_' + Date.now() + '_2',
-            symbol: 'XAUUSD',
-            type: 'BUY',
-            lots: 0.20,
-            openPrice: 2410.50,
-            closePrice: 2425.00,
-            openTime: new Date(Date.now() - 86400000 * 1).toISOString(),
-            closeTime: new Date(Date.now() - 86400000 * 1 + 3600000 * 2).toISOString(),
-            pl: 290.00,
-            comment: `Synced from ${connectedAccount.broker || 'MetaTrader'}`
-          },
-          {
-            id: 'trd_' + Date.now() + '_3',
-            symbol: 'GBPUSD',
-            type: 'SELL',
-            lots: 0.30,
-            openPrice: 1.29800,
-            closePrice: 1.29450,
-            openTime: new Date(Date.now() - 3600000 * 5).toISOString(),
-            closeTime: new Date(Date.now() - 3600000 * 1).toISOString(),
-            pl: 105.00,
-            comment: `Synced from ${connectedAccount.broker || 'MetaTrader'}`
-          }
-        ];
-        await this.saveTrades(userId, initialTrades);
-      }
-    } catch (err) {
-      console.error('Error populating initial trades on connect:', err);
-    }
 
     return {
       account: connectedAccount,

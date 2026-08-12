@@ -1116,37 +1116,79 @@ async function startServer() {
     }
   });
 
+  // In-memory cache for group stats to eliminate database query latency
+  const groupStatsCache: { [key: string]: { timestamp: number; data: any } } = {};
+
   // API: Groups Stats (Dynamic/Real Group Members and Messages Counts)
   app.get("/api/groups/stats", async (req: any, res) => {
     try {
-      const city = (req.query.city as string) || '';
-      const province = (req.query.province as string) || '';
+      const city = ((req.query.city as string) || '').trim();
+      const province = ((req.query.province as string) || '').trim();
 
-      const userRepo = new UserRepository();
-      const messageRepo = new MessageRepository();
-      const postRepo = new PostRepository();
+      const cacheKey = `${city.toLowerCase()}_${province.toLowerCase()}`;
+      const now = Date.now();
 
-      const users = await userRepo.list();
-      const messages = await messageRepo.list();
-      const posts = await postRepo.list();
+      // Return cached stats if fresh (less than 10 seconds old)
+      if (groupStatsCache[cacheKey] && (now - groupStatsCache[cacheKey].timestamp < 10000)) {
+        return res.json(groupStatsCache[cacheKey].data);
+      }
 
-      // Calculate real registered user counts
-      const cityUserCount = users.filter((u: any) => u.city && u.city.toLowerCase() === city.toLowerCase()).length;
-      const provinceUserCount = users.filter((u: any) => u.province && u.province.toLowerCase() === province.toLowerCase()).length;
+      let cityUserCount = 0;
+      let provinceUserCount = 0;
+      let cityChatCount = 0;
+      let provinceChatCount = 0;
+      let cityPostCount = 0;
+      let provincePostCount = 0;
 
-      // Group IDs
       const cityGroupId = `group_city_${city.toLowerCase().replace(/\s+/g, '_')}`;
       const provinceGroupId = `group_province_${province.toLowerCase().replace(/\s+/g, '_')}`;
 
-      // Calculate chat messages
-      const cityChatCount = messages.filter((m: any) => m.receiverId === cityGroupId).length;
-      const provinceChatCount = messages.filter((m: any) => m.receiverId === provinceGroupId).length;
+      if (supabase) {
+        // High-performance parallel HEAD count queries direct from PostgreSQL
+        const [
+          cityUsersRes,
+          provUsersRes,
+          cityMsgRes,
+          provMsgRes,
+          cityPostRes,
+          provPostRes
+        ] = await Promise.all([
+          city ? supabase.from('User').select('id', { count: 'exact', head: true }).ilike('city', city) : Promise.resolve({ count: 0, error: null }),
+          province ? supabase.from('User').select('id', { count: 'exact', head: true }).ilike('province', province) : Promise.resolve({ count: 0, error: null }),
+          cityGroupId ? supabase.from('Message').select('id', { count: 'exact', head: true }).eq('receiverId', cityGroupId) : Promise.resolve({ count: 0, error: null }),
+          provinceGroupId ? supabase.from('Message').select('id', { count: 'exact', head: true }).eq('receiverId', provinceGroupId) : Promise.resolve({ count: 0, error: null }),
+          cityGroupId ? supabase.from('Post').select('id', { count: 'exact', head: true }).eq('groupId', cityGroupId) : Promise.resolve({ count: 0, error: null }),
+          provinceGroupId ? supabase.from('Post').select('id', { count: 'exact', head: true }).eq('groupId', provinceGroupId) : Promise.resolve({ count: 0, error: null })
+        ]);
 
-      // Calculate forum posts
-      const cityPostCount = posts.filter((p: any) => p.groupId === cityGroupId).length;
-      const provincePostCount = posts.filter((p: any) => p.groupId === provinceGroupId).length;
+        cityUserCount = cityUsersRes.count || 0;
+        provinceUserCount = provUsersRes.count || 0;
+        cityChatCount = cityMsgRes.count || 0;
+        provinceChatCount = provMsgRes.count || 0;
+        cityPostCount = cityPostRes.count || 0;
+        provincePostCount = provPostRes.count || 0;
+      } else {
+        const userRepo = new UserRepository();
+        const messageRepo = new MessageRepository();
+        const postRepo = new PostRepository();
 
-      res.json({
+        const [users, messages, posts] = await Promise.all([
+          userRepo.list(),
+          messageRepo.list(),
+          postRepo.list()
+        ]);
+
+        cityUserCount = users.filter((u: any) => u.city && u.city.toLowerCase() === city.toLowerCase()).length;
+        provinceUserCount = users.filter((u: any) => u.province && u.province.toLowerCase() === province.toLowerCase()).length;
+
+        cityChatCount = messages.filter((m: any) => m.receiverId === cityGroupId).length;
+        provinceChatCount = messages.filter((m: any) => m.receiverId === provinceGroupId).length;
+
+        cityPostCount = posts.filter((p: any) => p.groupId === cityGroupId).length;
+        provincePostCount = posts.filter((p: any) => p.groupId === provinceGroupId).length;
+      }
+
+      const resultData = {
         city: {
           members: cityUserCount,
           messages: cityChatCount + cityPostCount
@@ -1155,7 +1197,14 @@ async function startServer() {
           members: provinceUserCount,
           messages: provinceChatCount + provincePostCount
         }
-      });
+      };
+
+      groupStatsCache[cacheKey] = {
+        timestamp: now,
+        data: resultData
+      };
+
+      res.json(resultData);
     } catch (error: any) {
       console.error("Error fetching group stats:", error);
       res.status(500).json({ error: error.message });
@@ -3305,77 +3354,168 @@ async function startServer() {
     }, 800);
   });
 
-  // --- METATRADER API ENDPOINTS (PROXY ke tarapti-be) ---
-  //
-  // Semua request /api/metatrader/* diteruskan ke tarapti-be (BE-GOTRADING)
-  // yang punya koneksi nyata ke MT5 Gateway. JANGAN tangani di sini pakai
-  // MetaTraderService lokal (hanya nulis ke tabel Post, tidak ke gateway).
-  //
-  // tarapti-be URL: process.env.VITE_BACKEND_API_URL || 'http://172.17.0.1:3004'
-
-  const MT5_BACKEND_URL = (process.env.VITE_BACKEND_API_URL || 'http://172.17.0.1:3004').replace(/\/$/, '');
-
-  async function proxyToBackend(req: any, res: any, path: string, method: string, body?: any) {
-    const authHeader = req.headers['authorization'] || '';
-    const qs = Object.keys(req.query || {}).length
-      ? '?' + new URLSearchParams(req.query as Record<string, string>).toString()
-      : '';
-    const targetUrl = `${MT5_BACKEND_URL}${path}${qs}`;
-    try {
-      const fetchOptions: RequestInit = {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authHeader,
-        } as Record<string, string>,
-      };
-      if (body !== undefined && method !== 'GET') {
-        (fetchOptions as any).body = JSON.stringify(body);
-      }
-      const upstream = await fetch(targetUrl, fetchOptions);
-      const contentType = upstream.headers.get('content-type') || '';
-      res.status(upstream.status);
-      if (contentType.includes('application/json')) {
-        const data = await upstream.json();
-        res.json(data);
-      } else {
-        const text = await upstream.text();
-        res.send(text);
-      }
-    } catch (err: any) {
-      console.error(`[MT5-PROXY] Error proxying ${method} ${targetUrl}:`, err.message);
-      res.status(502).json({ error: 'MT5 backend tidak dapat dihubungi. Coba lagi.' });
-    }
-  }
-
-  // GET /api/metatrader/account
+  // --- METATRADER API ENDPOINTS ---
+  
+  // GET /api/metatrader/account - Get connected account details
   app.get("/api/metatrader/account", authenticate, async (req: any, res) => {
-    await proxyToBackend(req, res, '/api/metatrader/account', 'GET');
+    try {
+      const mtService = new MetaTraderService();
+      const accounts = await mtService.getConnectedAccounts(req.userId);
+      const account = accounts.length > 0 ? accounts[0] : null;
+      res.json({ account, accounts });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  // POST /api/metatrader/connect
+  // POST /api/metatrader/connect - Connect a MetaTrader account
   app.post("/api/metatrader/connect", authenticate, async (req: any, res) => {
-    await proxyToBackend(req, res, '/api/metatrader/connect', 'POST', req.body);
+    const { platform, login, password, server, broker, realMetrics } = req.body;
+    if (!platform || !login || !password || !server) {
+      return res.status(400).json({ error: "Data koneksi tidak lengkap (Login ID, Password Investor, dan Server wajib diisi)" });
+    }
+
+    try {
+      const mtService = new MetaTraderService();
+
+      // If no real metrics payload is provided (direct webform attempt without WebAPI/EA Bridge),
+      // reject connection cleanly rather than displaying fake "Connected" status with fake numbers.
+      if (!realMetrics && !req.body.isEaBridge) {
+        return res.status(400).json({
+          error: `Gagal Terhubung ke Server MetaTrader (${server}). Server broker MetaTrader tidak mendukung socket TCP langsung dari browser. Gunakan EA Sync Tarapti atau WebAPI Gateway untuk membaca saldo dan transaksi real-time.`
+        });
+      }
+
+      const result = await mtService.connectAccount(req.userId, platform, login, server, broker, realMetrics);
+
+      // Notify followers of MT5 connection activity
+      try {
+        const userRepo = new UserRepository();
+        const user = await userRepo.findById(req.userId);
+        if (user) {
+          const followRepo = new FollowRepository();
+          const notifRepo = new NotificationRepository();
+          const followerIds = await followRepo.listFollowers(req.userId);
+          const authorFullName = `${user.firstName} ${user.lastName}`.trim();
+          for (const followerId of followerIds) {
+            const newNotif = {
+              id: "notify_mt5_connect_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+              toUserId: followerId,
+              fromUserId: req.userId,
+              fromUserName: authorFullName,
+              fromUserAvatar: user.avatar || "",
+              type: "friend_post",
+              message: `${authorFullName} baru saja menghubungkan akun trading MetaTrader (${platform} - ${login})!`,
+              isRead: false,
+              timestamp: new Date().toISOString()
+            };
+            await notifRepo.create(newNotif as any);
+            if (req.db) {
+              if (!req.db.notifications) req.db.notifications = [];
+              req.db.notifications.unshift(newNotif);
+            }
+          }
+        }
+      } catch (notifErr) {
+        console.warn("Error notifying followers of MT5 connection:", notifErr);
+      }
+
+      res.json({ success: true, account: result.account, accounts: result.accounts });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  // POST /api/metatrader/disconnect
+  // POST /api/metatrader/webhook - Real EA / WebAPI Sync Endpoint
+  app.post("/api/metatrader/webhook", async (req: any, res) => {
+    const { userId, login, platform, server, broker, balance, equity, margin, freeMargin, profit, trades } = req.body;
+    if (!userId || !login || !server) {
+      return res.status(400).json({ error: "Parameter tidak lengkap: userId, login, dan server wajib diisi" });
+    }
+    try {
+      const mtService = new MetaTraderService();
+      const result = await mtService.connectAccount(userId, platform || 'MT5', login, server, broker, {
+        balance: Number(balance) || 0,
+        equity: Number(equity) || 0,
+        margin: Number(margin) || 0,
+        freeMargin: Number(freeMargin) || 0,
+        profit: Number(profit) || 0,
+        isVerified: true
+      });
+      if (Array.isArray(trades)) {
+        await mtService.saveTrades(userId, trades);
+      }
+      res.json({ success: true, message: "Data real-time MT5 berhasil diperbarui via EA Sync", account: result.account });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/metatrader/disconnect - Disconnect MetaTrader account
   app.post("/api/metatrader/disconnect", authenticate, async (req: any, res) => {
-    await proxyToBackend(req, res, '/api/metatrader/disconnect', 'POST', req.body);
+    try {
+      const { accountId } = req.body || {};
+      const mtService = new MetaTraderService();
+      const result = await mtService.disconnectAccount(req.userId, accountId);
+      res.json({ success: true, accounts: result.accounts });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  // GET /api/metatrader/trades
+  // GET /api/metatrader/trades - Get all trades (including historical)
   app.get("/api/metatrader/trades", authenticate, async (req: any, res) => {
-    await proxyToBackend(req, res, '/api/metatrader/trades', 'GET');
+    try {
+      const mtService = new MetaTraderService();
+      const trades = await mtService.getTrades(req.userId);
+      res.json({ trades });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  // POST /api/metatrader/sync
+  // POST /api/metatrader/sync - Sync trades & trigger pricing/new trades simulation
   app.post("/api/metatrader/sync", authenticate, async (req: any, res) => {
-    await proxyToBackend(req, res, '/api/metatrader/sync', 'POST', req.body);
-  });
+    try {
+      const mtService = new MetaTraderService();
+      const result = await mtService.syncTrades(req.userId);
 
-  // POST /api/metatrader/reconnect
-  app.post("/api/metatrader/reconnect", authenticate, async (req: any, res) => {
-    await proxyToBackend(req, res, '/api/metatrader/reconnect', 'POST', req.body);
+      // Notify followers of trading sync activity
+      try {
+        const userRepo = new UserRepository();
+        const user = await userRepo.findById(req.userId);
+        if (user) {
+          const followRepo = new FollowRepository();
+          const notifRepo = new NotificationRepository();
+          const followerIds = await followRepo.listFollowers(req.userId);
+          const authorFullName = `${user.firstName} ${user.lastName}`.trim();
+          for (const followerId of followerIds) {
+            const newNotif = {
+              id: "notify_mt5_sync_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+              toUserId: followerId,
+              fromUserId: req.userId,
+              fromUserName: authorFullName,
+              fromUserAvatar: user.avatar || "",
+              type: "friend_post",
+              message: `${authorFullName} (yang Anda ikuti) baru saja menyinkronkan aktivitas trading terbarunya.`,
+              isRead: false,
+              timestamp: new Date().toISOString()
+            };
+            await notifRepo.create(newNotif as any);
+            if (req.db) {
+              if (!req.db.notifications) req.db.notifications = [];
+              req.db.notifications.unshift(newNotif);
+            }
+          }
+        }
+      } catch (notifErr) {
+        console.warn("Error notifying followers of MT5 sync:", notifErr);
+      }
+
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // API: Test & Sync News API / RSS

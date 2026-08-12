@@ -45,14 +45,12 @@ export const Account: React.FC = () => {
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [connectStepText, setConnectStepText] = useState('Connecting...');
 
-  // Derived state — declared before effects so effects can reference them
-  const activeAccount = accounts[selectedAccountIndex] || accounts[0];
-  const connStatus = activeAccount?.conn_status || (activeAccount ? 'connected' : 'disconnected');
+  useEffect(() => {
+    fetchAccountStatus();
+  }, []);
 
-
-
-  const fetchAccountStatus = async (silent = false) => {
-    if (!silent) setIsLoading(true);
+  const fetchAccountStatus = async () => {
+    setIsLoading(true);
     setError(null);
     try {
       const res = await apiFetch('/api/metatrader/account');
@@ -61,23 +59,23 @@ export const Account: React.FC = () => {
         const data = await res.json();
         const accs = data.accounts || (data.account ? [data.account] : []);
         setAccounts(accs);
-      } else if (!silent) {
+        if (accs.length > 0) {
+          fetchTrades();
+        }
+      } else {
         setAccounts([]);
       }
     } catch (err) {
       console.error('Failed to fetch MT5 accounts:', err);
-      if (!silent) setAccounts([]);
+      setAccounts([]);
     } finally {
-      if (!silent) setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const fetchTrades = async (akunId?: string | number) => {
+  const fetchTrades = async () => {
     try {
-      const url = akunId
-        ? `/api/metatrader/trades?limit=20&akunId=${akunId}`
-        : '/api/metatrader/trades?limit=20';
-      const res = await apiFetch(url);
+      const res = await apiFetch('/api/metatrader/trades?limit=20');
       const isJson = res.headers.get('content-type')?.includes('application/json');
       if (res.ok && isJson) {
         const data = await res.json();
@@ -87,22 +85,6 @@ export const Account: React.FC = () => {
       console.error('Failed to fetch trades:', err);
     }
   };
-
-  // --- Effects (placed after function declarations to avoid const-hoisting issues) ---
-
-  useEffect(() => {
-    fetchAccountStatus();
-    const interval = setInterval(() => fetchAccountStatus(true), 10000);
-    return () => clearInterval(interval);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (activeAccount?.login) {
-      fetchTrades(activeAccount.login);
-    } else {
-      setTrades([]);
-    }
-  }, [activeAccount?.login]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,16 +133,11 @@ export const Account: React.FC = () => {
   };
 
   const handleSync = async () => {
-    if (!activeAccount) return;
     setIsSyncing(true);
     try {
-      const res = await apiFetch('/api/metatrader/sync', {
-        method: 'POST',
-        body: JSON.stringify({ akunId: activeAccount.login }),
-      });
+      const res = await apiFetch('/api/metatrader/sync', { method: 'POST' });
       if (res.ok) {
-        await fetchAccountStatus(true);
-        await fetchTrades(activeAccount.login);
+        await fetchAccountStatus();
       }
     } catch (err) {
       console.error('Sync failed', err);
@@ -170,10 +147,11 @@ export const Account: React.FC = () => {
   };
 
   const handleDisconnect = async (targetAccountId?: string) => {
+    const activeAccount = accounts[selectedAccountIndex] || accounts[0];
     const targetAccount = accounts.find(a => a.id === targetAccountId) || activeAccount;
     if (!targetAccount) return;
 
-    if (!window.confirm(`Unlink account ${targetAccount.broker || 'MetaTrader'} (${targetAccount.login})? Trade history stays saved.`)) return;
+    if (!window.confirm(`Putuskan koneksi akun ${targetAccount.broker || 'MetaTrader'} (${targetAccount.login})? Riwayat transaksi akun ini akan dihapus dari aplikasi.`)) return;
 
     try {
       const res = await apiFetch('/api/metatrader/disconnect', {
@@ -190,6 +168,8 @@ export const Account: React.FC = () => {
         if (updatedAccs.length === 0) {
           setTrades([]);
           setShowConnectForm(false);
+        } else {
+          fetchTrades();
         }
       }
     } catch (err) {
@@ -200,6 +180,8 @@ export const Account: React.FC = () => {
   const formatCurrency = (val: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);
   };
+
+  const activeAccount = accounts[selectedAccountIndex] || accounts[0];
 
   const renderConnectForm = () => (
     <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
@@ -391,14 +373,7 @@ export const Account: React.FC = () => {
             </span>
             
             <button
-              onClick={() => {
-                setLogin('');
-                setServer('');
-                setBroker('');
-                setCustomBroker('');
-                setCustomServer('');
-                setShowConnectForm(true);
-              }}
+              onClick={() => setShowConnectForm(true)}
               className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-lg transition shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <LinkIcon size={12} />
@@ -418,9 +393,9 @@ export const Account: React.FC = () => {
                     : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80'
                 }`}
               >
-                <div className={`w-2 h-2 rounded-full ${idx === selectedAccountIndex ? 'bg-white/70' : acc.conn_status === 'connected' ? 'bg-emerald-500' : acc.conn_status === 'reconnecting' ? 'bg-amber-400' : acc.conn_status === 'error' ? 'bg-rose-500' : 'bg-slate-400'}`} />
+                <div className={`w-2 h-2 rounded-full ${idx === selectedAccountIndex ? 'bg-emerald-300' : 'bg-emerald-500'}`} />
                 <span>{acc.broker || 'MT5'} ({acc.login})</span>
-                <span className="text-[10px] opacity-80 font-semibold">{acc.conn_status === 'reconnecting' ? '⟳' : acc.conn_status === 'error' ? '!' : formatCurrency(acc.equity, acc.currency)}</span>
+                <span className="text-[10px] opacity-80 font-semibold">{formatCurrency(acc.equity, acc.currency)}</span>
               </button>
             ))}
           </div>
@@ -436,33 +411,11 @@ export const Account: React.FC = () => {
                 <h2 className="text-base font-black text-slate-900 tracking-tight">
                   {activeAccount.broker || (activeAccount.server ? activeAccount.server.split('-')[0] : 'MetaTrader')} ({activeAccount.platform || 'MT5'})
                 </h2>
-                {connStatus === 'connected' ? (
-                  <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
-                    <CheckCircle2 size={10} /> Connected
-                  </span>
-                ) : connStatus === 'reconnecting' ? (
-                  <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10 animate-pulse">
-                    <Cpu size={10} /> Reconnecting...
-                  </span>
-                ) : connStatus === 'error' ? (
-                  <span className="bg-rose-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-rose-500/10">
-                    <AlertCircle size={10} /> Error
-                  </span>
-                ) : (
-                  <span className="bg-slate-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-slate-500/10">
-                    <Unplug size={10} /> Disconnected
-                  </span>
-                )}
+                <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
+                  <CheckCircle2 size={10} /> Connected
+                </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Account ID:{' '}
-                {connStatus === 'reconnecting' ? (
-                  <span className="inline-block w-20 h-3 bg-amber-200/70 rounded animate-pulse align-middle" title="Verifying account…" />
-                ) : (
-                  <span className="font-bold text-slate-800">{activeAccount.login}</span>
-                )}
-                {' '}• Server: <span className="font-bold text-slate-800">{activeAccount.server}</span>
-              </p>
+              <p className="text-[11px] text-slate-500 font-medium">Account ID: <span className="font-bold text-slate-800">{activeAccount.login}</span> • Server: <span className="font-bold text-slate-800">{activeAccount.server}</span></p>
             </div>
             <div className="flex gap-2">
               <button
@@ -483,128 +436,65 @@ export const Account: React.FC = () => {
             </div>
           </div>
 
-          {/* Warning: kredensial belum disimpan – minta user input ulang password */}
-          {activeAccount.credential_saved === false && connStatus !== 'reconnecting' && (
-            <div className="relative z-10 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5">
-              <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-xs font-bold text-amber-800">Sandi MT5 belum tersimpan</p>
-                <p className="text-[10px] text-amber-700 mt-0.5">Auto-reconnect tidak aktif. Hubungkan ulang akun ini untuk menyimpan sandi agar koneksi otomatis berjalan setelah server restart.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setLogin(String(activeAccount.login || ''));
-                  setServer(activeAccount.server || '');
-                  setBroker(activeAccount.broker || '');
-                  setShowConnectForm(true);
-                }}
-                className="text-[10px] font-bold text-white bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer shrink-0"
-              >
-                Simpan Sandi
-              </button>
-            </div>
-          )}
-
-          {/* Error banner: koneksi gagal - tampilkan pesan dan tombol Hubungkan Ulang */}
-          {connStatus === 'error' && (
-            <div className="relative z-10 mb-3 p-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5">
-              <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-xs font-bold text-rose-800">Koneksi MT5 Gagal</p>
-                <p className="text-[10px] text-rose-700 mt-0.5">{activeAccount.error_message || 'Terjadi kesalahan saat menghubungkan ke akun MT5. Periksa kembali kredensial Anda.'}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setLogin(String(activeAccount.login || ''));
-                  setServer(activeAccount.server || '');
-                  setBroker(activeAccount.broker || '');
-                  setShowConnectForm(true);
-                }}
-                className="text-[10px] font-bold text-white bg-rose-500 hover:bg-rose-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer shrink-0"
-              >
-                Hubungkan Ulang
-              </button>
-            </div>
-          )}
-
-          {/* Financial grid — selalu tampilkan snapshot data (live jika connected, cached jika tidak) */}
-          {connStatus === 'reconnecting' && (
-            <div className="relative z-10 mb-2 flex items-center gap-1.5 text-[9px] text-amber-600 font-bold">
-              <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Data terakhir tersimpan — gateway sedang reconnect ke akun ini
-              </span>
-            </div>
-          )}
-          {connStatus === 'disconnected' && (activeAccount.balance !== undefined) && (
-            <div className="relative z-10 mb-2 flex items-center gap-1.5 text-[9px] text-slate-500 font-bold">
-              <span className="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                Data terakhir — akun offline{activeAccount.updatedAt ? ` · ${new Date(activeAccount.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
-              </span>
-            </div>
-          )}
           <div className="grid grid-cols-2 gap-3 relative z-10">
-            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
               <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Balance</div>
               <div className="text-sm font-black text-slate-800">{formatCurrency(activeAccount.balance, activeAccount.currency)}</div>
             </div>
-            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
               <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equity</div>
               <div className="text-sm font-black text-slate-800">{formatCurrency(activeAccount.equity, activeAccount.currency)}</div>
             </div>
-            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
               <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Floating Profit</div>
-              <div className={`text-sm font-black ${(activeAccount.profit || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {(activeAccount.profit || 0) > 0 ? '+' : ''}{formatCurrency(activeAccount.profit, activeAccount.currency)}
+              <div className={`text-sm font-black ${activeAccount.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {activeAccount.profit > 0 ? '+' : ''}{formatCurrency(activeAccount.profit, activeAccount.currency)}
               </div>
             </div>
-            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
               <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Margin Level</div>
               <div className="text-sm font-black text-slate-800">{activeAccount.marginLevel ? `${activeAccount.marginLevel.toFixed(2)}%` : '—'}</div>
             </div>
           </div>
         </div>
 
-        {/* Trades List — selalu tampil, termasuk saat offline (dari snapshot) */}
+        {/* Trades List */}
         <div className="bg-white/70 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)]">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
-              <Activity size={12} /> Recent Trades
-            </h3>
-
-            {trades.length === 0 ? (
-              <div className="text-center py-6 text-slate-400 text-xs font-medium bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed">
-                No recent trades found
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {trades.map(trade => (
-                  <div key={trade.id} className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 hover:border-indigo-100 transition">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${(trade.type || '').toUpperCase().includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                        {(trade.type || '').toUpperCase().includes('BUY') ? 'BUY' : 'SELL'}
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-800">{trade.symbol}</div>
-                        <div className="text-[9px] text-slate-500 font-medium">Vol: {trade.lots}</div>
-                      </div>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+            <Activity size={12} /> Recent Trades
+          </h3>
+          
+          {trades.length === 0 ? (
+            <div className="text-center py-6 text-slate-400 text-xs font-medium bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed">
+              No recent trades found
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {trades.map(trade => (
+                <div key={trade.id} className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 hover:border-indigo-100 transition">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${(trade.type || '').toUpperCase().includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                      {(trade.type || '').toUpperCase().includes('BUY') ? 'BUY' : 'SELL'}
                     </div>
-                    <div className="text-right">
-                      <div className={`text-xs font-black ${trade.pl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {trade.pl > 0 ? '+' : ''}{formatCurrency(trade.pl, activeAccount.currency)}
-                      </div>
-                      <div className="text-[8px] text-slate-400 font-medium mt-0.5">
-                        {trade.closeTime ? new Date(trade.closeTime).toLocaleDateString(navigator.language || 'id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).replace(/\s*(AM|PM|am|pm)/gi, '') : 'Open'}
-                      </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">{trade.symbol}</div>
+                      <div className="text-[9px] text-slate-500 font-medium">Vol: {trade.lots}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  <div className="text-right">
+                    <div className={`text-xs font-black ${trade.pl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {trade.pl > 0 ? '+' : ''}{formatCurrency(trade.pl, activeAccount.currency)}
+                    </div>
+                    <div className="text-[8px] text-slate-400 font-medium mt-0.5">
+                      {trade.closeTime ? new Date(trade.closeTime).toLocaleDateString(navigator.language || 'id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).replace(/\s*(AM|PM|am|pm)/gi, '') : 'Open'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
     );
   };
 

@@ -186,9 +186,18 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
   const [groupStats, setGroupStats] = useState<{
     city: { members: number; messages: number };
     province: { members: number; messages: number };
-  }>({
-    city: { members: 0, messages: 0 },
-    province: { members: 0, messages: 0 }
+  }>(() => {
+    try {
+      const cached = sessionStorage.getItem(`group_stats_${selectedCity}_${selectedProvince}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.city && parsed.province) return parsed;
+      }
+    } catch {}
+    return {
+      city: { members: 0, messages: 0 },
+      province: { members: 0, messages: 0 }
+    };
   });
 
   // Derived current group info
@@ -474,18 +483,23 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
   }, [currentGroupId]);
 
   useEffect(() => {
-    // Refresh stats when posts change (e.g. after a new post is added locally)
+    // Refresh stats when location or posts change
+    let isMounted = true;
     const refreshStats = async () => {
       try {
         const res = await apiFetch(`/api/groups/stats?city=${encodeURIComponent(selectedCity)}&province=${encodeURIComponent(selectedProvince)}`);
-        if (res.ok) {
+        if (res.ok && isMounted) {
           const data = await res.json();
           setGroupStats(data);
+          try {
+            sessionStorage.setItem(`group_stats_${selectedCity}_${selectedProvince}`, JSON.stringify(data));
+          } catch {}
         }
       } catch (err) {}
     };
     refreshStats();
-  }, [posts]);
+    return () => { isMounted = false; };
+  }, [selectedCity, selectedProvince, posts.length]);
 
   // Seeded Official and Community Posts for Groups
   const getSeededGroupPosts = (groupId: string, groupName: string, locationName: string): Post[] => {

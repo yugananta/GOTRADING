@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from './AppContext.tsx';
 import { ShieldCheck, Server, Key, UserCheck, X } from 'lucide-react';
 import { MetaTraderLogo } from './MetaTraderLogo';
+import { apiFetch } from '../utils/apiFetch';
 
 interface ConnectModalProps {
   isOpen: boolean;
@@ -15,20 +16,49 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose }) =
   const [server, setServer] = useState('');
   const [password, setPassword] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accountId) return;
 
-    const platform = broker === 'metatrader4' ? 'MT4' : 'MT5';
-    connectBroker(broker, accountId, platform, password, server);
-    setSuccessMsg('Successfully synchronized live credentials. Your statistics are now active.');
-    setTimeout(() => {
-      setSuccessMsg('');
-      onClose();
-    }, 1500);
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsSubmitting(true);
+
+    try {
+      const platform = broker === 'metatrader4' ? 'MT4' : 'MT5';
+      const res = await apiFetch('/api/metatrader/connect', {
+        method: 'POST',
+        body: JSON.stringify({
+          platform,
+          login: accountId,
+          password,
+          server: server || 'Axi-Live',
+          broker
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        connectBroker(broker, accountId, platform, password, server);
+        setSuccessMsg('Akun terhubung dan terverifikasi!');
+        setTimeout(() => {
+          setSuccessMsg('');
+          onClose();
+        }, 1500);
+      } else {
+        setErrorMsg(data.error || 'Gagal terhubung ke server broker. Periksa kembali kredensial & status server.');
+      }
+    } catch (err) {
+      setErrorMsg('Gagal terhubung ke server backend.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDisconnect = () => {
@@ -57,6 +87,12 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose }) =
         {successMsg && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3 rounded-lg text-xs mb-4 text-center">
             {successMsg}
+          </div>
+        )}
+
+        {errorMsg && (
+          <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-xl text-xs mb-4 leading-relaxed font-medium">
+            ⚠️ {errorMsg}
           </div>
         )}
 
@@ -169,9 +205,10 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose }) =
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-xs transition duration-150 flex items-center justify-center gap-1.5"
+                disabled={isSubmitting}
+                className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 text-white font-medium rounded-xl text-xs transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                Connect Verified Account
+                {isSubmitting ? 'Memeriksa Koneksi Server...' : 'Connect Verified Account'}
               </button>
             </div>
           </form>
