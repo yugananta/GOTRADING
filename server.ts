@@ -19,7 +19,7 @@ import { ConnectionRepository } from './src/repositories/ConnectionRepository.ts
 import { StoryRepository } from './src/repositories/StoryRepository.ts';
 import { AuthService } from './src/services/AuthService.ts';
 import { authenticate } from './src/middleware/authMiddleware.ts';
-import { generateAccessToken, verifyRefreshToken } from './src/utils/auth.ts';
+import { generateAccessToken } from './src/utils/auth.ts';
 import { supabase } from './src/lib/supabaseClient.ts';
 import { LocationRepository } from './src/repositories/LocationRepository.ts';
 import { GroupRepository } from './src/repositories/GroupRepository.ts';
@@ -1327,25 +1327,6 @@ async function startServer() {
     } catch (error: any) {
       console.error('Login error:', error);
       res.status(400).json({ error: error.message || "Invalid email or password" });
-    }
-  });
-
-  app.post("/api/auth/refresh", async (req: any, res) => {
-    try {
-      const { refreshToken } = req.body;
-      if (!refreshToken) {
-        return res.status(400).json({ error: "Refresh token is required" });
-      }
-      const result = await authService.refreshToken(refreshToken);
-      res.json({
-        success: true,
-        accessToken: result.accessToken,
-        token: result.accessToken,
-        refreshToken: result.refreshToken
-      });
-    } catch (error: any) {
-      console.error('Refresh token error:', error);
-      res.status(401).json({ error: error.message || "Invalid or expired refresh token" });
     }
   });
 
@@ -3330,10 +3311,10 @@ async function startServer() {
   app.get("/api/metatrader/account", authenticate, async (req: any, res) => {
     try {
       const mtService = new MetaTraderService();
-      const account = await mtService.getConnectedAccount(req.userId);
-      res.json({ account });
+      const accounts = await mtService.getConnectedAccounts(req.userId);
+      const account = accounts.length > 0 ? accounts[0] : null;
+      res.json({ account, accounts });
     } catch (err: any) {
-      console.error('[MT5] getConnectedAccount error:', err.message);
       res.status(500).json({ error: err.message });
     }
   });
@@ -3345,9 +3326,8 @@ async function startServer() {
       return res.status(400).json({ error: "Missing required connection details" });
     }
     try {
-      const authToken = req.headers.authorization?.split(' ')[1];
       const mtService = new MetaTraderService();
-      const account = await mtService.connectAccount(req.userId, platform, login, server, broker, password, authToken);
+      const result = await mtService.connectAccount(req.userId, platform, login, server, broker);
 
       // Notify followers of MT5 connection activity
       try {
@@ -3366,7 +3346,7 @@ async function startServer() {
               fromUserName: authorFullName,
               fromUserAvatar: user.avatar || "",
               type: "friend_post",
-              message: `${authorFullName} (yang Anda ikuti) baru saja menghubungkan akun trading MetaTrader (${platform}) baru!`,
+              message: `${authorFullName} (yang Anda ikuti) baru saja menghubungkan akun trading MetaTrader (${platform} - ${login}) baru!`,
               isRead: false,
               timestamp: new Date().toISOString()
             };
@@ -3381,7 +3361,7 @@ async function startServer() {
         console.warn("Error notifying followers of MT5 connection:", notifErr);
       }
 
-      res.json({ success: true, account });
+      res.json({ success: true, account: result.account, accounts: result.accounts });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -3390,10 +3370,10 @@ async function startServer() {
   // POST /api/metatrader/disconnect - Disconnect MetaTrader account
   app.post("/api/metatrader/disconnect", authenticate, async (req: any, res) => {
     try {
-      const authToken = req.headers.authorization?.split(' ')[1];
+      const { accountId } = req.body || {};
       const mtService = new MetaTraderService();
-      await mtService.disconnectAccount(req.userId, authToken);
-      res.json({ success: true });
+      const result = await mtService.disconnectAccount(req.userId, accountId);
+      res.json({ success: true, accounts: result.accounts });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -3413,9 +3393,8 @@ async function startServer() {
   // POST /api/metatrader/sync - Sync trades & trigger pricing/new trades simulation
   app.post("/api/metatrader/sync", authenticate, async (req: any, res) => {
     try {
-      const authToken = req.headers.authorization?.split(' ')[1];
       const mtService = new MetaTraderService();
-      const result = await mtService.syncTrades(req.userId, authToken);
+      const result = await mtService.syncTrades(req.userId);
 
       // Notify followers of trading sync activity
       try {

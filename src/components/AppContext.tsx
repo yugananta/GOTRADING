@@ -135,7 +135,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [latestRealtimeEvent, setLatestRealtimeEvent] = useState<{ id: string; type: 'FRIEND_REQUEST' | 'FRIEND_ACCEPTED' | 'NEW_MESSAGE' | 'NOTIFICATION'; notification: Notification; timestamp: number } | null>(null);
 
   const clearRealtimeEvent = () => setLatestRealtimeEvent(null);
-
+  
   // Real-time trading stats (updates when broker is connected!)
   const [tradingStats, setTradingStats] = useState({
     portfolio: "$0.00",
@@ -147,7 +147,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
+  
   const fetchStories = useCallback(async () => {
     try {
       const res = await apiFetch(`/api/stories`);
@@ -286,10 +286,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const newPLVal = rawPL + delta;
           const sign = newPLVal >= 0 ? '+' : '-';
           const newPLStr = `${sign}$${Math.abs(Math.round(newPLVal))}`;
-
+          
           const rawPort = parseFloat(prev.portfolio.replace('$', '').replace(',', ''));
           const newPortStr = `$${(rawPort + delta).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-
+          
           return {
             ...prev,
             portfolio: newPortStr,
@@ -336,7 +336,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const unread = notifications.filter(n => !n.isRead);
     const count = unread.length;
-
+    
     if (count > lastUnreadCount.current) {
       console.log(`Unread notifications increased from ${lastUnreadCount.current} to ${count}. Playing sound.`);
       const newest = unread[0];
@@ -390,46 +390,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const res = await apiFetch('/api/metatrader/account');
       if (res.ok) {
         const data = await res.json();
-        if (data && data.account) {
-          const account = data.account;
-          // Status koneksi sebenarnya dari backend:
-          // 'connected' | 'reconnecting' | 'disconnected' | 'error'
-          const connStatus = account.conn_status || 'connected';
-          const isConnected = connStatus === 'connected';
-          const brokerName = account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader');
+        const accounts = data.accounts || (data.account ? [data.account] : []);
+        if (accounts.length > 0) {
+          const primaryAccount = accounts[0];
+          const brokerName = accounts.length > 1
+            ? `${accounts.length} Akun Terhubung (${primaryAccount.broker || 'MT5'})`
+            : (primaryAccount.broker || (primaryAccount.server ? primaryAccount.server.split('-')[0] : 'MetaTrader'));
+            
+          setConnectedBroker({ broker: brokerName, accountId: primaryAccount.login, platform: primaryAccount.platform, server: primaryAccount.server });
+          
+          const totalEquity = accounts.reduce((sum: number, acc: any) => sum + (Number(acc.equity) || 0), 0);
 
-          setCurrentUser(prev => prev ? { ...prev, mt5Connected: isConnected } : prev);
-
-          if (isConnected) {
-            setConnectedBroker({ broker: brokerName, accountId: account.login, platform: account.platform, server: account.server });
-
-            // Fetch synced trades to calculate real-time stats
-            const tradesRes = await apiFetch('/api/metatrader/trades');
-            if (tradesRes.ok) {
-              const { trades } = await tradesRes.json();
-
-              // Calculate real-time stats based on the synced trades
-              const closedTrades = trades.filter((t: any) => t.closeTime);
-              const wins = closedTrades.filter((t: any) => t.pl > 0).length;
-              const winRateStr = closedTrades.length > 0 ? `${Math.round((wins / closedTrades.length) * 100)}%` : '0%';
-
-              const todayStr = new Date().toISOString().substring(0, 10);
-              const todayTrades = closedTrades.filter((t: any) => t.closeTime.startsWith(todayStr));
-              const todayPLValue = todayTrades.reduce((acc: number, t: any) => acc + t.pl, 0);
-
-              setTradingStats({
-                portfolio: `$${account.equity.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
-                todayPL: todayPLValue >= 0 ? `+$${Math.round(todayPLValue)}` : `-$${Math.round(Math.abs(todayPLValue))}`,
-                winRate: winRateStr,
-                streak: "12d",
-                tradesLoggedToday: todayTrades.length,
-                dailyTradeGoal: 6
-              });
-            }
-          } else if (connStatus === 'error') {
-            // Koneksi gagal (credential invalid/expired) -> jangan tampilkan
-            // sebagai terhubung; user diminta connect ulang.
-            setConnectedBroker(null);
+          // Fetch synced trades to calculate real-time stats
+          const tradesRes = await apiFetch('/api/metatrader/trades');
+          if (tradesRes.ok) {
+            const { trades } = await tradesRes.json();
+            
+            // Calculate real-time stats based on the synced trades
+            const closedTrades = trades.filter((t: any) => t.closeTime);
+            const wins = closedTrades.filter((t: any) => t.pl > 0).length;
+            const winRateStr = closedTrades.length > 0 ? `${Math.round((wins / closedTrades.length) * 100)}%` : '0%';
+            
+            const todayStr = new Date().toISOString().substring(0, 10);
+            const todayTrades = closedTrades.filter((t: any) => t.closeTime.startsWith(todayStr));
+            const todayPLValue = todayTrades.reduce((acc: number, t: any) => acc + t.pl, 0);
+            
+            setTradingStats({
+              portfolio: `$${totalEquity.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
+              todayPL: todayPLValue >= 0 ? `+$${Math.round(todayPLValue)}` : `-$${Math.round(Math.abs(todayPLValue))}`,
+              winRate: winRateStr,
+              streak: "12d",
+              tradesLoggedToday: todayTrades.length,
+              dailyTradeGoal: 6
+            });
           }
         } else {
           setConnectedBroker(null);
@@ -462,7 +455,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         { event: 'INSERT', schema: 'public', table: 'Post' },
         (payload) => {
           const newPost = deserializePost(payload.new);
-
+          
           if (newPost.groupId) return;
 
           // If current user created it, update directly (optimistic swap)
@@ -508,7 +501,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (postsRef.current.length === 0) {
       setLoadingPosts(true);
     }
-
+    
     try {
       const res = await apiFetch(`/api/posts?currentUserId=${currentUser?.id}`);
       if (isJsonResponse(res)) {
