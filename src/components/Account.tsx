@@ -45,12 +45,14 @@ export const Account: React.FC = () => {
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [connectStepText, setConnectStepText] = useState('Connecting...');
 
-  useEffect(() => {
-    fetchAccountStatus();
-  }, []);
+  // Derived state — declared before effects so effects can reference them
+  const activeAccount = accounts[selectedAccountIndex] || accounts[0];
+  const connStatus = activeAccount?.conn_status || (activeAccount ? 'connected' : 'disconnected');
 
-  const fetchAccountStatus = async () => {
-    setIsLoading(true);
+
+
+  const fetchAccountStatus = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
       const res = await apiFetch('/api/metatrader/account');
@@ -59,23 +61,23 @@ export const Account: React.FC = () => {
         const data = await res.json();
         const accs = data.accounts || (data.account ? [data.account] : []);
         setAccounts(accs);
-        if (accs.length > 0) {
-          fetchTrades();
-        }
-      } else {
+      } else if (!silent) {
         setAccounts([]);
       }
     } catch (err) {
       console.error('Failed to fetch MT5 accounts:', err);
-      setAccounts([]);
+      if (!silent) setAccounts([]);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
-  const fetchTrades = async () => {
+  const fetchTrades = async (akunId?: string | number) => {
     try {
-      const res = await apiFetch('/api/metatrader/trades?limit=20');
+      const url = akunId
+        ? `/api/metatrader/trades?limit=20&akunId=${akunId}`
+        : '/api/metatrader/trades?limit=20';
+      const res = await apiFetch(url);
       const isJson = res.headers.get('content-type')?.includes('application/json');
       if (res.ok && isJson) {
         const data = await res.json();
@@ -85,6 +87,22 @@ export const Account: React.FC = () => {
       console.error('Failed to fetch trades:', err);
     }
   };
+
+  // --- Effects (placed after function declarations to avoid const-hoisting issues) ---
+
+  useEffect(() => {
+    fetchAccountStatus();
+    const interval = setInterval(() => fetchAccountStatus(true), 10000);
+    return () => clearInterval(interval);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (activeAccount?.login) {
+      fetchTrades(activeAccount.login);
+    } else {
+      setTrades([]);
+    }
+  }, [activeAccount?.login]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,11 +151,16 @@ export const Account: React.FC = () => {
   };
 
   const handleSync = async () => {
+    if (!activeAccount) return;
     setIsSyncing(true);
     try {
-      const res = await apiFetch('/api/metatrader/sync', { method: 'POST' });
+      const res = await apiFetch('/api/metatrader/sync', {
+        method: 'POST',
+        body: JSON.stringify({ akunId: activeAccount.login }),
+      });
       if (res.ok) {
-        await fetchAccountStatus();
+        await fetchAccountStatus(true);
+        await fetchTrades(activeAccount.login);
       }
     } catch (err) {
       console.error('Sync failed', err);
@@ -147,7 +170,6 @@ export const Account: React.FC = () => {
   };
 
   const handleDisconnect = async (targetAccountId?: string) => {
-    const activeAccount = accounts[selectedAccountIndex] || accounts[0];
     const targetAccount = accounts.find(a => a.id === targetAccountId) || activeAccount;
     if (!targetAccount) return;
 
@@ -178,12 +200,6 @@ export const Account: React.FC = () => {
   const formatCurrency = (val: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);
   };
-
-  const activeAccount = accounts[selectedAccountIndex] || accounts[0];
-
-  // Status koneksi akun aktif (dari backend, kolom conn_status):
-  // 'connected' | 'reconnecting' | 'disconnected' | 'error'
-  const connStatus = activeAccount?.conn_status || (activeAccount ? 'connected' : 'disconnected');
 
   const renderConnectForm = () => (
     <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
@@ -375,7 +391,14 @@ export const Account: React.FC = () => {
             </span>
             
             <button
-              onClick={() => setShowConnectForm(true)}
+              onClick={() => {
+                setLogin('');
+                setServer('');
+                setBroker('');
+                setCustomBroker('');
+                setCustomServer('');
+                setShowConnectForm(true);
+              }}
               className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-lg transition shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <LinkIcon size={12} />
@@ -395,9 +418,9 @@ export const Account: React.FC = () => {
                     : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80'
                 }`}
               >
-                <div className={`w-2 h-2 rounded-full ${idx === selectedAccountIndex ? 'bg-emerald-300' : 'bg-emerald-500'}`} />
+                <div className={`w-2 h-2 rounded-full ${idx === selectedAccountIndex ? 'bg-white/70' : acc.conn_status === 'connected' ? 'bg-emerald-500' : acc.conn_status === 'reconnecting' ? 'bg-amber-400' : acc.conn_status === 'error' ? 'bg-rose-500' : 'bg-slate-400'}`} />
                 <span>{acc.broker || 'MT5'} ({acc.login})</span>
-                <span className="text-[10px] opacity-80 font-semibold">{formatCurrency(acc.equity, acc.currency)}</span>
+                <span className="text-[10px] opacity-80 font-semibold">{acc.conn_status === 'reconnecting' ? '⟳' : acc.conn_status === 'error' ? '!' : formatCurrency(acc.equity, acc.currency)}</span>
               </button>
             ))}
           </div>
@@ -413,9 +436,23 @@ export const Account: React.FC = () => {
                 <h2 className="text-base font-black text-slate-900 tracking-tight">
                   {activeAccount.broker || (activeAccount.server ? activeAccount.server.split('-')[0] : 'MetaTrader')} ({activeAccount.platform || 'MT5'})
                 </h2>
-                <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
-                  <CheckCircle2 size={10} /> Connected
-                </span>
+                {connStatus === 'connected' ? (
+                  <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
+                    <CheckCircle2 size={10} /> Connected
+                  </span>
+                ) : connStatus === 'reconnecting' ? (
+                  <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10 animate-pulse">
+                    <Cpu size={10} /> Reconnecting...
+                  </span>
+                ) : connStatus === 'error' ? (
+                  <span className="bg-rose-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-rose-500/10">
+                    <AlertCircle size={10} /> Error
+                  </span>
+                ) : (
+                  <span className="bg-slate-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-slate-500/10">
+                    <Unplug size={10} /> Disconnected
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 font-medium">
                 Account ID:{' '}
@@ -456,10 +493,38 @@ export const Account: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setShowConnectForm(true)}
+                onClick={() => {
+                  setLogin(String(activeAccount.login || ''));
+                  setServer(activeAccount.server || '');
+                  setBroker(activeAccount.broker || '');
+                  setShowConnectForm(true);
+                }}
                 className="text-[10px] font-bold text-white bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer shrink-0"
               >
                 Simpan Sandi
+              </button>
+            </div>
+          )}
+
+          {/* Error banner: koneksi gagal - tampilkan pesan dan tombol Hubungkan Ulang */}
+          {connStatus === 'error' && (
+            <div className="relative z-10 mb-3 p-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5">
+              <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-rose-800">Koneksi MT5 Gagal</p>
+                <p className="text-[10px] text-rose-700 mt-0.5">{activeAccount.error_message || 'Terjadi kesalahan saat menghubungkan ke akun MT5. Periksa kembali kredensial Anda.'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setLogin(String(activeAccount.login || ''));
+                  setServer(activeAccount.server || '');
+                  setBroker(activeAccount.broker || '');
+                  setShowConnectForm(true);
+                }}
+                className="text-[10px] font-bold text-white bg-rose-500 hover:bg-rose-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer shrink-0"
+              >
+                Hubungkan Ulang
               </button>
             </div>
           )}
