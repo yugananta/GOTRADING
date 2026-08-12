@@ -529,43 +529,47 @@ export const Account: React.FC = () => {
             </div>
           )}
 
-          {/* Financial grid: skeleton saat reconnecting agar tidak tampilkan angka palsu/stale */}
-          {connStatus === 'reconnecting' ? (
-            <div className="grid grid-cols-2 gap-3 relative z-10">
-              {['Balance', 'Equity', 'Floating Profit', 'Margin Level'].map(label => (
-                <div key={label} className="bg-white/60 border border-amber-100 rounded-2xl p-3">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">{label}</div>
-                  <div className="h-4 bg-amber-100 rounded animate-pulse w-3/4" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 relative z-10">
-              <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Balance</div>
-                <div className="text-sm font-black text-slate-800">{formatCurrency(activeAccount.balance, activeAccount.currency)}</div>
-              </div>
-              <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equity</div>
-                <div className="text-sm font-black text-slate-800">{formatCurrency(activeAccount.equity, activeAccount.currency)}</div>
-              </div>
-              <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Floating Profit</div>
-                <div className={`text-sm font-black ${activeAccount.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {activeAccount.profit > 0 ? '+' : ''}{formatCurrency(activeAccount.profit, activeAccount.currency)}
-                </div>
-              </div>
-              <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Margin Level</div>
-                <div className="text-sm font-black text-slate-800">{activeAccount.marginLevel ? `${activeAccount.marginLevel.toFixed(2)}%` : '—'}</div>
-              </div>
+          {/* Financial grid — selalu tampilkan snapshot data (live jika connected, cached jika tidak) */}
+          {connStatus === 'reconnecting' && (
+            <div className="relative z-10 mb-2 flex items-center gap-1.5 text-[9px] text-amber-600 font-bold">
+              <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Data terakhir tersimpan — gateway sedang reconnect ke akun ini
+              </span>
             </div>
           )}
+          {connStatus === 'disconnected' && (activeAccount.balance !== undefined) && (
+            <div className="relative z-10 mb-2 flex items-center gap-1.5 text-[9px] text-slate-500 font-bold">
+              <span className="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                Data terakhir — akun offline{activeAccount.updatedAt ? ` · ${new Date(activeAccount.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+              </span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3 relative z-10">
+            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Balance</div>
+              <div className="text-sm font-black text-slate-800">{formatCurrency(activeAccount.balance, activeAccount.currency)}</div>
+            </div>
+            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equity</div>
+              <div className="text-sm font-black text-slate-800">{formatCurrency(activeAccount.equity, activeAccount.currency)}</div>
+            </div>
+            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Floating Profit</div>
+              <div className={`text-sm font-black ${(activeAccount.profit || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {(activeAccount.profit || 0) > 0 ? '+' : ''}{formatCurrency(activeAccount.profit, activeAccount.currency)}
+              </div>
+            </div>
+            <div className={`bg-white/60 border rounded-2xl p-3 ${connStatus !== 'connected' ? 'border-slate-100 opacity-80' : 'border-slate-100'}`}>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Margin Level</div>
+              <div className="text-sm font-black text-slate-800">{activeAccount.marginLevel ? `${activeAccount.marginLevel.toFixed(2)}%` : '—'}</div>
+            </div>
+          </div>
         </div>
 
-        {/* Trades List: hanya tampil saat koneksi confirmed (bukan reconnecting) */}
-        {connStatus !== 'reconnecting' && (
-          <div className="bg-white/70 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)]">
+        {/* Trades List — selalu tampil, termasuk saat offline (dari snapshot) */}
+        <div className="bg-white/70 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)]">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
               <Activity size={12} /> Recent Trades
             </h3>
@@ -600,7 +604,7 @@ export const Account: React.FC = () => {
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     );
   };
