@@ -51,7 +51,6 @@ export const Account: React.FC = () => {
   }, []);
 
   const fetchAccountStatus = async () => {
-    setIsLoading(true);
     try {
       const res = await apiFetch('/api/metatrader/account');
       const isJson = res.headers.get('content-type')?.includes('application/json');
@@ -59,29 +58,34 @@ export const Account: React.FC = () => {
         const data = await res.json();
         if (data.account) {
           setAccount(data.account);
-          // Credential invalid/expired -> tampilkan pesan & form connect ulang.
           if (data.account.conn_status === 'error') {
             setError(data.account.error_message || 'Koneksi MT5 gagal. Silakan hubungkan ulang akun Anda.');
-            setShowConnectForm(true);
-          } else if (data.account.conn_status === 'connected') {
+          } else {
             setError(null);
           }
           fetchTrades();
         } else {
-          setAccount(null);
-          setError(null);
+          // Backend returns no account only when user truly has no linked account.
+          // Preserve last known state if we already have one (transient backend issue).
+          setAccount((prev: any) => {
+            if (prev) {
+              console.warn('[Account] Backend returned no account but we have a cached one — keeping it.');
+              return prev;
+            }
+            return null;
+          });
         }
+      } else if (res.status === 401) {
+        // Only force logout on explicit 401
+        setAccount(null);
+        setError('Sesi Anda telah berakhir. Silakan login kembali.');
       } else {
-        if (res.status === 401) {
-          setAccount(null);
-          setError('Sesi Anda telah berakhir. Silakan login kembali.');
-        } else {
-          console.warn(`Temporary server status error (${res.status}). Preserving last known account state.`);
-        }
+        // 502/503/network during restart — keep last known state, silent retry
+        console.warn(`[Account] Temporary error ${res.status} — preserving last known state.`);
       }
     } catch (err) {
-      console.error('Failed to fetch MT5 account:', err);
-      // Keep last known account state on network errors
+      // Network error during server restart — keep last known state
+      console.warn('[Account] Network error — preserving last known state.');
     } finally {
       setIsLoading(false);
     }
@@ -180,12 +184,16 @@ export const Account: React.FC = () => {
   // 'connected' | 'reconnecting' | 'disconnected' | 'error'
   const connStatus = account?.conn_status || (account ? 'connected' : 'disconnected');
 
-  // Polling otomatis untuk memperbarui status koneksi dan metrik akun secara real-time
+  // Polling otomatis untuk memperbarui status koneksi dan metrik akun secara real-time.
+  // Gunakan account.akunId (bukan id) karena backend mengembalikan akunId, bukan id.
+  // Poll lebih agresif (5 detik) saat reconnecting agar transisi ke 'connected' lebih cepat.
+  const isReconnecting = connStatus === 'reconnecting' || connStatus === 'disconnected';
   useEffect(() => {
-    if (!account) return;
-    const id = setInterval(() => fetchAccountStatus(), 15000);
+    if (!account && !isReconnecting) return;
+    const interval = isReconnecting ? 5000 : 15000;
+    const id = setInterval(() => fetchAccountStatus(), interval);
     return () => clearInterval(id);
-  }, [account?.id]);
+  }, [account?.akunId, isReconnecting]);
 
   const formatCurrency = (val: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);
