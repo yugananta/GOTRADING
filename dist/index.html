@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error("GLOBAL ERROR:", e.message);
+        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">' + e.message + '</div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error("GLOBAL UNHANDLED REJECTION:", e.reason);
+        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">Unhandled Rejection: ' + e.reason + '</div>';
+      });
+    </script>
+    <script type="module" crossorigin src="/assets/index-BHqfZkRI.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-base-D7OlOWgF.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-C6DXn74_.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-kajZqXco.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-ByZAoVKa.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-BE2nSDYM.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-DUW9PjbN.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
