@@ -6,6 +6,26 @@
 // requests will always get 401 once the real backend is wired up. If
 // there's no token yet (not logged in), the Authorization header is
 // simply omitted — safe to use for public endpoints too (login, register, etc).
+// Base URL for the backend API. When VITE_BACKEND_API_URL is defined (e.g. in
+// Railway production), all relative paths are resolved against it so the
+// frontend can talk to a backend running on a different domain/service. If
+// it's not set, requests fall back to relative URLs (same-origin), which
+// preserves the previous behavior for local development.
+const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL as string | undefined;
+
+function resolveUrl(url: string): string {
+  if (!BACKEND_API_URL) {
+    return url;
+  }
+  // If the caller already passed an absolute URL, leave it untouched.
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+  const base = BACKEND_API_URL.replace(/\/+$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
+}
+
 export function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = localStorage.getItem('accessToken');
   const lang = localStorage.getItem('i18nextLng') || 'en';
@@ -17,5 +37,5 @@ export function apiFetch(url: string, options: RequestInit = {}): Promise<Respon
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  return fetch(url, { ...options, headers });
+  return fetch(resolveUrl(url), { ...options, headers });
 }
