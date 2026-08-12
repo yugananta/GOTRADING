@@ -1993,11 +1993,12 @@ async function startServer() {
         const page = req.query.page !== undefined ? parseInt(req.query.page as string) : 0;
         const pageSize = req.query.pageSize !== undefined ? parseInt(req.query.pageSize as string) : 15;
         const limitVal = limit ? parseInt(limit as string) : (groupId || userId || search || tag ? 150 : 50);
+        const resolvedGroupId = typeof groupId === 'string' && groupId.trim() !== '' ? groupId : undefined;
         
         // Filter in database using PostRepository with new search/tag/pagination support
         let posts = await postRepo.list(
-          limitVal, 
-          (groupId as string) || (userId || search || tag ? undefined : null),
+          limitVal,
+          resolvedGroupId,
           search as string,
           tag as string,
           userId as string,
@@ -2138,17 +2139,18 @@ async function startServer() {
       // Extract hashtags safely
       const hashtags = content ? (content.match(/#\w+/g) || []).map((t: string) => t.substring(1)) : [];
 
-      const authorFirstName = user.firstName || (user as any).first_name || 'Trader';
-      const authorLastName = user.lastName || (user as any).last_name || 'Member';
+      const safeUser = user as any;
+      const authorFirstName = safeUser.firstName || safeUser.first_name || 'Trader';
+      const authorLastName = safeUser.lastName || safeUser.last_name || 'Member';
 
       const newPost: Post = await postRepo.create({
         userId,
         authorName: `${authorFirstName} ${authorLastName}`.trim(),
-        authorUsername: (user as any).username || ('trader_' + userId.substring(0, 6)),
-        authorAvatar: user.avatar || (user as any).avatar_url || "",
-        authorRole: (user as any).tradingExperience || (user as any).trading_experience || "Trader",
-        authorCity: (user as any).city || "Jakarta",
-        authorCountry: (user as any).country || "Indonesia",
+        authorUsername: safeUser.username || ('trader_' + userId.substring(0, 6)),
+        authorAvatar: safeUser.avatar || safeUser.avatar_url || "",
+        authorRole: safeUser.tradingExperience || safeUser.trading_experience || "Trader",
+        authorCity: safeUser.city || "Jakarta",
+        authorCountry: safeUser.country || "Indonesia",
         content: content || "",
         images: images || [],
         videoUrl: videoUrl || undefined,
@@ -2184,11 +2186,11 @@ async function startServer() {
         }
       }
 
-      const currentRep = (user as any).reputationPoints || 0;
+      const currentRep = (safeUser as any).reputationPoints || 0;
       const gain = calculateReputationGain(currentRep, 2);
-      (user as any).reputationPoints = currentRep + gain;
+      (safeUser as any).reputationPoints = currentRep + gain;
       try {
-        await userRepo.update(userId, user);
+        await userRepo.update(userId, safeUser as any);
       } catch (e) {
         console.error("Error updating user reputation:", e);
       }
@@ -2216,7 +2218,7 @@ async function startServer() {
             toUserId: targetUser.id,
             fromUserId: userId,
             fromUserName: authorFullName,
-            fromUserAvatar: user.avatar || "",
+            fromUserAvatar: safeUser.avatar || "",
             type: "friend_post",
             message: messageText,
             isRead: false,
@@ -2427,20 +2429,21 @@ async function startServer() {
         return res.status(404).json({ error: "User not found" });
       }
 
+      const safeCommentUser = user as any;
       console.log(`Attempting to create comment in CommentRepository: ${JSON.stringify({
         postId,
         userId,
-        authorName: `${user.firstName} ${user.lastName}`,
-        authorUsername: (user as any).username,
-        authorAvatar: user.avatar,
+        authorName: `${safeCommentUser.firstName || 'Trader'} ${safeCommentUser.lastName || 'Member'}`,
+        authorUsername: safeCommentUser.username,
+        authorAvatar: safeCommentUser.avatar || "",
         content
       })}`);
       const newComment: Comment = await commentRepo.create({
         postId,
         userId,
-        authorName: `${user.firstName} ${user.lastName}`,
-        authorUsername: (user as any).username,
-        authorAvatar: user.avatar,
+        authorName: `${safeCommentUser.firstName || 'Trader'} ${safeCommentUser.lastName || 'Member'}`,
+        authorUsername: safeCommentUser.username,
+        authorAvatar: safeCommentUser.avatar || "",
         content
       });
       console.log(`Comment created successfully: ${JSON.stringify(newComment)}`);
@@ -2454,8 +2457,8 @@ async function startServer() {
         await notifRepo.create({
           toUserId: post.userId,
           fromUserId: userId,
-          fromUserName: `${user.firstName} ${user.lastName}`,
-          fromUserAvatar: user.avatar,
+          fromUserName: `${safeCommentUser.firstName || 'Trader'} ${safeCommentUser.lastName || 'Member'}`,
+          fromUserAvatar: safeCommentUser.avatar || "",
           type: "comment",
           message: `commented on your post: "${content.substring(0, 30)}..."`,
           isRead: false,
@@ -3308,131 +3311,131 @@ async function startServer() {
   // --- METATRADER API ENDPOINTS ---
   
   // GET /api/metatrader/account - Get connected account details
-  app.get("/api/metatrader/account", authenticate, async (req: any, res) => {
-    try {
-      const mtService = new MetaTraderService();
-      const accounts = await mtService.getConnectedAccounts(req.userId);
-      const account = accounts.length > 0 ? accounts[0] : null;
-      res.json({ account, accounts });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  // app.get("/api/metatrader/account", authenticate, async (req: any, res) => {
+  //   try {
+  //     const mtService = new MetaTraderService();
+  //     const accounts = await mtService.getConnectedAccounts(req.userId);
+  //     const account = accounts.length > 0 ? accounts[0] : null;
+  //     res.json({ account, accounts });
+  //   } catch (err: any) {
+  //     res.status(500).json({ error: err.message });
+  //   }
+  // });
 
   // POST /api/metatrader/connect - Connect a MetaTrader account
-  app.post("/api/metatrader/connect", authenticate, async (req: any, res) => {
-    const { platform, login, password, server, broker } = req.body;
-    if (!platform || !login || !password || !server) {
-      return res.status(400).json({ error: "Missing required connection details" });
-    }
-    try {
-      const mtService = new MetaTraderService();
-      const result = await mtService.connectAccount(req.userId, platform, login, server, broker);
+  // app.post("/api/metatrader/connect", authenticate, async (req: any, res) => {
+  //   const { platform, login, password, server, broker } = req.body;
+  //   if (!platform || !login || !password || !server) {
+  //     return res.status(400).json({ error: "Missing required connection details" });
+  //   }
+  //   try {
+  //     const mtService = new MetaTraderService();
+  //     const result = await mtService.connectAccount(req.userId, platform, login, server, broker);
 
-      // Notify followers of MT5 connection activity
-      try {
-        const userRepo = new UserRepository();
-        const user = await userRepo.findById(req.userId);
-        if (user) {
-          const followRepo = new FollowRepository();
-          const notifRepo = new NotificationRepository();
-          const followerIds = await followRepo.listFollowers(req.userId);
-          const authorFullName = `${user.firstName} ${user.lastName}`.trim();
-          for (const followerId of followerIds) {
-            const newNotif = {
-              id: "notify_mt5_connect_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
-              toUserId: followerId,
-              fromUserId: req.userId,
-              fromUserName: authorFullName,
-              fromUserAvatar: user.avatar || "",
-              type: "friend_post",
-              message: `${authorFullName} (yang Anda ikuti) baru saja menghubungkan akun trading MetaTrader (${platform} - ${login}) baru!`,
-              isRead: false,
-              timestamp: new Date().toISOString()
-            };
-            await notifRepo.create(newNotif as any);
-            if (req.db) {
-              if (!req.db.notifications) req.db.notifications = [];
-              req.db.notifications.unshift(newNotif);
-            }
-          }
-        }
-      } catch (notifErr) {
-        console.warn("Error notifying followers of MT5 connection:", notifErr);
-      }
+  //     // Notify followers of MT5 connection activity
+  //     try {
+  //       const userRepo = new UserRepository();
+  //       const user = await userRepo.findById(req.userId);
+  //       if (user) {
+  //         const followRepo = new FollowRepository();
+  //         const notifRepo = new NotificationRepository();
+  //         const followerIds = await followRepo.listFollowers(req.userId);
+  //         const authorFullName = `${user.firstName} ${user.lastName}`.trim();
+  //         for (const followerId of followerIds) {
+  //           const newNotif = {
+  //             id: "notify_mt5_connect_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+  //             toUserId: followerId,
+  //             fromUserId: req.userId,
+  //             fromUserName: authorFullName,
+  //             fromUserAvatar: user.avatar || "",
+  //             type: "friend_post",
+  //             message: `${authorFullName} (yang Anda ikuti) baru saja menghubungkan akun trading MetaTrader (${platform} - ${login}) baru!`,
+  //             isRead: false,
+  //             timestamp: new Date().toISOString()
+  //           };
+  //           await notifRepo.create(newNotif as any);
+  //           if (req.db) {
+  //             if (!req.db.notifications) req.db.notifications = [];
+  //             req.db.notifications.unshift(newNotif);
+  //           }
+  //         }
+  //       }
+  //     } catch (notifErr) {
+  //       console.warn("Error notifying followers of MT5 connection:", notifErr);
+  //     }
 
-      res.json({ success: true, account: result.account, accounts: result.accounts });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  //     res.json({ success: true, account: result.account, accounts: result.accounts });
+  //   } catch (err: any) {
+  //     res.status(500).json({ error: err.message });
+  //   }
+  // });
 
   // POST /api/metatrader/disconnect - Disconnect MetaTrader account
-  app.post("/api/metatrader/disconnect", authenticate, async (req: any, res) => {
-    try {
-      const { accountId } = req.body || {};
-      const mtService = new MetaTraderService();
-      const result = await mtService.disconnectAccount(req.userId, accountId);
-      res.json({ success: true, accounts: result.accounts });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  // app.post("/api/metatrader/disconnect", authenticate, async (req: any, res) => {
+  //   try {
+  //     const { accountId } = req.body || {};
+  //     const mtService = new MetaTraderService();
+  //     const result = await mtService.disconnectAccount(req.userId, accountId);
+  //     res.json({ success: true, accounts: result.accounts });
+  //   } catch (err: any) {
+  //     res.status(500).json({ error: err.message });
+  //   }
+  // });
 
   // GET /api/metatrader/trades - Get all trades (including historical)
-  app.get("/api/metatrader/trades", authenticate, async (req: any, res) => {
-    try {
-      const mtService = new MetaTraderService();
-      const trades = await mtService.getTrades(req.userId);
-      res.json({ trades });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  // app.get("/api/metatrader/trades", authenticate, async (req: any, res) => {
+  //   try {
+  //     const mtService = new MetaTraderService();
+  //     const trades = await mtService.getTrades(req.userId);
+  //     res.json({ trades });
+  //   } catch (err: any) {
+  //     res.status(500).json({ error: err.message });
+  //   }
+  // });
 
   // POST /api/metatrader/sync - Sync trades & trigger pricing/new trades simulation
-  app.post("/api/metatrader/sync", authenticate, async (req: any, res) => {
-    try {
-      const mtService = new MetaTraderService();
-      const result = await mtService.syncTrades(req.userId);
+  // app.post("/api/metatrader/sync", authenticate, async (req: any, res) => {
+  //   try {
+  //     const mtService = new MetaTraderService();
+  //     const result = await mtService.syncTrades(req.userId);
 
-      // Notify followers of trading sync activity
-      try {
-        const userRepo = new UserRepository();
-        const user = await userRepo.findById(req.userId);
-        if (user) {
-          const followRepo = new FollowRepository();
-          const notifRepo = new NotificationRepository();
-          const followerIds = await followRepo.listFollowers(req.userId);
-          const authorFullName = `${user.firstName} ${user.lastName}`.trim();
-          for (const followerId of followerIds) {
-            const newNotif = {
-              id: "notify_mt5_sync_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
-              toUserId: followerId,
-              fromUserId: req.userId,
-              fromUserName: authorFullName,
-              fromUserAvatar: user.avatar || "",
-              type: "friend_post",
-              message: `${authorFullName} (yang Anda ikuti) baru saja menyinkronkan aktivitas trading terbarunya.`,
-              isRead: false,
-              timestamp: new Date().toISOString()
-            };
-            await notifRepo.create(newNotif as any);
-            if (req.db) {
-              if (!req.db.notifications) req.db.notifications = [];
-              req.db.notifications.unshift(newNotif);
-            }
-          }
-        }
-      } catch (notifErr) {
-        console.warn("Error notifying followers of MT5 sync:", notifErr);
-      }
+  //     // Notify followers of trading sync activity
+  //     try {
+  //       const userRepo = new UserRepository();
+  //       const user = await userRepo.findById(req.userId);
+  //       if (user) {
+  //         const followRepo = new FollowRepository();
+  //         const notifRepo = new NotificationRepository();
+  //         const followerIds = await followRepo.listFollowers(req.userId);
+  //         const authorFullName = `${user.firstName} ${user.lastName}`.trim();
+  //         for (const followerId of followerIds) {
+  //           const newNotif = {
+  //             id: "notify_mt5_sync_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+  //             toUserId: followerId,
+  //             fromUserId: req.userId,
+  //             fromUserName: authorFullName,
+  //             fromUserAvatar: user.avatar || "",
+  //             type: "friend_post",
+  //             message: `${authorFullName} (yang Anda ikuti) baru saja menyinkronkan aktivitas trading terbarunya.`,
+  //             isRead: false,
+  //             timestamp: new Date().toISOString()
+  //           };
+  //           await notifRepo.create(newNotif as any);
+  //           if (req.db) {
+  //             if (!req.db.notifications) req.db.notifications = [];
+  //             req.db.notifications.unshift(newNotif);
+  //           }
+  //         }
+  //       }
+  //     } catch (notifErr) {
+  //       console.warn("Error notifying followers of MT5 sync:", notifErr);
+  //     }
 
-      res.json(result);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  //     res.json(result);
+  //   } catch (err: any) {
+  //     res.status(500).json({ error: err.message });
+  //   }
+  // });
 
   // API: Test & Sync News API / RSS
   app.post("/api/admin/news/sync", authenticate, (req: any, res) => {
@@ -3531,7 +3534,7 @@ async function startServer() {
         toUserId: userId,
         fromUserId: sampleSender.id,
         fromUserName: `${sampleSender.firstName} ${sampleSender.lastName}`,
-        fromUserAvatar: sampleSender.avatar,
+        fromUserAvatar: sampleSender.avatar || "",
         type: "friend_request",
         message: "wants to connect with you",
         isRead: false,
@@ -3544,7 +3547,7 @@ async function startServer() {
         toUserId: userId,
         fromUserId: sampleSender.id,
         fromUserName: `${sampleSender.firstName} ${sampleSender.lastName}`,
-        fromUserAvatar: sampleSender.avatar,
+        fromUserAvatar: sampleSender.avatar || "",
         type: "friend_accepted",
         message: "accepted your connection request!",
         isRead: false,
@@ -3557,7 +3560,7 @@ async function startServer() {
         toUserId: userId,
         fromUserId: sampleSender.id,
         fromUserName: `${sampleSender.firstName} ${sampleSender.lastName}`,
-        fromUserAvatar: sampleSender.avatar,
+        fromUserAvatar: sampleSender.avatar || "",
         type: "message",
         message: "sent you a message: 'Hello! How is your XAUUSD market setup today?'",
         isRead: false,
@@ -3635,7 +3638,7 @@ async function startServer() {
         toUserId: userId,
         fromUserId: sampleSender.id,
         fromUserName: `${sampleSender.firstName} ${sampleSender.lastName}`,
-        fromUserAvatar: sampleSender.avatar,
+        fromUserAvatar: sampleSender.avatar || "",
         type: "like",
         message: "liked your technical analysis post",
         isRead: false,
