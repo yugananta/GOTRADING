@@ -1,288 +1,211 @@
+// src/services/metatrader.ts
+//
+// MetaTraderService — BFF layer.
+//
+// SEBELUMNYA: salah baca/tulis ke tabel 'Post' (tabel feed sosial).
+// SEKARANG:   baca langsung dari 'user_mt5_accounts' di Supabase
+//             (tabel yang sama yang dipakai BE-GOTRADING).
+//             connect/disconnect/trades di-proxy ke BE-GOTRADING API
+//             agar auto-reconnect & credential storage berjalan benar.
+
 import { supabase } from '../lib/supabaseClient.ts';
 
+// URL backend BE-GOTRADING. Dibaca dari env, fallback ke Railway URL.
+function getBackendUrl(): string {
+  // Dalam Railway, set env var BACKEND_API_URL di service GOTRADING.
+  // Contoh: https://be-gotrading-production.up.railway.app
+  if (typeof process !== 'undefined' && process.env) {
+    return (
+      process.env.BACKEND_API_URL ||
+      process.env.VITE_BACKEND_API_URL ||
+      'http://localhost:3004'
+    );
+  }
+  return 'http://localhost:3004';
+}
+
 export interface MetaTraderAccount {
-  id: string;
-  userId: string;
-  platform: 'MT4' | 'MT5';
+  akunId: number;
   login: string;
   server: string;
-  broker?: string;
+  broker: string;
+  platform: string;
+  currency: string;
+  leverage: number;
   balance: number;
   equity: number;
+  profit: number;
   margin: number;
   freeMargin: number;
-  leverage: number;
-  currency: string;
-  profit: number;
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+  marginLevel: number;
+  conn_status: 'connected' | 'reconnecting' | 'disconnected' | 'error';
+  credential_saved: boolean;
+  error_message: string | null;
+  last_connected_at: string | null;
 }
 
 export interface MetaTraderTrade {
-  id: string;
+  ticket: number;
   symbol: string;
-  type: 'BUY' | 'SELL';
+  type: string;
   lots: number;
   openPrice: number;
   closePrice: number;
   openTime: string;
-  closeTime: string;
+  closeTime: string | null;
   pl: number;
   comment: string;
 }
 
 export class MetaTraderService {
   /**
-   * Fetch connected MetaTrader account for a user
+   * Baca akun MT5 yang sudah terhubung dari tabel user_mt5_accounts.
+   * Kalau gateway sedang tidak bisa dihubungi, data snapshot dari DB
+   * tetap dikembalikan dengan conn_status 'reconnecting'.
    */
   async getConnectedAccount(userId: string): Promise<MetaTraderAccount | null> {
     try {
       const { data, error } = await supabase
-        .from('Post')
+        .from('user_mt5_accounts')
         .select('*')
-        .eq('userId', userId)
-        .contains('tags', ['__metatrader_account__'])
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching MetaTrader account from Supabase:', error);
+        console.error('[MetaTraderService] Error reading user_mt5_accounts:', error);
         return null;
       }
+      if (!data) return null;
 
-      if (data && data.chart) {
-        const account = typeof data.chart === 'string' ? JSON.parse(data.chart) : data.chart;
-        return {
-          id: data.id,
-          userId: data.userId,
-          platform: account.platform || 'MT5',
-          login: account.login || '',
-          server: account.server || '',
-          broker: account.broker || (account.server ? account.server.split('-')[0] : 'MetaTrader'),
-          balance: Number(account.balance) || 50000,
-          equity: Number(account.equity) || 50000,
-          margin: Number(account.margin) || 0,
-          freeMargin: Number(account.freeMargin) || 50000,
-          leverage: Number(account.leverage) || 100,
-          currency: account.currency || 'USD',
-          profit: Number(account.profit) || 0,
-          isVerified: account.isVerified !== false,
-          createdAt: data.timestamp || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      }
+      // Fallback snapshot saat gateway tidak bisa dihubungi
+      const snap = data.snapshot?.account || {};
+      const connStatus = data.conn_status || 'disconnected';
+
+      return {
+        akunId: data.akun_id,
+        login: String(data.akun_id),
+        server: data.server || snap.server || data.snapshot?.requested_server || '',
+        broker: data.broker || snap.broker || data.snapshot?.requested_broker || 'Axi',
+        platform: data.platform || 'MT5',
+        currency: snap.currency || 'USD',
+        leverage: Number(snap.leverage) || 100,
+        balance: Number(snap.balance) || 0,
+        equity: Number(snap.equity) || 0,
+        profit: Number(snap.profit) || 0,
+        margin: Number(snap.margin) || 0,
+        freeMargin: Number(snap.margin_free) || 0,
+        marginLevel: Number(snap.margin_level) || 0,
+        conn_status: connStatus as MetaTraderAccount['conn_status'],
+        credential_saved: Boolean(data.credential_saved),
+        error_message: data.error_message || null,
+        last_connected_at: data.last_connected_at || null,
+      };
     } catch (err) {
-      console.error('Unexpected error getting MetaTrader account:', err);
-    }
-    return null;
-  }
-
-  /**
-   * Save or update connected MetaTrader account details in Supabase
-   */
-  async connectAccount(userId: string, platform: 'MT4' | 'MT5', login: string, server: string, broker?: string): Promise<MetaTraderAccount> {
-    const existing = await this.getConnectedAccount(userId);
-
-    const derivedBroker = broker || (server.toLowerCase().includes('axi') ? 'Axi' : server.split('-')[0] || 'MetaTrader');
-
-    const accountData = {
-      platform,
-      login,
-      server,
-      broker: derivedBroker,
-      balance: existing?.balance || 50000.0,
-      equity: existing?.equity || 50000.0,
-      margin: existing?.margin || 0.0,
-      freeMargin: existing?.freeMargin || 50000.0,
-      leverage: 500,
-      currency: 'USD',
-      profit: existing?.profit || 0.0,
-      isVerified: true
-    };
-
-    if (existing) {
-      // Update existing post containing the account info
-      const { error } = await supabase
-        .from('Post')
-        .update({
-          content: `MetaTrader Account Connection: ${login} (${platform})`,
-          chart: accountData
-        })
-        .eq('id', existing.id);
-
-      if (error) {
-        console.error('Error updating MetaTrader account in Supabase:', error);
-      }
-
-      return {
-        id: existing.id,
-        userId,
-        ...accountData,
-        createdAt: existing.createdAt,
-        updatedAt: new Date().toISOString()
-      };
-    } else {
-      // Create new system post containing the account info
-      const id = 'mt_acc_' + Date.now();
-      const payload = {
-        id,
-        userId,
-        authorName: 'System Integration',
-        authorUsername: 'system',
-        content: `MetaTrader Account Connection: ${login} (${platform})`,
-        tags: ['__metatrader_account__'],
-        chart: accountData,
-        timestamp: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('Post')
-        .insert(payload);
-
-      if (error) {
-        console.error('Error creating MetaTrader account in Supabase:', error);
-      }
-
-      // Account connected successfully
-      return {
-        id,
-        userId,
-        ...accountData,
-        createdAt: payload.timestamp,
-        updatedAt: payload.timestamp
-      };
+      console.error('[MetaTraderService] Unexpected error:', err);
+      return null;
     }
   }
 
   /**
-   * Disconnect MetaTrader account for a user
+   * Proxy connect ke BE-GOTRADING.
+   * BE-GOTRADING menyimpan credential terenkripsi & menghubungkan ke gateway.
    */
-  async disconnectAccount(userId: string): Promise<void> {
+  async connectAccount(
+    userId: string,
+    platform: string,
+    login: string,
+    server: string,
+    broker?: string,
+    password?: string,
+    authToken?: string
+  ): Promise<MetaTraderAccount> {
+    const beUrl = getBackendUrl();
+    const res = await fetch(`${beUrl}/api/metatrader/connect`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify({ platform, login, password, server, broker }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || 'Failed to connect MT5 account');
+    }
+
+    // Setelah BE-GOTRADING berhasil, baca kembali dari Supabase
+    const account = await this.getConnectedAccount(userId);
+    if (!account) {
+      // Kalau row belum ada (race condition), kembalikan data minimal dari response
+      return data.account || { akunId: Number(login), login, server, broker: broker || '', platform, currency: 'USD', leverage: 100, balance: 0, equity: 0, profit: 0, margin: 0, freeMargin: 0, marginLevel: 0, conn_status: 'connected', credential_saved: true, error_message: null, last_connected_at: null };
+    }
+    return account;
+  }
+
+  /**
+   * Proxy disconnect ke BE-GOTRADING.
+   */
+  async disconnectAccount(userId: string, authToken?: string): Promise<void> {
+    const beUrl = getBackendUrl();
     try {
-      // Remove the account post
-      const { error: accError } = await supabase
-        .from('Post')
-        .delete()
-        .eq('userId', userId)
-        .contains('tags', ['__metatrader_account__']);
-
-      if (accError) console.error('Error deleting MT account:', accError);
-
-      // Remove the trades post
-      const { error: tradesError } = await supabase
-        .from('Post')
-        .delete()
-        .eq('userId', userId)
-        .contains('tags', ['__metatrader_trades__']);
-
-      if (tradesError) console.error('Error deleting MT trades:', tradesError);
+      await fetch(`${beUrl}/api/metatrader/disconnect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+      });
     } catch (err) {
-      console.error('Unexpected error disconnecting MetaTrader account:', err);
+      console.error('[MetaTraderService] Disconnect proxy error:', err);
     }
   }
 
   /**
-   * Fetch all synced trades for a user
+   * Ambil trades dari snapshot di DB (tidak perlu akses gateway).
    */
   async getTrades(userId: string): Promise<MetaTraderTrade[]> {
     try {
       const { data, error } = await supabase
-        .from('Post')
-        .select('*')
-        .eq('userId', userId)
-        .contains('tags', ['__metatrader_trades__'])
+        .from('user_mt5_accounts')
+        .select('snapshot')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching trades from Supabase:', error);
-        return [];
-      }
+      if (error || !data) return [];
 
-      if (data && data.chart) {
-        const trades = typeof data.chart === 'string' ? JSON.parse(data.chart) : data.chart;
-        if (Array.isArray(trades)) {
-          return trades as MetaTraderTrade[];
-        }
-      }
+      const trades = data.snapshot?.trades;
+      if (Array.isArray(trades)) return trades as MetaTraderTrade[];
     } catch (err) {
-      console.error('Unexpected error getting trades:', err);
+      console.error('[MetaTraderService] getTrades error:', err);
     }
     return [];
   }
 
   /**
-   * Save trades list to Supabase
+   * Sync: trigger BE-GOTRADING untuk sync ulang dari gateway,
+   * lalu kembalikan data terbaru dari DB.
    */
-  async saveTrades(userId: string, trades: MetaTraderTrade[]): Promise<void> {
+  async syncTrades(userId: string, authToken?: string): Promise<{ account: MetaTraderAccount | null; trades: MetaTraderTrade[] }> {
+    const beUrl = getBackendUrl();
     try {
-      const { data, error } = await supabase
-        .from('Post')
-        .select('id')
-        .eq('userId', userId)
-        .contains('tags', ['__metatrader_trades__'])
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error finding existing trades post:', error);
-        return;
-      }
-
-      if (data) {
-        // Update existing
-        await supabase
-          .from('Post')
-          .update({
-            chart: trades
-          })
-          .eq('id', data.id);
-      } else {
-        // Create new
-        const id = 'mt_trades_' + Date.now();
-        await supabase
-          .from('Post')
-          .insert({
-            id,
-            userId,
-            authorName: 'System Integration',
-            authorUsername: 'system',
-            content: `MetaTrader Trades List for User ${userId}`,
-            tags: ['__metatrader_trades__'],
-            chart: trades,
-            timestamp: new Date().toISOString()
-          });
-      }
+      await fetch(`${beUrl}/api/metatrader/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+      });
     } catch (err) {
-      console.error('Unexpected error saving trades:', err);
+      console.warn('[MetaTraderService] Sync proxy warning:', err);
     }
-  }
 
-  /**
-   * Perform real-time sync (recalculates account equity and summary metrics from actual stored trades)
-   */
-  async syncTrades(userId: string): Promise<{ account: MetaTraderAccount | null; trades: MetaTraderTrade[] }> {
     const account = await this.getConnectedAccount(userId);
-    if (!account) {
-      return { account: null, trades: [] };
-    }
-
     const trades = await this.getTrades(userId);
-
-    // Recalculate real account values based strictly on actual stored trades
-    let currentUnrealized = 0;
-    let margin = 0;
-
-    trades.forEach(t => {
-      if (!t.closeTime) {
-        currentUnrealized += (t.pl || 0);
-        margin += (t.lots || 0) * 200;
-      }
-    });
-
-    account.equity = Number((account.balance + currentUnrealized).toFixed(2));
-    account.profit = Number(currentUnrealized.toFixed(2));
-    account.margin = Number(margin.toFixed(2));
-    account.freeMargin = Number((account.equity - margin).toFixed(2));
-
     return { account, trades };
   }
 }

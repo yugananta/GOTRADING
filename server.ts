@@ -3333,6 +3333,7 @@ async function startServer() {
       const account = await mtService.getConnectedAccount(req.userId);
       res.json({ account });
     } catch (err: any) {
+      console.error('[MT5] getConnectedAccount error:', err.message);
       res.status(500).json({ error: err.message });
     }
   });
@@ -3344,8 +3345,9 @@ async function startServer() {
       return res.status(400).json({ error: "Missing required connection details" });
     }
     try {
+      const authToken = req.headers.authorization?.split(' ')[1];
       const mtService = new MetaTraderService();
-      const account = await mtService.connectAccount(req.userId, platform, login, server, broker);
+      const account = await mtService.connectAccount(req.userId, platform, login, server, broker, password, authToken);
 
       // Notify followers of MT5 connection activity
       try {
@@ -3388,8 +3390,9 @@ async function startServer() {
   // POST /api/metatrader/disconnect - Disconnect MetaTrader account
   app.post("/api/metatrader/disconnect", authenticate, async (req: any, res) => {
     try {
+      const authToken = req.headers.authorization?.split(' ')[1];
       const mtService = new MetaTraderService();
-      await mtService.disconnectAccount(req.userId);
+      await mtService.disconnectAccount(req.userId, authToken);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -3410,8 +3413,9 @@ async function startServer() {
   // POST /api/metatrader/sync - Sync trades & trigger pricing/new trades simulation
   app.post("/api/metatrader/sync", authenticate, async (req: any, res) => {
     try {
+      const authToken = req.headers.authorization?.split(' ')[1];
       const mtService = new MetaTraderService();
-      const result = await mtService.syncTrades(req.userId);
+      const result = await mtService.syncTrades(req.userId, authToken);
 
       // Notify followers of trading sync activity
       try {

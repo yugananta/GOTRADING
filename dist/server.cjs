@@ -1689,189 +1689,126 @@ var GroupRepository = class {
 };
 
 // src/services/metatrader.ts
+function getBackendUrl() {
+  if (typeof process !== "undefined" && process.env) {
+    return process.env.BACKEND_API_URL || process.env.VITE_BACKEND_API_URL || "http://localhost:3004";
+  }
+  return "http://localhost:3004";
+}
 var MetaTraderService = class {
   /**
-   * Fetch connected MetaTrader account for a user
+   * Baca akun MT5 yang sudah terhubung dari tabel user_mt5_accounts.
+   * Kalau gateway sedang tidak bisa dihubungi, data snapshot dari DB
+   * tetap dikembalikan dengan conn_status 'reconnecting'.
    */
   async getConnectedAccount(userId) {
     try {
-      const { data, error } = await supabase.from("Post").select("*").eq("userId", userId).contains("tags", ["__metatrader_account__"]).maybeSingle();
+      const { data, error } = await supabase.from("user_mt5_accounts").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (error) {
-        console.error("Error fetching MetaTrader account from Supabase:", error);
+        console.error("[MetaTraderService] Error reading user_mt5_accounts:", error);
         return null;
       }
-      if (data && data.chart) {
-        const account = typeof data.chart === "string" ? JSON.parse(data.chart) : data.chart;
-        return {
-          id: data.id,
-          userId: data.userId,
-          platform: account.platform || "MT5",
-          login: account.login || "",
-          server: account.server || "",
-          broker: account.broker || (account.server ? account.server.split("-")[0] : "MetaTrader"),
-          balance: Number(account.balance) || 5e4,
-          equity: Number(account.equity) || 5e4,
-          margin: Number(account.margin) || 0,
-          freeMargin: Number(account.freeMargin) || 5e4,
-          leverage: Number(account.leverage) || 100,
-          currency: account.currency || "USD",
-          profit: Number(account.profit) || 0,
-          isVerified: account.isVerified !== false,
-          createdAt: data.timestamp || (/* @__PURE__ */ new Date()).toISOString(),
-          updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-        };
-      }
+      if (!data) return null;
+      const snap = data.snapshot?.account || {};
+      const connStatus = data.conn_status || "disconnected";
+      return {
+        akunId: data.akun_id,
+        login: String(data.akun_id),
+        server: data.server || snap.server || data.snapshot?.requested_server || "",
+        broker: data.broker || snap.broker || data.snapshot?.requested_broker || "Axi",
+        platform: data.platform || "MT5",
+        currency: snap.currency || "USD",
+        leverage: Number(snap.leverage) || 100,
+        balance: Number(snap.balance) || 0,
+        equity: Number(snap.equity) || 0,
+        profit: Number(snap.profit) || 0,
+        margin: Number(snap.margin) || 0,
+        freeMargin: Number(snap.margin_free) || 0,
+        marginLevel: Number(snap.margin_level) || 0,
+        conn_status: connStatus,
+        credential_saved: Boolean(data.credential_saved),
+        error_message: data.error_message || null,
+        last_connected_at: data.last_connected_at || null
+      };
     } catch (err) {
-      console.error("Unexpected error getting MetaTrader account:", err);
-    }
-    return null;
-  }
-  /**
-   * Save or update connected MetaTrader account details in Supabase
-   */
-  async connectAccount(userId, platform, login, server, broker) {
-    const existing = await this.getConnectedAccount(userId);
-    const derivedBroker = broker || (server.toLowerCase().includes("axi") ? "Axi" : server.split("-")[0] || "MetaTrader");
-    const accountData = {
-      platform,
-      login,
-      server,
-      broker: derivedBroker,
-      balance: existing?.balance || 5e4,
-      equity: existing?.equity || 5e4,
-      margin: existing?.margin || 0,
-      freeMargin: existing?.freeMargin || 5e4,
-      leverage: 500,
-      currency: "USD",
-      profit: existing?.profit || 0,
-      isVerified: true
-    };
-    if (existing) {
-      const { error } = await supabase.from("Post").update({
-        content: `MetaTrader Account Connection: ${login} (${platform})`,
-        chart: accountData
-      }).eq("id", existing.id);
-      if (error) {
-        console.error("Error updating MetaTrader account in Supabase:", error);
-      }
-      return {
-        id: existing.id,
-        userId,
-        ...accountData,
-        createdAt: existing.createdAt,
-        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-      };
-    } else {
-      const id = "mt_acc_" + Date.now();
-      const payload = {
-        id,
-        userId,
-        authorName: "System Integration",
-        authorUsername: "system",
-        content: `MetaTrader Account Connection: ${login} (${platform})`,
-        tags: ["__metatrader_account__"],
-        chart: accountData,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString()
-      };
-      const { error } = await supabase.from("Post").insert(payload);
-      if (error) {
-        console.error("Error creating MetaTrader account in Supabase:", error);
-      }
-      return {
-        id,
-        userId,
-        ...accountData,
-        createdAt: payload.timestamp,
-        updatedAt: payload.timestamp
-      };
+      console.error("[MetaTraderService] Unexpected error:", err);
+      return null;
     }
   }
   /**
-   * Disconnect MetaTrader account for a user
+   * Proxy connect ke BE-GOTRADING.
+   * BE-GOTRADING menyimpan credential terenkripsi & menghubungkan ke gateway.
    */
-  async disconnectAccount(userId) {
+  async connectAccount(userId, platform, login, server, broker, password, authToken) {
+    const beUrl = getBackendUrl();
+    const res = await fetch(`${beUrl}/api/metatrader/connect`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      },
+      body: JSON.stringify({ platform, login, password, server, broker })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to connect MT5 account");
+    }
+    const account = await this.getConnectedAccount(userId);
+    if (!account) {
+      return data.account || { akunId: Number(login), login, server, broker: broker || "", platform, currency: "USD", leverage: 100, balance: 0, equity: 0, profit: 0, margin: 0, freeMargin: 0, marginLevel: 0, conn_status: "connected", credential_saved: true, error_message: null, last_connected_at: null };
+    }
+    return account;
+  }
+  /**
+   * Proxy disconnect ke BE-GOTRADING.
+   */
+  async disconnectAccount(userId, authToken) {
+    const beUrl = getBackendUrl();
     try {
-      const { error: accError } = await supabase.from("Post").delete().eq("userId", userId).contains("tags", ["__metatrader_account__"]);
-      if (accError) console.error("Error deleting MT account:", accError);
-      const { error: tradesError } = await supabase.from("Post").delete().eq("userId", userId).contains("tags", ["__metatrader_trades__"]);
-      if (tradesError) console.error("Error deleting MT trades:", tradesError);
+      await fetch(`${beUrl}/api/metatrader/disconnect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authToken ? { Authorization: `Bearer ${authToken}` } : {}
+        }
+      });
     } catch (err) {
-      console.error("Unexpected error disconnecting MetaTrader account:", err);
+      console.error("[MetaTraderService] Disconnect proxy error:", err);
     }
   }
   /**
-   * Fetch all synced trades for a user
+   * Ambil trades dari snapshot di DB (tidak perlu akses gateway).
    */
   async getTrades(userId) {
     try {
-      const { data, error } = await supabase.from("Post").select("*").eq("userId", userId).contains("tags", ["__metatrader_trades__"]).maybeSingle();
-      if (error) {
-        console.error("Error fetching trades from Supabase:", error);
-        return [];
-      }
-      if (data && data.chart) {
-        const trades = typeof data.chart === "string" ? JSON.parse(data.chart) : data.chart;
-        if (Array.isArray(trades)) {
-          return trades;
-        }
-      }
+      const { data, error } = await supabase.from("user_mt5_accounts").select("snapshot").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (error || !data) return [];
+      const trades = data.snapshot?.trades;
+      if (Array.isArray(trades)) return trades;
     } catch (err) {
-      console.error("Unexpected error getting trades:", err);
+      console.error("[MetaTraderService] getTrades error:", err);
     }
     return [];
   }
   /**
-   * Save trades list to Supabase
+   * Sync: trigger BE-GOTRADING untuk sync ulang dari gateway,
+   * lalu kembalikan data terbaru dari DB.
    */
-  async saveTrades(userId, trades) {
+  async syncTrades(userId, authToken) {
+    const beUrl = getBackendUrl();
     try {
-      const { data, error } = await supabase.from("Post").select("id").eq("userId", userId).contains("tags", ["__metatrader_trades__"]).maybeSingle();
-      if (error) {
-        console.error("Error finding existing trades post:", error);
-        return;
-      }
-      if (data) {
-        await supabase.from("Post").update({
-          chart: trades
-        }).eq("id", data.id);
-      } else {
-        const id = "mt_trades_" + Date.now();
-        await supabase.from("Post").insert({
-          id,
-          userId,
-          authorName: "System Integration",
-          authorUsername: "system",
-          content: `MetaTrader Trades List for User ${userId}`,
-          tags: ["__metatrader_trades__"],
-          chart: trades,
-          timestamp: (/* @__PURE__ */ new Date()).toISOString()
-        });
-      }
+      await fetch(`${beUrl}/api/metatrader/sync`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authToken ? { Authorization: `Bearer ${authToken}` } : {}
+        }
+      });
     } catch (err) {
-      console.error("Unexpected error saving trades:", err);
+      console.warn("[MetaTraderService] Sync proxy warning:", err);
     }
-  }
-  /**
-   * Perform real-time sync (recalculates account equity and summary metrics from actual stored trades)
-   */
-  async syncTrades(userId) {
     const account = await this.getConnectedAccount(userId);
-    if (!account) {
-      return { account: null, trades: [] };
-    }
     const trades = await this.getTrades(userId);
-    let currentUnrealized = 0;
-    let margin = 0;
-    trades.forEach((t) => {
-      if (!t.closeTime) {
-        currentUnrealized += t.pl || 0;
-        margin += (t.lots || 0) * 200;
-      }
-    });
-    account.equity = Number((account.balance + currentUnrealized).toFixed(2));
-    account.profit = Number(currentUnrealized.toFixed(2));
-    account.margin = Number(margin.toFixed(2));
-    account.freeMargin = Number((account.equity - margin).toFixed(2));
     return { account, trades };
   }
 };
@@ -4635,6 +4572,7 @@ ${originalPost.content}`,
       const account = await mtService.getConnectedAccount(req.userId);
       res.json({ account });
     } catch (err) {
+      console.error("[MT5] getConnectedAccount error:", err.message);
       res.status(500).json({ error: err.message });
     }
   });
@@ -4644,8 +4582,9 @@ ${originalPost.content}`,
       return res.status(400).json({ error: "Missing required connection details" });
     }
     try {
+      const authToken = req.headers.authorization?.split(" ")[1];
       const mtService = new MetaTraderService();
-      const account = await mtService.connectAccount(req.userId, platform, login, server, broker);
+      const account = await mtService.connectAccount(req.userId, platform, login, server, broker, password, authToken);
       try {
         const userRepo = new UserRepository();
         const user = await userRepo.findById(req.userId);
@@ -4683,8 +4622,9 @@ ${originalPost.content}`,
   });
   app.post("/api/metatrader/disconnect", authenticate, async (req, res) => {
     try {
+      const authToken = req.headers.authorization?.split(" ")[1];
       const mtService = new MetaTraderService();
-      await mtService.disconnectAccount(req.userId);
+      await mtService.disconnectAccount(req.userId, authToken);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -4701,8 +4641,9 @@ ${originalPost.content}`,
   });
   app.post("/api/metatrader/sync", authenticate, async (req, res) => {
     try {
+      const authToken = req.headers.authorization?.split(" ")[1];
       const mtService = new MetaTraderService();
-      const result = await mtService.syncTrades(req.userId);
+      const result = await mtService.syncTrades(req.userId, authToken);
       try {
         const userRepo = new UserRepository();
         const user = await userRepo.findById(req.userId);
