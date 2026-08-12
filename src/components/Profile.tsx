@@ -327,10 +327,10 @@ export const Profile: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser.id })
       })
-        .catch(err => console.error("Logout failed:", err))
         .finally(() => {
           setCurrentUser(null);
           localStorage.removeItem('tarapti_user');
+          localStorage.removeItem('accessToken');
         });
     }
   };

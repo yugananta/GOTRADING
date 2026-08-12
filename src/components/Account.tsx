@@ -446,6 +446,24 @@ export const Account: React.FC = () => {
             </div>
           </div>
 
+          {/* Warning: kredensial belum disimpan – minta user input ulang password */}
+          {activeAccount.credential_saved === false && connStatus !== 'reconnecting' && (
+            <div className="relative z-10 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5">
+              <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-amber-800">Sandi MT5 belum tersimpan</p>
+                <p className="text-[10px] text-amber-700 mt-0.5">Auto-reconnect tidak aktif. Hubungkan ulang akun ini untuk menyimpan sandi agar koneksi otomatis berjalan setelah server restart.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConnectForm(true)}
+                className="text-[10px] font-bold text-white bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer shrink-0"
+              >
+                Simpan Sandi
+              </button>
+            </div>
+          )}
+
           {/* Financial grid: skeleton saat reconnecting agar tidak tampilkan angka palsu/stale */}
           {connStatus === 'reconnecting' ? (
             <div className="grid grid-cols-2 gap-3 relative z-10">

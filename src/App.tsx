@@ -702,6 +702,7 @@ function MainAppLayout() {
         .finally(() => {
           setCurrentUser(null);
           localStorage.removeItem('tarapti_user');
+          localStorage.removeItem('accessToken');
           setIsProfileMenuOpen(false);
         });
     }
