@@ -702,7 +702,6 @@ function MainAppLayout() {
         .finally(() => {
           setCurrentUser(null);
           localStorage.removeItem('tarapti_user');
-          localStorage.removeItem('accessToken');
           setIsProfileMenuOpen(false);
         });
     }
@@ -731,12 +730,6 @@ function MainAppLayout() {
               <span className="text-xs font-bold text-slate-200 block">{currentUser.firstName} {currentUser.lastName}</span>
               <span className="text-[9px] text-slate-400">@{currentUser.username} • {t('common.administrator')}</span>
             </div>
-            <a
-              href="/logo-upload"
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 rounded-xl text-[10px] font-bold transition-all"
-            >
-              ⚙️ Upload Logo
-            </a>
             <button
               onClick={() => {
                 setCurrentUser(null);
@@ -1007,15 +1000,6 @@ function MainAppLayout() {
                   )}
                 </button>
 
-                <a
-                  href="/logo-upload"
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-lg transition border border-indigo-200/80 shadow-xs cursor-pointer shrink-0"
-                  title="Upload & Kelola Logo"
-                >
-                  <span>⚙️</span>
-                  <span className="hidden xs:inline">Logo</span>
-                </a>
-
                 {/* Language Flag Selector Icon */}
                 <div className="relative">
                   <button
@@ -1109,14 +1093,6 @@ function MainAppLayout() {
                               <UserIcon size={14} />
                               Edit Profile
                             </button>
-
-                            <a
-                              href="/logo-upload"
-                              className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition cursor-pointer"
-                            >
-                              <span className="text-sm">⚙️</span>
-                              Upload Logo
-                            </a>
                             
                             <button
                               onClick={handleLogout}
