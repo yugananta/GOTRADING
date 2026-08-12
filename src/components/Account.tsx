@@ -454,7 +454,15 @@ export const Account: React.FC = () => {
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">Account ID: <span className="font-bold text-slate-800">{account.login}</span> • Server: <span className="font-bold text-slate-800">{account.server}</span></p>
+            <p className="text-[11px] text-slate-500 font-medium">
+              Account ID:{' '}
+              {connStatus === 'reconnecting' ? (
+                <span className="inline-block w-20 h-3 bg-amber-200/70 rounded animate-pulse align-middle" title="Verifying account…" />
+              ) : (
+                <span className="font-bold text-slate-800">{account.login}</span>
+              )}
+              {' '}• Server: <span className="font-bold text-slate-800">{account.server}</span>
+            </p>
           </div>
           <div className="flex gap-2">
             <button
@@ -475,64 +483,78 @@ export const Account: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 relative z-10">
-          <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Balance</div>
-            <div className="text-sm font-black text-slate-800">{formatCurrency(account.balance, account.currency)}</div>
-          </div>
-          <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equity</div>
-            <div className="text-sm font-black text-slate-800">{formatCurrency(account.equity, account.currency)}</div>
-          </div>
-          <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Floating Profit</div>
-            <div className={`text-sm font-black ${account.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {account.profit > 0 ? '+' : ''}{formatCurrency(account.profit, account.currency)}
-            </div>
-          </div>
-          <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
-            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Margin Level</div>
-            <div className="text-sm font-black text-slate-800">{account.marginLevel ? `${account.marginLevel.toFixed(2)}%` : '—'}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Trades List */}
-      <div className="bg-white/70 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)]">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
-          <Activity size={12} /> Recent Trades
-        </h3>
-
-        {trades.length === 0 ? (
-          <div className="text-center py-6 text-slate-400 text-xs font-medium bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed">
-            No recent trades found
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {trades.map(trade => (
-              <div key={trade.id} className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 hover:border-indigo-100 transition">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${(trade.type || '').toUpperCase().includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                    {(trade.type || '').toUpperCase().includes('BUY') ? 'BUY' : 'SELL'}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-800">{trade.symbol}</div>
-                    <div className="text-[9px] text-slate-500 font-medium">Vol: {trade.lots}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`text-xs font-black ${trade.pl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {trade.pl > 0 ? '+' : ''}{formatCurrency(trade.pl, account.currency)}
-                  </div>
-                  <div className="text-[8px] text-slate-400 font-medium mt-0.5">
-                    {trade.closeTime ? new Date(trade.closeTime).toLocaleDateString(navigator.language || 'id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).replace(/\s*(AM|PM|am|pm)/gi, '') : 'Open'}
-                  </div>
-                </div>
+        {/* Financial grid: skeleton saat reconnecting agar tidak tampilkan angka palsu/stale */}
+        {connStatus === 'reconnecting' ? (
+          <div className="grid grid-cols-2 gap-3 relative z-10">
+            {['Balance', 'Equity', 'Floating Profit', 'Margin Level'].map(label => (
+              <div key={label} className="bg-white/60 border border-amber-100 rounded-2xl p-3">
+                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">{label}</div>
+                <div className="h-4 bg-amber-100 rounded animate-pulse w-3/4" />
               </div>
             ))}
           </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 relative z-10">
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Balance</div>
+              <div className="text-sm font-black text-slate-800">{formatCurrency(account.balance, account.currency)}</div>
+            </div>
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equity</div>
+              <div className="text-sm font-black text-slate-800">{formatCurrency(account.equity, account.currency)}</div>
+            </div>
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Floating Profit</div>
+              <div className={`text-sm font-black ${account.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {account.profit > 0 ? '+' : ''}{formatCurrency(account.profit, account.currency)}
+              </div>
+            </div>
+            <div className="bg-white/60 border border-slate-100 rounded-2xl p-3">
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Margin Level</div>
+              <div className="text-sm font-black text-slate-800">{account.marginLevel ? `${account.marginLevel.toFixed(2)}%` : '—'}</div>
+            </div>
+          </div>
         )}
       </div>
+
+      {/* Trades List: hanya tampil saat koneksi confirmed (bukan reconnecting) */}
+      {connStatus !== 'reconnecting' && (
+        <div className="bg-white/70 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)]">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-1.5">
+            <Activity size={12} /> Recent Trades
+          </h3>
+
+          {trades.length === 0 ? (
+            <div className="text-center py-6 text-slate-400 text-xs font-medium bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed">
+              No recent trades found
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {trades.map(trade => (
+                <div key={trade.id} className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 hover:border-indigo-100 transition">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${(trade.type || '').toUpperCase().includes('BUY') ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                      {(trade.type || '').toUpperCase().includes('BUY') ? 'BUY' : 'SELL'}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">{trade.symbol}</div>
+                      <div className="text-[9px] text-slate-500 font-medium">Vol: {trade.lots}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xs font-black ${trade.pl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {trade.pl > 0 ? '+' : ''}{formatCurrency(trade.pl, account.currency)}
+                    </div>
+                    <div className="text-[8px] text-slate-400 font-medium mt-0.5">
+                      {trade.closeTime ? new Date(trade.closeTime).toLocaleDateString(navigator.language || 'id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).replace(/\s*(AM|PM|am|pm)/gi, '') : 'Open'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
