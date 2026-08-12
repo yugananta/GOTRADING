@@ -229,12 +229,11 @@ export class ProfileRepository implements IProfileRepository {
 export class SessionRepository implements ISessionRepository {
   async create(session: Omit<Session, 'id'>): Promise<Session> {
     const id = crypto.randomUUID();
-    const { id: _, ...sessionData } = session as any;
-    const record = { id, ...sessionData } as Session;
+    const record = { id, ...session } as Session;
 
     try {
       const { data, error } = await supabase
-        .from('Session')
+        .from('sessions')
         .insert(record)
         .select()
         .single();
@@ -251,7 +250,7 @@ export class SessionRepository implements ISessionRepository {
   async getByRefreshTokenHash(hash: string): Promise<Session | null> {
     try {
       const { data, error } = await supabase
-        .from('Session')
+        .from('sessions')
         .select('*')
         .eq('refresh_token_hash', hash)
         .maybeSingle();
@@ -268,7 +267,7 @@ export class SessionRepository implements ISessionRepository {
   async revoke(id: string): Promise<void> {
     try {
       await supabase
-        .from('Session')
+        .from('sessions')
         .update({ revoked_at: new Date().toISOString() })
         .eq('id', id);
     } catch (e: any) {
@@ -279,7 +278,7 @@ export class SessionRepository implements ISessionRepository {
   async listByUserId(userId: string): Promise<Session[]> {
     try {
       const { data, error } = await supabase
-        .from('Session')
+        .from('sessions')
         .select('*')
         .eq('user_id', userId)
         .is('revoked_at', null);
@@ -296,7 +295,7 @@ export class SessionRepository implements ISessionRepository {
   async revokeAllByUserId(userId: string): Promise<void> {
     try {
       await supabase
-        .from('Session')
+        .from('sessions')
         .update({ revoked_at: new Date().toISOString() })
         .eq('user_id', userId)
         .is('revoked_at', null);
