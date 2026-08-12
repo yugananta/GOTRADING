@@ -24,6 +24,8 @@ export class PostRepository implements IPostRepository {
             
             if (groupId) {
                 query = query.eq('groupId', groupId);
+            } else if (groupId === null || groupId === 'null') {
+                query = query.is('groupId', null);
             }
 
             if (userId) {
@@ -90,6 +92,9 @@ export class PostRepository implements IPostRepository {
 
         if (tag) {
             results = results.filter(p => p.tags && p.tags.includes(tag));
+        } else {
+            // Exclude internal system posts (e.g. MetaTrader storage) from public social feed
+            results = results.filter(p => !p.tags || (!p.tags.includes('__metatrader_account__') && !p.tags.includes('__metatrader_trades__')));
         }
 
         if (page !== undefined) {

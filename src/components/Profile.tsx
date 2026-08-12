@@ -327,10 +327,10 @@ export const Profile: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser.id })
       })
+        .catch(err => console.error("Logout failed:", err))
         .finally(() => {
           setCurrentUser(null);
           localStorage.removeItem('tarapti_user');
-          localStorage.removeItem('accessToken');
         });
     }
   };
@@ -415,7 +415,7 @@ export const Profile: React.FC = () => {
 
           {/* Hover Overlay Hint */}
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1.5 z-15">
-            <Settings size={14} className="animate-spin-slow" />
+            <Image size={14} className="animate-pulse" />
             <span>Ubah Background Profile</span>
           </div>
           
@@ -427,7 +427,7 @@ export const Profile: React.FC = () => {
               className="p-2 bg-white/80 dark:bg-black/60 backdrop-blur-md text-slate-700 dark:text-gray-200 hover:text-slate-900 dark:hover:text-white rounded-full transition border border-white/50 shadow-sm cursor-pointer flex items-center justify-center"
               title="Ubah Background Profile"
             >
-              <Settings size={15} />
+              <Image size={15} />
             </button>
           </div>
         </div>
@@ -1022,12 +1022,6 @@ export const Profile: React.FC = () => {
                     <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
                       Logo ini akan tampil sebagai ikon pop-up pada layar notifikasi perangkat Anda.
                     </p>
-                    <a
-                      href="/logo-upload"
-                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
-                    >
-                      ⚙️ Kelola & Upload Logo
-                    </a>
                   </div>
                 </div>
 
