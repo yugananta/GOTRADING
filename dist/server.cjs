@@ -344,7 +344,7 @@ var SessionRepository = class {
     const { id: _, ...sessionData } = session;
     const record = { id, ...sessionData };
     try {
-      const { data, error } = await supabase.from("sessions").insert(record).select().single();
+      const { data, error } = await supabase.from("Session").insert(record).select().single();
       if (!error && data) {
         return data;
       }
@@ -355,7 +355,7 @@ var SessionRepository = class {
   }
   async getByRefreshTokenHash(hash) {
     try {
-      const { data, error } = await supabase.from("sessions").select("*").eq("refresh_token_hash", hash).maybeSingle();
+      const { data, error } = await supabase.from("Session").select("*").eq("refresh_token_hash", hash).maybeSingle();
       if (!error && data) {
         return data;
       }
@@ -366,14 +366,14 @@ var SessionRepository = class {
   }
   async revoke(id) {
     try {
-      await supabase.from("sessions").update({ revoked_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", id);
+      await supabase.from("Session").update({ revoked_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", id);
     } catch (e) {
       console.error("Failed to revoke session in Supabase:", e?.message || e);
     }
   }
   async listByUserId(userId) {
     try {
-      const { data, error } = await supabase.from("sessions").select("*").eq("user_id", userId).is("revoked_at", null);
+      const { data, error } = await supabase.from("Session").select("*").eq("user_id", userId).is("revoked_at", null);
       if (!error && data) {
         return data;
       }
@@ -384,7 +384,7 @@ var SessionRepository = class {
   }
   async revokeAllByUserId(userId) {
     try {
-      await supabase.from("sessions").update({ revoked_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("user_id", userId).is("revoked_at", null);
+      await supabase.from("Session").update({ revoked_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("user_id", userId).is("revoked_at", null);
     } catch (e) {
       console.error("Failed to revoke all sessions in Supabase:", e?.message || e);
     }
