@@ -333,7 +333,7 @@ export const Account: React.FC = () => {
         </div>
 
         <div className="pt-2 flex items-center gap-2">
-          {showConnectForm && !account && (
+          {showConnectForm && (
             <button
               type="button"
               onClick={() => { setShowConnectForm(false); setError(null); }}
@@ -379,6 +379,36 @@ export const Account: React.FC = () => {
           </div>
         )}
 
+        {connStatus === 'disconnected' && (
+          account?.credential_saved ? (
+            <div className="relative z-10 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2">
+              <div className="flex items-start gap-2 text-amber-700 text-xs">
+                <RefreshCw size={14} className="shrink-0 mt-0.5 animate-spin" />
+                <p>Koneksi MT5 terputus. Menunggu auto-reconnect...</p>
+              </div>
+              <button
+                onClick={retryReconnect}
+                className="shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-[10px] font-bold rounded-lg transition cursor-pointer"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          ) : (
+            <div className="relative z-10 mb-3 p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-2">
+              <div className="flex items-start gap-2 text-slate-700 text-xs">
+                <Unplug size={14} className="shrink-0 mt-0.5 text-slate-500" />
+                <p>Koneksi terputus dan password tidak tersimpan. Silakan hubungkan ulang akun Anda.</p>
+              </div>
+              <button
+                onClick={() => setShowConnectForm(true)}
+                className="shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold rounded-lg transition cursor-pointer"
+              >
+                Hubungkan Ulang
+              </button>
+            </div>
+          )
+        )}
+
         {connStatus === 'error' && (
           <div className="relative z-10 mb-3 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between gap-2">
             <div className="flex items-start gap-2 text-rose-700 text-xs">
@@ -401,6 +431,10 @@ export const Account: React.FC = () => {
               ) : connStatus === 'error' ? (
                 <span className="bg-rose-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-rose-500/10" title="Connection error. Reconnect your MT5 account.">
                   <AlertCircle size={10} /> Connection Error
+                </span>
+              ) : connStatus === 'disconnected' ? (
+                <span className="bg-slate-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-slate-500/10" title="MT5 Account is disconnected.">
+                  <Unplug size={10} /> Disconnected
                 </span>
               ) : (
                 <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
@@ -594,10 +628,10 @@ export const Account: React.FC = () => {
 
             {/* CARD 1: CONNECT ACCOUNT (RESTORED ORIGINAL LAYOUT) */}
             <div>
-              {account ? (
-                renderConnectedOverview()
-              ) : showConnectForm ? (
+              {showConnectForm || (account && connStatus === 'error') ? (
                 renderConnectForm()
+              ) : account ? (
+                renderConnectedOverview()
               ) : (
                 <div className="h-full bg-[#EFF2F6]/90 dark:bg-slate-900/60 backdrop-blur-md border border-[#E2E8F0] dark:border-slate-800 rounded-3xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden flex flex-col items-center text-center justify-between">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
