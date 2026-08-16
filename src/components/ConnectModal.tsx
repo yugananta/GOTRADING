@@ -30,6 +30,15 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({ isOpen, onClose }) =
     setIsSubmitting(true);
 
     try {
+      const storedAccessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      const storedRefreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+
+      console.log('[ConnectModal.tsx] [AUTH-DIAGNOSTIC-BEFORE-CONNECT]', {
+        accessToken: storedAccessToken ? `EXISTS (length: ${storedAccessToken.length}, startsWith: ${storedAccessToken.substring(0, 10)}...)` : 'NULL/EMPTY',
+        refreshToken: storedRefreshToken ? `EXISTS (length: ${storedRefreshToken.length}, startsWith: ${storedRefreshToken.substring(0, 10)}...)` : 'NULL/EMPTY',
+        timestamp: new Date().toISOString()
+      });
+
       const platform = broker === 'metatrader4' ? 'MT4' : 'MT5';
       const res = await apiFetch('/api/metatrader/connect', {
         method: 'POST',

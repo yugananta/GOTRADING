@@ -1320,6 +1320,7 @@ var import_crypto3 = __toESM(require("crypto"), 1);
 // src/utils/auth.ts
 var import_jsonwebtoken = __toESM(require("jsonwebtoken"), 1);
 var getAccessSecret = () => process.env.JWT_ACCESS_SECRET || process.env.ACCESS_SECRET || "fallback_access_secret";
+var getRefreshSecret = () => process.env.JWT_REFRESH_SECRET || process.env.REFRESH_SECRET || "fallback_refresh_secret";
 var generateAccessToken = (userOrId) => {
   const userId = typeof userOrId === "string" ? userOrId : userOrId.id || userOrId.userId || userOrId.sub || "";
   const email = typeof userOrId === "object" ? userOrId.email : void 0;
@@ -1332,6 +1333,10 @@ var generateAccessToken = (userOrId) => {
   };
   if (email) payload.email = email;
   return import_jsonwebtoken.default.sign(payload, getAccessSecret(), { expiresIn: "15m" });
+};
+var generateRefreshToken = (userOrId) => {
+  const userId = typeof userOrId === "string" ? userOrId : userOrId.id || userOrId.userId || userOrId.sub || "";
+  return import_jsonwebtoken.default.sign({ userId, sub: userId, id: userId }, getRefreshSecret(), { expiresIn: "30d" });
 };
 
 // src/services/AuthService.ts
@@ -3096,9 +3101,18 @@ INSTRUCTIONS:
         browser: "unknown",
         os: "unknown"
       };
-      let loginResult = { accessToken: generateAccessToken({ id: user.id, email: user.email, role: "user" }), refreshToken: "" };
+      let loginResult = {
+        accessToken: generateAccessToken({ id: user.id, email: user.email, role: "user" }),
+        refreshToken: generateRefreshToken({ id: user.id, email: user.email, role: "user" })
+      };
       try {
-        loginResult = await authService.login(email, password, ip, device);
+        const fullLogin = await authService.login(email, password, ip, device);
+        if (fullLogin?.accessToken) {
+          loginResult.accessToken = fullLogin.accessToken;
+        }
+        if (fullLogin?.refreshToken) {
+          loginResult.refreshToken = fullLogin.refreshToken;
+        }
       } catch (loginErr) {
         console.warn("Auto-login after register failed to create session:", loginErr);
       }

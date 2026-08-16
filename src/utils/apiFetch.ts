@@ -99,8 +99,8 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   let token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
 
-  // 1. Proactive auto-refresh if token will expire in < 2 minutes (120s) or already expired
-  if (!isAuthEndpoint && token && refreshToken && isTokenExpiringSoon(token, 120)) {
+  // 1. Proactive auto-refresh if token is missing, already expired, or expiring in < 2 minutes (120s)
+  if (!isAuthEndpoint && refreshToken && (!token || isTokenExpiringSoon(token, 120))) {
     const refreshed = await refreshAuthToken();
     if (refreshed) {
       token = refreshed;
@@ -116,6 +116,8 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else if (!isAuthEndpoint) {
+    console.warn(`[apiFetch] WARN: Sending request to ${url} without Authorization Bearer token! (accessToken was null)`);
   }
 
   let response = await fetch(url, { ...options, headers });

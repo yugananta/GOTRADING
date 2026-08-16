@@ -200,6 +200,16 @@ export const Account: React.FC = () => {
     setConnectStepText(t('account.connecting') || 'Connecting to MT5...');
 
     try {
+      const storedAccessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      const storedRefreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+
+      console.log('[Account.tsx] [AUTH-DIAGNOSTIC-BEFORE-CONNECT]', {
+        accessToken: storedAccessToken ? `EXISTS (length: ${storedAccessToken.length}, startsWith: ${storedAccessToken.substring(0, 10)}...)` : 'NULL/EMPTY',
+        refreshToken: storedRefreshToken ? `EXISTS (length: ${storedRefreshToken.length}, startsWith: ${storedRefreshToken.substring(0, 10)}...)` : 'NULL/EMPTY',
+        currentUser: currentUser ? { id: currentUser.id, email: currentUser.email, username: currentUser.username } : 'NULL',
+        timestamp: new Date().toISOString()
+      });
+
       const payload = { 
         platform: 'MT5',
         login, 

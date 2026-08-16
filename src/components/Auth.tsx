@@ -259,12 +259,23 @@ export const Auth: React.FC = () => {
       }, res, resData);
 
       if (res.ok) {
-        if (resData.token || resData.accessToken) {
-          localStorage.setItem('accessToken', resData.token || resData.accessToken);
+        const receivedAccessToken = resData.token || resData.accessToken;
+        const receivedRefreshToken = resData.refreshToken;
+
+        if (receivedAccessToken) {
+          localStorage.setItem('accessToken', receivedAccessToken);
         }
-        if (resData.refreshToken) {
-          localStorage.setItem('refreshToken', resData.refreshToken);
+        if (receivedRefreshToken) {
+          localStorage.setItem('refreshToken', receivedRefreshToken);
         }
+
+        console.log('[Auth.tsx] [POST-REGISTER-AUTH-STORAGE]', {
+          savedAccessToken: receivedAccessToken ? `SAVED (length: ${receivedAccessToken.length}, startsWith: ${receivedAccessToken.substring(0, 10)}...)` : 'MISSING',
+          savedRefreshToken: receivedRefreshToken ? `SAVED (length: ${receivedRefreshToken.length}, startsWith: ${receivedRefreshToken.substring(0, 10)}...)` : 'MISSING',
+          user: resData.user?.email || resData.user?.id,
+          timestamp: new Date().toISOString()
+        });
+
         setSuccessMsg('Registration successful! Welcome to Tarapti...');
         setTimeout(() => {
           setCurrentUser(resData.user);

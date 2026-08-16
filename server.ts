@@ -19,7 +19,7 @@ import { ConnectionRepository } from './src/repositories/ConnectionRepository.ts
 import { StoryRepository } from './src/repositories/StoryRepository.ts';
 import { AuthService } from './src/services/AuthService.ts';
 import { authenticate } from './src/middleware/authMiddleware.ts';
-import { generateAccessToken } from './src/utils/auth.ts';
+import { generateAccessToken, generateRefreshToken } from './src/utils/auth.ts';
 import { supabase } from './src/lib/supabaseClient.ts';
 import { LocationRepository } from './src/repositories/LocationRepository.ts';
 import { GroupRepository } from './src/repositories/GroupRepository.ts';
@@ -1631,9 +1631,18 @@ INSTRUCTIONS:
         os: 'unknown'
       };
 
-      let loginResult = { accessToken: generateAccessToken({ id: user.id, email: user.email, role: 'user' }), refreshToken: '' };
+      let loginResult = { 
+        accessToken: generateAccessToken({ id: user.id, email: user.email, role: 'user' }), 
+        refreshToken: generateRefreshToken({ id: user.id, email: user.email, role: 'user' }) 
+      };
       try {
-        loginResult = await authService.login(email, password, ip, device);
+        const fullLogin = await authService.login(email, password, ip, device);
+        if (fullLogin?.accessToken) {
+          loginResult.accessToken = fullLogin.accessToken;
+        }
+        if (fullLogin?.refreshToken) {
+          loginResult.refreshToken = fullLogin.refreshToken;
+        }
       } catch (loginErr) {
         console.warn('Auto-login after register failed to create session:', loginErr);
       }
