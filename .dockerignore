@@ -1,0 +1,8 @@
+node_modules
+.git
+.github
+*.log
+android
+tarapti-android
+app
+android_backup

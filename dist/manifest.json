@@ -1,0 +1,21 @@
+{
+  "short_name": "Tarapti",
+  "name": "Tarapti - Trader Social Network",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/192/000000/bullish.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://img.icons8.com/color/512/000000/bullish.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0B0E14",
+  "theme_color": "#6366F1",
+  "display": "standalone",
+  "orientation": "portrait"
+}
