@@ -208,16 +208,29 @@ export const Journal: React.FC = () => {
   const [activeAccountInfo, setActiveAccountInfo] = useState<any>(null);
   const [trades, setTrades] = useState<any[]>([]);
   const [loadingTrades, setLoadingTrades] = useState(false);
+  const latestRequestIdRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchTradesAndAccount = async (targetLoginOrId?: string) => {
+    const requestId = ++latestRequestIdRef.current;
+    
+    // Abort previous in-flight requests if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoadingTrades(true);
     try {
       const currentActiveLogin = targetLoginOrId || activeAccountLogin || activeAccount?.login || connectedAccounts?.[0]?.login;
       
       if (!currentActiveLogin && !activeAccount?.id) {
         console.log("[Journal.tsx] No active trading account connected or selected.");
-        setActiveAccountInfo(null);
-        setTrades([]);
+        if (latestRequestIdRef.current === requestId) {
+          setActiveAccountInfo(null);
+          setTrades([]);
+        }
         return;
       }
 
@@ -232,17 +245,15 @@ export const Journal: React.FC = () => {
         ? `?login=${encodeURIComponent(currentActiveLogin)}&accountId=${encodeURIComponent(realAccountId || '')}`
         : (realAccountId ? `?accountId=${encodeURIComponent(realAccountId)}` : '');
 
-      console.log(`[Journal.tsx] Fetching account info and trades for login: ${currentActiveLogin || 'default'} (ID: ${realAccountId})`);
+      console.log(`[Journal.tsx] [Req #${requestId}] Fetching account info and trades for login: ${currentActiveLogin || 'default'} (ID: ${realAccountId})`);
 
       // 1. Fetch account info
-      const accRes = await apiFetch(`/api/metatrader/account${queryParam}`);
+      const accRes = await apiFetch(`/api/metatrader/account${queryParam}`, { signal: controller.signal });
       if (accRes.ok) {
         const data = await accRes.json();
         const accs = data.accounts || (data.account ? [data.account] : (data.data?.accounts || (data.data?.account ? [data.data.account] : [])));
-        console.log('[Journal.tsx] [INVESTIGATION] Raw response from GET /api/metatrader/account:', JSON.stringify(data, null, 2));
-        if (accs && accs.length > 0) {
+        if (latestRequestIdRef.current === requestId && accs && accs.length > 0) {
           const found = currentActiveLogin ? accs.find((a: any) => a.login === currentActiveLogin || a.id === currentActiveLogin) : accs[0];
-          console.log('[Journal.tsx] [INVESTIGATION] Selected activeAccountInfo:', JSON.stringify(found || accs[0], null, 2));
           setActiveAccountInfo(found || accs[0]);
         }
       }
@@ -255,18 +266,26 @@ export const Journal: React.FC = () => {
       if (realAccountId) {
         queryParams.set('accountId', realAccountId);
       }
-      const res = await apiFetch(`/api/metatrader/trades?${queryParams.toString()}`);
+      const res = await apiFetch(`/api/metatrader/trades?${queryParams.toString()}`, { signal: controller.signal });
       const isJson = res.headers.get('content-type')?.includes('application/json');
       if (res.ok && isJson) {
         const data = await res.json();
         const tradesList = data.trades || data.data?.trades || (Array.isArray(data) ? data : []);
-        console.log(`[Journal.tsx] Loaded ${tradesList.length} trades for account ${currentActiveLogin || 'default'}`);
-        setTrades(tradesList);
+        if (latestRequestIdRef.current === requestId) {
+          console.log(`[Journal.tsx] [Req #${requestId}] Loaded ${tradesList.length} trades for account ${currentActiveLogin || 'default'}`);
+          setTrades(tradesList);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        console.log(`[Journal.tsx] [Req #${requestId}] Request aborted in favor of a newer request.`);
+        return;
+      }
       console.error("[Journal.tsx] Error fetching trades and account info:", err);
     } finally {
-      setLoadingTrades(false);
+      if (latestRequestIdRef.current === requestId) {
+        setLoadingTrades(false);
+      }
     }
   };
 
@@ -309,11 +328,8 @@ export const Journal: React.FC = () => {
   };
 
   useEffect(() => {
-    // Reset state first to prevent stale previous account data from lingering
     const targetLogin = activeAccountLogin || activeAccount?.login;
     if (targetLogin) {
-      setTrades([]);
-      setActiveAccountInfo(null);
       fetchTradesAndAccount(targetLogin);
     } else if (connectedAccounts && connectedAccounts.length > 0) {
       fetchTradesAndAccount(connectedAccounts[0].login);
@@ -321,6 +337,12 @@ export const Journal: React.FC = () => {
       setTrades([]);
       setActiveAccountInfo(null);
     }
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [activeAccountLogin, activeAccount?.login, activeAccount?.id]);
 
   // Helper to identify balance transactions (Deposits / Withdrawals / Credits)
@@ -381,8 +403,8 @@ export const Journal: React.FC = () => {
   const currentEffectiveBalance = useMemo(() => {
     if (typeof activeAccountInfo?.balance === 'number') return activeAccountInfo.balance;
     if (typeof activeAccount?.balance === 'number') return activeAccount.balance;
-    return currentBalanceValue > 0 ? currentBalanceValue : ((connectedBroker as any)?.balance ?? 0);
-  }, [activeAccountInfo, activeAccount, currentBalanceValue, connectedBroker]);
+    return 0;
+  }, [activeAccountInfo, activeAccount]);
 
   const balanceDeals = useMemo(() => trades.filter(t => isBalanceDeal(t)), [trades]);
   const totalDepositsAmount = useMemo(() => {
