@@ -212,8 +212,15 @@ export const Journal: React.FC = () => {
   const fetchTradesAndAccount = async (targetLoginOrId?: string) => {
     setLoadingTrades(true);
     try {
-      const currentActiveLogin = targetLoginOrId || activeAccountLogin || activeAccount?.login;
+      const currentActiveLogin = targetLoginOrId || activeAccountLogin || activeAccount?.login || connectedAccounts?.[0]?.login;
       
+      if (!currentActiveLogin && !activeAccount?.id) {
+        console.log("[Journal.tsx] No active trading account connected or selected.");
+        setActiveAccountInfo(null);
+        setTrades([]);
+        return;
+      }
+
       // Find matching account in connectedAccounts or fallback to activeAccount to get the real UUID id
       const matchingAccount = connectedAccounts?.find(
         (a: any) => a.login === currentActiveLogin || a.id === currentActiveLogin
@@ -222,8 +229,8 @@ export const Journal: React.FC = () => {
       const realAccountId = matchingAccount?.id || currentActiveLogin;
 
       const queryParam = currentActiveLogin 
-        ? `?login=${encodeURIComponent(currentActiveLogin)}&accountId=${encodeURIComponent(realAccountId)}`
-        : '';
+        ? `?login=${encodeURIComponent(currentActiveLogin)}&accountId=${encodeURIComponent(realAccountId || '')}`
+        : (realAccountId ? `?accountId=${encodeURIComponent(realAccountId)}` : '');
 
       console.log(`[Journal.tsx] Fetching account info and trades for login: ${currentActiveLogin || 'default'} (ID: ${realAccountId})`);
 
@@ -232,8 +239,10 @@ export const Journal: React.FC = () => {
       if (accRes.ok) {
         const data = await accRes.json();
         const accs = data.accounts || (data.account ? [data.account] : (data.data?.accounts || (data.data?.account ? [data.data.account] : [])));
+        console.log('[Journal.tsx] [INVESTIGATION] Raw response from GET /api/metatrader/account:', JSON.stringify(data, null, 2));
         if (accs && accs.length > 0) {
           const found = currentActiveLogin ? accs.find((a: any) => a.login === currentActiveLogin || a.id === currentActiveLogin) : accs[0];
+          console.log('[Journal.tsx] [INVESTIGATION] Selected activeAccountInfo:', JSON.stringify(found || accs[0], null, 2));
           setActiveAccountInfo(found || accs[0]);
         }
       }
@@ -242,6 +251,8 @@ export const Journal: React.FC = () => {
       const queryParams = new URLSearchParams();
       if (currentActiveLogin) {
         queryParams.set('login', currentActiveLogin);
+      }
+      if (realAccountId) {
         queryParams.set('accountId', realAccountId);
       }
       const res = await apiFetch(`/api/metatrader/trades?${queryParams.toString()}`);
@@ -263,7 +274,7 @@ export const Journal: React.FC = () => {
 
   const handleSyncMetaTrader = async () => {
     setLoadingTrades(true);
-    const currentActiveLogin = activeAccountLogin || activeAccount?.login;
+    const currentActiveLogin = activeAccountLogin || activeAccount?.login || connectedAccounts?.[0]?.login;
     const queryParams = new URLSearchParams();
     if (currentActiveLogin) {
       queryParams.set('login', currentActiveLogin);
@@ -298,8 +309,19 @@ export const Journal: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTradesAndAccount(activeAccountLogin || activeAccount?.login);
-  }, [activeAccountLogin, activeAccount?.login]);
+    // Reset state first to prevent stale previous account data from lingering
+    const targetLogin = activeAccountLogin || activeAccount?.login;
+    if (targetLogin) {
+      setTrades([]);
+      setActiveAccountInfo(null);
+      fetchTradesAndAccount(targetLogin);
+    } else if (connectedAccounts && connectedAccounts.length > 0) {
+      fetchTradesAndAccount(connectedAccounts[0].login);
+    } else {
+      setTrades([]);
+      setActiveAccountInfo(null);
+    }
+  }, [activeAccountLogin, activeAccount?.login, activeAccount?.id]);
 
   // Helper to identify balance transactions (Deposits / Withdrawals / Credits)
   const isBalanceDeal = (t: any) => {
@@ -357,8 +379,10 @@ export const Journal: React.FC = () => {
   }, [closedTrades]);
 
   const currentEffectiveBalance = useMemo(() => {
-    return activeAccountInfo?.balance ?? (currentBalanceValue > 0 ? currentBalanceValue : ((connectedBroker as any)?.balance ?? 0));
-  }, [activeAccountInfo, currentBalanceValue, connectedBroker]);
+    if (typeof activeAccountInfo?.balance === 'number') return activeAccountInfo.balance;
+    if (typeof activeAccount?.balance === 'number') return activeAccount.balance;
+    return currentBalanceValue > 0 ? currentBalanceValue : ((connectedBroker as any)?.balance ?? 0);
+  }, [activeAccountInfo, activeAccount, currentBalanceValue, connectedBroker]);
 
   const balanceDeals = useMemo(() => trades.filter(t => isBalanceDeal(t)), [trades]);
   const totalDepositsAmount = useMemo(() => {
