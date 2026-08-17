@@ -311,11 +311,9 @@ export const Journal: React.FC = () => {
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
     try {
-      const token = localStorage.getItem('accessToken');
       const res = await apiFetch(`/api/metatrader/sync${queryString}`, {
         method: 'POST',
         headers: { 
-          'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 

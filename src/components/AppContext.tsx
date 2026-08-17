@@ -344,8 +344,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `/api/notifications/${currentUser.id}?_t=${Date.now()}`,
       (data) => setNotifications(data),
       (e) => console.warn("Notification poll notice:", e),
-      60000,
-      { headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` } }
+      60000
     );
 
     // Sync sessions every 60s
@@ -353,8 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `/api/messages/sessions/${currentUser.id}?_t=${Date.now()}`,
       (data) => setSessions(data),
       (e) => console.warn("Session poll notice:", e),
-      60000,
-      { headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` } }
+      60000
     );
 
     return () => {

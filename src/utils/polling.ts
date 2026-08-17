@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { apiFetch } from './apiFetch';
 
 /**
  * Enhanced reusable polling utility that fetches data at a specified interval with exponential backoff on errors.
@@ -25,15 +26,13 @@ export function poll<T>(
     if (isStopped) return;
     
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         ...requestInit,
         headers: {
-          ...requestInit.headers,
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          ...(requestInit.headers as Record<string, string> | undefined),
         }
       });
 
