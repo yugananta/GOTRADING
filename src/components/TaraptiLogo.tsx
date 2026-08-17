@@ -18,7 +18,7 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
   type = 'main',
   align = type === 'login' ? 'center' : 'left'
 }) => {
-  const [imgSrc, setImgSrc] = useState(type === 'login' ? '/logo_login.png' : '/logo_gotrading.png');
+  const [imgSrc, setImgSrc] = useState(type === 'login' ? '/logo_login_baru.png' : '/logo_gotrading.png');
   const [timestamp] = useState(() => Date.now());
   const [hasError, setHasError] = useState(false);
   const logoHeight = typeof height === 'number' ? `${height}px` : height;
@@ -36,7 +36,9 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
             objectPosition: align === 'center' ? 'center' : 'left center' 
           }}
           onError={() => {
-            if (imgSrc === '/logo_login.png') {
+            if (imgSrc === '/logo_login_baru.png') {
+              setImgSrc('/logo_login.png');
+            } else if (imgSrc === '/logo_login.png') {
               setImgSrc('/login_logo.png');
             } else if (imgSrc === '/logo_gotrading.png') {
               setImgSrc('/login_logo.png');
