@@ -7,6 +7,7 @@ interface TaraptiLogoProps {
   textColor?: string;
   onlyEmblem?: boolean;
   type?: 'main' | 'login';
+  align?: 'left' | 'center';
 }
 
 export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({ 
@@ -14,20 +15,26 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
   height = '70px',
   showText = true,
   textColor = 'text-slate-900',
-  type = 'main'
+  type = 'main',
+  align = type === 'login' ? 'center' : 'left'
 }) => {
-  const [imgSrc, setImgSrc] = useState(type === 'login' ? '/login_logo.png' : '/gotrading_logo.png');
+  const [imgSrc, setImgSrc] = useState('/login_logo.png');
   const [timestamp] = useState(() => Date.now());
   const [hasError, setHasError] = useState(false);
   const logoHeight = typeof height === 'number' ? `${height}px` : height;
 
   return (
-    <div className={`flex items-center shrink-0 select-none ${className}`} style={{ height: logoHeight }}>
+    <div className={`flex items-center shrink-0 select-none ${align === 'center' ? 'justify-center mx-auto' : ''} ${className}`} style={{ height: logoHeight }}>
       {!hasError && (
         <img 
           src={`${imgSrc}?t=${timestamp}`}
           alt="Logo" 
-          style={{ height: '100%', width: 'auto', objectFit: 'contain', objectPosition: 'left center' }}
+          style={{ 
+            height: '100%', 
+            width: 'auto', 
+            objectFit: 'contain', 
+            objectPosition: align === 'center' ? 'center' : 'left center' 
+          }}
           onError={() => {
             if (imgSrc === '/login_logo.png') {
               setImgSrc('/gotrading_logo.png');
