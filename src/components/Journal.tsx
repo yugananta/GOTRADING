@@ -439,8 +439,17 @@ export const Journal: React.FC = () => {
   const balanceDeals = useMemo(() => trades.filter(t => isBalanceDeal(t)), [trades]);
   
   const { initialDepositAmount, additionalDepositsAmount, totalDepositsAmount } = useMemo(() => {
-    const sortedBalanceDeals = [...balanceDeals].sort((a, b) => 
-      new Date(a.closeTime || a.openTime || 0).getTime() - new Date(b.closeTime || b.openTime || 0).getTime()
+    // Deduplicate balance deals by ID, ticket, or signature
+    const seen = new Set<string>();
+    const uniqueBalanceDeals = balanceDeals.filter(deal => {
+      const key = deal.id || deal.ticket || deal.dealId || `${deal.closeTime || deal.openTime || deal.time || ''}_${deal.pl}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    const sortedBalanceDeals = [...uniqueBalanceDeals].sort((a, b) => 
+      parseUTCDate(a.closeTime || a.openTime || a.time || 0).getTime() - parseUTCDate(b.closeTime || b.openTime || b.time || 0).getTime()
     );
     const positiveDeals = sortedBalanceDeals.filter(t => (t.pl || 0) > 0);
     if (positiveDeals.length > 0) {
@@ -1633,24 +1642,10 @@ export const Journal: React.FC = () => {
         
         const depositLoad = equity > 0 && margin > 0 ? Math.min(100, (margin / equity) * 100) : 0;
         
-        // Estimate real deposits / withdrawals from trades
-        const balanceDealsList = balanceDeals.length > 0 ? balanceDeals : trades.filter(t => isBalanceDeal(t));
-        const sortedBalanceDeals = [...balanceDealsList].sort((a, b) => 
-          new Date(a.closeTime || a.openTime || 0).getTime() - new Date(b.closeTime || b.openTime || 0).getTime()
-        );
-        const positiveDeals = sortedBalanceDeals.filter(t => (t.pl || 0) > 0);
-        let initialDeposit = 0;
-        let additionalDeposits = 0;
-        if (positiveDeals.length > 0) {
-          initialDeposit = positiveDeals[0].pl || 0;
-          additionalDeposits = positiveDeals.slice(1).reduce((acc, t) => acc + (t.pl || 0), 0);
-        } else if (currentBalance > 0) {
-          const calc = currentBalance - (profit > 0 ? profit : 0);
-          initialDeposit = calc > 0 ? calc : currentBalance;
-          additionalDeposits = 0;
-        }
-        const totalDeposits = initialDeposit + additionalDeposits;
-        let withdrawals = balanceDealsList.filter(t => (t.pl || 0) < 0).reduce((acc, t) => acc + Math.abs(t.pl || 0), 0);
+        const initialDeposit = initialDepositAmount;
+        const additionalDeposits = additionalDepositsAmount;
+        const totalDeposits = totalDepositsAmount;
+        const withdrawals = totalWithdrawalsAmount;
         
         // Algo trading calculation based on magicNumber or expert EA comments
         const algoTradesCount = closedTrades.filter(t => 
