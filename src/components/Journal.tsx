@@ -209,11 +209,12 @@ export const Journal: React.FC = () => {
   const [activeAccountInfo, setActiveAccountInfo] = useState<any>(null);
   const isDataStale = useMemo(() => {
     if (!activeAccountInfo) return false;
-    if (activeAccountInfo.conn_status === 'error' || activeAccountInfo.conn_status === 'reconnecting') return true;
-    if (!activeAccountInfo.fetched_at) return true;
+    if (activeAccountInfo.conn_status === 'error') return true;
+    if (!activeAccountInfo.fetched_at) return false;
     const fetchedTime = new Date(activeAccountInfo.fetched_at).getTime();
+    if (isNaN(fetchedTime)) return false;
     const diffMinutes = (Date.now() - fetchedTime) / 60000;
-    return diffMinutes > 5;
+    return diffMinutes > 15;
   }, [activeAccountInfo]);
   const [trades, setTrades] = useState<any[]>([]);
   const [loadingTrades, setLoadingTrades] = useState(false);
@@ -1744,15 +1745,17 @@ export const Journal: React.FC = () => {
             </span>
           </div>
 
-          {/* Warning Message Row */}
-          <div className="px-4 sm:px-6 py-1.5 flex items-center gap-2.5">
-            <div className="w-4 h-4 rounded-full bg-[#f59e0b] text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs">
-              !
+          {/* Warning Message Row - Only display if max drawdown is genuinely high (>= 25%) */}
+          {maxDrawdown >= 25 && (
+            <div className="px-4 sm:px-6 py-1.5 flex items-center gap-2.5">
+              <div className="w-4 h-4 rounded-full bg-[#f59e0b] text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs">
+                !
+              </div>
+              <span className="text-[13px] sm:text-[13.5px] text-slate-800 dark:text-slate-200 font-normal">
+                A large drawdown may occur on the account again
+              </span>
             </div>
-            <span className="text-[13px] sm:text-[13.5px] text-slate-800 dark:text-slate-200 font-normal">
-              A large drawdown may occur on the account again
-            </span>
-          </div>
+          )}
 
           {/* MQL5 Spider / Radar Chart (Pure SVG, Hexagonal, Generous Bounds for % Labels) */}
           <div 
