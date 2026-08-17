@@ -437,14 +437,35 @@ export const Journal: React.FC = () => {
   }, [activeAccountInfo, activeAccount]);
 
   const balanceDeals = useMemo(() => trades.filter(t => isBalanceDeal(t)), [trades]);
-  const totalDepositsAmount = useMemo(() => {
-    const dep = balanceDeals.filter(t => t.pl > 0).reduce((acc, t) => acc + t.pl, 0);
-    if (dep > 0) return dep;
+  
+  const { initialDepositAmount, additionalDepositsAmount, totalDepositsAmount } = useMemo(() => {
+    const sortedBalanceDeals = [...balanceDeals].sort((a, b) => 
+      new Date(a.closeTime || a.openTime || 0).getTime() - new Date(b.closeTime || b.openTime || 0).getTime()
+    );
+    const positiveDeals = sortedBalanceDeals.filter(t => (t.pl || 0) > 0);
+    if (positiveDeals.length > 0) {
+      const initial = positiveDeals[0].pl || 0;
+      const additional = positiveDeals.slice(1).reduce((acc, t) => acc + (t.pl || 0), 0);
+      return {
+        initialDepositAmount: initial,
+        additionalDepositsAmount: additional,
+        totalDepositsAmount: initial + additional,
+      };
+    }
     if (currentEffectiveBalance > 0) {
       const calc = currentEffectiveBalance - (totalPnLAllTime > 0 ? totalPnLAllTime : 0);
-      return calc > 0 ? calc : currentEffectiveBalance;
+      const initial = calc > 0 ? calc : currentEffectiveBalance;
+      return {
+        initialDepositAmount: initial,
+        additionalDepositsAmount: 0,
+        totalDepositsAmount: initial,
+      };
     }
-    return 10000;
+    return {
+      initialDepositAmount: 10000,
+      additionalDepositsAmount: 0,
+      totalDepositsAmount: 10000,
+    };
   }, [balanceDeals, currentEffectiveBalance, totalPnLAllTime]);
 
   const totalWithdrawalsAmount = useMemo(() => {
@@ -803,13 +824,20 @@ export const Journal: React.FC = () => {
     const clickedDate = new Date(activeYear, activeMonth, dayNum);
     const dateFormatted = clickedDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
+    const dayStart = new Date(activeYear, activeMonth, dayNum, 0, 0, 0, 0);
+    const dayEnd = new Date(activeYear, activeMonth, dayNum, 23, 59, 59, 999);
+    const dayDeposits = balanceDeals.filter(t => {
+      const dt = parseUTCDate(t.closeTime || t.openTime || '');
+      return dt >= dayStart && dt <= dayEnd && (t.pl || 0) > 0;
+    }).reduce((acc, t) => acc + (t.pl || 0), 0);
+
     const detail: MockTradeDetail = {
       date: dateFormatted,
       netPL,
       netPLPercent: pct,
       startBalance: startBal,
       endBalance: endBal,
-      deposit: 0,
+      deposit: dayDeposits,
       buysCount: Math.ceil(tradesCount / 2),
       sellsCount: Math.floor(tradesCount / 2),
       tradesCount,
@@ -1607,15 +1635,22 @@ export const Journal: React.FC = () => {
         
         // Estimate real deposits / withdrawals from trades
         const balanceDealsList = balanceDeals.length > 0 ? balanceDeals : trades.filter(t => isBalanceDeal(t));
-        let deposits = balanceDealsList.filter(t => t.pl > 0).reduce((acc, t) => acc + t.pl, 0);
-        let withdrawals = balanceDealsList.filter(t => t.pl < 0).reduce((acc, t) => acc + Math.abs(t.pl), 0);
-        
-        if (deposits === 0 && withdrawals === 0 && currentBalance > 0) {
-           deposits = currentBalance - (profit > 0 ? profit : 0);
-           if (deposits < 0) deposits = currentBalance;
+        const sortedBalanceDeals = [...balanceDealsList].sort((a, b) => 
+          new Date(a.closeTime || a.openTime || 0).getTime() - new Date(b.closeTime || b.openTime || 0).getTime()
+        );
+        const positiveDeals = sortedBalanceDeals.filter(t => (t.pl || 0) > 0);
+        let initialDeposit = 0;
+        let additionalDeposits = 0;
+        if (positiveDeals.length > 0) {
+          initialDeposit = positiveDeals[0].pl || 0;
+          additionalDeposits = positiveDeals.slice(1).reduce((acc, t) => acc + (t.pl || 0), 0);
+        } else if (currentBalance > 0) {
+          const calc = currentBalance - (profit > 0 ? profit : 0);
+          initialDeposit = calc > 0 ? calc : currentBalance;
+          additionalDeposits = 0;
         }
-        
-        const initialDeposit = deposits > 0 ? deposits : (currentBalance > 0 ? currentBalance : 0);
+        const totalDeposits = initialDeposit + additionalDeposits;
+        let withdrawals = balanceDealsList.filter(t => (t.pl || 0) < 0).reduce((acc, t) => acc + Math.abs(t.pl || 0), 0);
         
         // Algo trading calculation based on magicNumber or expert EA comments
         const algoTradesCount = closedTrades.filter(t => 
@@ -1624,8 +1659,8 @@ export const Journal: React.FC = () => {
         ).length;
         const algoTrading = totalTrades > 0 ? (algoTradesCount / totalTrades) * 100 : 0;
         
-        // Real Peak-to-Valley Max Drawdown calculation
-        let peak = initialDeposit || currentBalance || 0;
+        // Real Peak-to-Valley Max Drawdown calculation using totalDeposits
+        let peak = totalDeposits || currentBalance || 0;
         let runningBalance = peak;
         let maxDDAmt = 0;
         const sortedTrades = [...closedTrades].sort((a, b) => new Date(a.closeTime).getTime() - new Date(b.closeTime).getTime());
@@ -1648,7 +1683,7 @@ export const Journal: React.FC = () => {
         const displayEquity = equity;
         const displayInitialDeposit = initialDeposit;
         const displayWithdrawals = withdrawals;
-        const displayDeposits = deposits;
+        const displayDeposits = additionalDeposits;
 
         // Scale bar widths proportionally based on the max amount
         const maxBarValue = Math.max(Math.abs(displayProfit), displayWithdrawals, displayEquity, displayInitialDeposit, displayDeposits, 100);
