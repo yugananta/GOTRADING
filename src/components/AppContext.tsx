@@ -171,7 +171,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const activeAccount = useMemo(() => {
     if (!connectedAccounts || connectedAccounts.length === 0) return null;
     if (activeAccountLogin) {
-      const found = connectedAccounts.find((a: any) => a.login === activeAccountLogin || a.id === activeAccountLogin);
+      const found = connectedAccounts.find((a: any) => String(a.login) === String(activeAccountLogin) || String(a.id) === String(activeAccountLogin));
       if (found) return found;
     }
     return connectedAccounts[0];

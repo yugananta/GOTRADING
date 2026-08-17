@@ -219,6 +219,7 @@ export const Journal: React.FC = () => {
   const [loadingTrades, setLoadingTrades] = useState(false);
   const latestRequestIdRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const previousAccountLoginRef = useRef<string | null>(null);
 
   const fetchTradesAndAccount = async (targetLoginOrId?: string) => {
     const requestId = ++latestRequestIdRef.current;
@@ -245,7 +246,7 @@ export const Journal: React.FC = () => {
 
       // Find matching account in connectedAccounts or fallback to activeAccount to get the real UUID id
       const matchingAccount = connectedAccounts?.find(
-        (a: any) => a.login === currentActiveLogin || a.id === currentActiveLogin
+        (a: any) => String(a.login) === String(currentActiveLogin) || String(a.id) === String(currentActiveLogin)
       ) || activeAccount;
 
       const realAccountId = matchingAccount?.id || currentActiveLogin;
@@ -262,7 +263,9 @@ export const Journal: React.FC = () => {
         const data = await accRes.json();
         const accs = data.accounts || (data.account ? [data.account] : (data.data?.accounts || (data.data?.account ? [data.data.account] : [])));
         if (latestRequestIdRef.current === requestId && accs && accs.length > 0) {
-          const found = currentActiveLogin ? accs.find((a: any) => a.login === currentActiveLogin || a.id === currentActiveLogin) : accs[0];
+          const found = currentActiveLogin 
+            ? accs.find((a: any) => String(a.login) === String(currentActiveLogin) || String(a.id) === String(currentActiveLogin)) 
+            : accs[0];
           setActiveAccountInfo(found || accs[0]);
         }
       }
@@ -270,10 +273,10 @@ export const Journal: React.FC = () => {
       // 2. Fetch trades specifically for this account
       const queryParams = new URLSearchParams();
       if (currentActiveLogin) {
-        queryParams.set('login', currentActiveLogin);
+        queryParams.set('login', String(currentActiveLogin));
       }
       if (realAccountId) {
-        queryParams.set('accountId', realAccountId);
+        queryParams.set('accountId', String(realAccountId));
       }
       const res = await apiFetch(`/api/metatrader/trades?${queryParams.toString()}`, { signal: controller.signal });
       const isJson = res.headers.get('content-type')?.includes('application/json');
@@ -305,8 +308,8 @@ export const Journal: React.FC = () => {
     const currentActiveLogin = activeAccountLogin || activeAccount?.login || connectedAccounts?.[0]?.login;
     const queryParams = new URLSearchParams();
     if (currentActiveLogin) {
-      queryParams.set('login', currentActiveLogin);
-      queryParams.set('accountId', activeAccount?.id || currentActiveLogin);
+      queryParams.set('login', String(currentActiveLogin));
+      queryParams.set('accountId', String(activeAccount?.id || currentActiveLogin));
     }
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
@@ -346,11 +349,20 @@ export const Journal: React.FC = () => {
   };
 
   useEffect(() => {
+    const prevLogin = previousAccountLoginRef.current;
     const targetLogin = activeAccountLogin || activeAccount?.login;
+    
+    console.log('[JOURNAL-ACCOUNT-SWITCH]', { from: prevLogin, to: targetLogin ? String(targetLogin) : null });
+    previousAccountLoginRef.current = targetLogin ? String(targetLogin) : null;
+
+    // Reset state before starting new fetch to avoid stale data display
+    setTrades([]);
+    setActiveAccountInfo(null);
+
     if (targetLogin) {
-      fetchTradesAndAccount(targetLogin);
+      fetchTradesAndAccount(String(targetLogin));
     } else if (connectedAccounts && connectedAccounts.length > 0) {
-      fetchTradesAndAccount(connectedAccounts[0].login);
+      fetchTradesAndAccount(String(connectedAccounts[0].login));
     } else {
       setTrades([]);
       setActiveAccountInfo(null);
@@ -1141,13 +1153,13 @@ export const Journal: React.FC = () => {
         {connectedAccounts && connectedAccounts.length > 0 ? (
           <div className="space-y-1 max-h-[200px] overflow-y-auto no-scrollbar">
             {connectedAccounts.map((acc: any) => {
-              const isSelected = (activeAccountLogin === acc.login) || (activeAccount?.login === acc.login) || (activeAccountInfo?.login === acc.login);
+              const isSelected = String(activeAccountLogin || activeAccount?.login || activeAccountInfo?.login) === String(acc.login);
               return (
                 <button
                   key={acc.id || acc.login}
                   onClick={() => {
-                    console.log('[JOURNAL-CARD-LIST-CLICK] Switched active account:', acc.login);
-                    setActiveAccountLogin(acc.login);
+                    console.log('[JOURNAL-ACCOUNT-SWITCH]', { from: activeAccountLogin || activeAccountInfo?.login, to: acc.login });
+                    setActiveAccountLogin(String(acc.login));
                   }}
                   className={`w-full p-1.5 rounded-lg border text-left transition duration-150 flex items-center justify-between gap-2 cursor-pointer ${
                     isSelected
@@ -1196,6 +1208,35 @@ export const Journal: React.FC = () => {
     <div className="py-2 w-full max-w-none relative">
       <div className="w-full animate-in fade-in duration-300">
 
+      {/* MULTI-ACCOUNT QUICK SWITCHER PILLS */}
+      {connectedAccounts && connectedAccounts.length > 1 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
+          {connectedAccounts.map((acc: any, idx: number) => {
+            const isSelected = String(activeAccountLogin || activeAccount?.login || activeAccountInfo?.login) === String(acc.login);
+            return (
+              <button
+                key={acc.id || acc.login || idx}
+                onClick={() => {
+                  console.log('[JOURNAL-ACCOUNT-SWITCH]', { from: activeAccountLogin || activeAccountInfo?.login, to: acc.login });
+                  setActiveAccountLogin(String(acc.login));
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 border shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                    : 'bg-white dark:bg-[#121620] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-300 animate-pulse' : 'bg-emerald-500'}`} />
+                <span>{acc.broker || 'MT5'} ({acc.login})</span>
+                <span className="text-[10px] opacity-80 font-semibold font-mono">
+                  ${Number(acc.equity || acc.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* ACCOUNT SELECTOR DROPDOWN (IF MULTIPLE ACCOUNTS CONNECTED) */}
       {connectedAccounts && connectedAccounts.length > 1 && (
         <div className="relative mb-4 w-full" ref={dropdownRef}>
@@ -1232,13 +1273,13 @@ export const Journal: React.FC = () => {
                 className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/80"
               >
                 {connectedAccounts.map((acc: any) => {
-                  const isSelected = (activeAccountLogin === acc.login) || (activeAccount?.login === acc.login) || (activeAccountInfo?.login === acc.login);
+                  const isSelected = String(activeAccountLogin || activeAccount?.login || activeAccountInfo?.login) === String(acc.login);
                   return (
                     <button
                       key={acc.id || acc.login}
                       onClick={() => {
-                        console.log('[JOURNAL-ACCOUNT-DROPDOWN] Switched to account:', acc.login);
-                        setActiveAccountLogin(acc.login);
+                        console.log('[JOURNAL-ACCOUNT-SWITCH]', { from: activeAccountLogin || activeAccountInfo?.login, to: acc.login });
+                        setActiveAccountLogin(String(acc.login));
                         setIsAccountDropdownOpen(false);
                       }}
                       className={`w-full px-4 py-3 text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer ${
