@@ -40,6 +40,7 @@ import {
   Send,
   CheckCircle2,
   AlertTriangle,
+  AlertCircle,
   ChevronDown,
   Database,
   Check,
@@ -206,6 +207,14 @@ export const Journal: React.FC = () => {
 
   // --- REAL-TIME METATRADER TRADES SYNC ---
   const [activeAccountInfo, setActiveAccountInfo] = useState<any>(null);
+  const isDataStale = useMemo(() => {
+    if (!activeAccountInfo) return false;
+    if (activeAccountInfo.conn_status === 'error' || activeAccountInfo.conn_status === 'reconnecting') return true;
+    if (!activeAccountInfo.fetched_at) return true;
+    const fetchedTime = new Date(activeAccountInfo.fetched_at).getTime();
+    const diffMinutes = (Date.now() - fetchedTime) / 60000;
+    return diffMinutes > 5;
+  }, [activeAccountInfo]);
   const [trades, setTrades] = useState<any[]>([]);
   const [loadingTrades, setLoadingTrades] = useState(false);
   const latestRequestIdRef = useRef<number>(0);
@@ -319,9 +328,20 @@ export const Journal: React.FC = () => {
         if (showToast) {
           showToast("🔄 Sync Sukses! Data MetaTrader tersinkronisasi secara real-time.");
         }
+      } else {
+        const data = await res.json().catch(() => null);
+        const errorMsg = data?.error || "Gagal sinkronisasi data dari MetaTrader Gateway.";
+        await fetchTradesAndAccount(currentActiveLogin);
+        if (showToast) {
+          showToast(`❌ Sync Gagal: ${errorMsg}`);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error syncing trades:", err);
+      await fetchTradesAndAccount(currentActiveLogin);
+      if (showToast) {
+        showToast(`❌ Sync Gagal: ${err?.message || "Terjadi kesalahan koneksi."}`);
+      }
     } finally {
       setLoadingTrades(false);
     }
@@ -1266,16 +1286,42 @@ export const Journal: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-50/50 dark:bg-blue-900/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
         
         <div className="relative z-10 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-1.5">
               <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${activeTab === 'goals' ? (totalPnLAllTimePercent >= 0 ? 'bg-emerald-400' : 'bg-rose-400') : activeTab === 'ledger' ? 'bg-amber-400' : 'bg-indigo-400'}`} />
               <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 font-roboto">
                 {activeTab === 'goals' ? 'Portofolio Performance (All Time)' : activeTab === 'ledger' ? t('common.journal.ledgerReport') : 'MetaTrader Executed History'}
               </span>
             </div>
-            <div className="px-2.5 py-1 bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-full text-[8.5px] font-black text-slate-600 dark:text-slate-300 shadow-xs backdrop-blur-md font-roboto tracking-[0.08em] uppercase flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {activeAccountInfo?.login ? `${activeAccountInfo.broker || 'MT5'} (${activeAccountInfo.login})` : (activeAccountInfo?.server || 'MetaTrader 5 Sync')}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {activeAccountInfo && (
+                <>
+                  {activeAccountInfo.conn_status === 'error' ? (
+                    <span className="px-2 py-0.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-full text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                      Sync Error
+                    </span>
+                  ) : activeAccountInfo.conn_status === 'reconnecting' ? (
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      Reconnecting
+                    </span>
+                  ) : isDataStale ? (
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      Data Stale
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      Connected
+                    </span>
+                  )}
+                </>
+              )}
+              <div className="px-2.5 py-1 bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-full text-[8.5px] font-black text-slate-600 dark:text-slate-300 shadow-xs backdrop-blur-md font-roboto tracking-[0.08em] uppercase flex items-center gap-1">
+                {activeAccountInfo?.login ? `${activeAccountInfo.broker || 'MT5'} (${activeAccountInfo.login})` : (activeAccountInfo?.server || 'MetaTrader 5 Sync')}
+              </div>
             </div>
           </div>
           
@@ -1361,6 +1407,34 @@ export const Journal: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {activeAccountInfo?.conn_status === 'error' && activeAccountInfo.error_message && (
+            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[10px] text-rose-600 dark:text-rose-400 flex items-start gap-2 mt-2">
+              <AlertCircle size={14} className="shrink-0 mt-0.5 text-rose-500" />
+              <div>
+                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-rose-500">Sinkronisasi Gagal</p>
+                <p className="text-[11px] leading-relaxed font-medium text-rose-600 dark:text-rose-400">{activeAccountInfo.error_message}</p>
+                <button 
+                  onClick={() => setActiveView('account')} 
+                  className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wide transition mt-1.5 cursor-pointer"
+                >
+                  Hubungkan Ulang Akun
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isDataStale && activeAccountInfo?.conn_status !== 'error' && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-2 mt-2">
+              <AlertCircle size={14} className="shrink-0 mt-0.5 text-amber-500" />
+              <div>
+                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-amber-500">Data Stale (Tertunda)</p>
+                <p className="text-[11px] leading-relaxed font-medium text-amber-600 dark:text-amber-400">
+                  Sinkronisasi terakhir terjadi {activeAccountInfo.fetched_at ? `${Math.round((Date.now() - new Date(activeAccountInfo.fetched_at).getTime()) / 60000)} menit yang lalu` : 'beberapa waktu lalu'}. Silakan klik tombol "Sync MetaTrader" di bawah untuk memperbarui balance dan posisi active trades.
+                </p>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() => openShareCard()}
@@ -2066,9 +2140,13 @@ export const Journal: React.FC = () => {
               <button
                 onClick={handleSyncMetaTrader}
                 disabled={loadingTrades}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-gray-700 cursor-pointer disabled:opacity-50"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 transition rounded-xl text-xs font-bold border cursor-pointer disabled:opacity-50 ${
+                  isDataStale && !loadingTrades
+                    ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-gray-700'
+                }`}
               >
-                <RefreshCw size={13} className={loadingTrades ? "animate-spin text-indigo-600 dark:text-indigo-400" : "text-indigo-600 dark:text-indigo-400"} />
+                <RefreshCw size={13} className={loadingTrades ? "animate-spin text-indigo-600 dark:text-indigo-400" : (isDataStale ? "text-amber-500" : "text-indigo-600 dark:text-indigo-400")} />
                 <span>{loadingTrades ? "Syncing..." : "Sync MetaTrader"}</span>
               </button>
             </div>

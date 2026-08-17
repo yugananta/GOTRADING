@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck, LogOut, CheckCircle2, Lock, Link as LinkIcon, Database, AlertCircle, RefreshCw, Activity, ArrowRight, ExternalLink, Unplug, Handshake, Cpu, BadgeCheck } from 'lucide-react';
+import { ShieldCheck, LogOut, CheckCircle2, Lock, Link as LinkIcon, Database, AlertCircle, AlertTriangle, RefreshCw, Activity, ArrowRight, ExternalLink, Unplug, Handshake, Cpu, BadgeCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.tsx';
 import { apiFetch } from '../utils/apiFetch';
@@ -290,10 +290,17 @@ export const Account: React.FC = () => {
       const data = await res.json().catch(() => null);
       console.log('[Account.tsx] [INVESTIGATION] Raw sync response:', data);
       if (res.ok) {
+        setError(null);
+        await fetchAccountStatus(currentActive?.login);
+      } else {
+        const errorMsg = data?.error || 'Gagal sinkronisasi data dari MetaTrader Gateway.';
+        setError(errorMsg);
         await fetchAccountStatus(currentActive?.login);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Account.tsx] [INVESTIGATION] Sync failed:', err);
+      setError(err?.message || 'Gagal terhubung ke server saat sinkronisasi.');
+      await fetchAccountStatus(currentActive?.login);
     } finally {
       setIsSyncing(false);
     }
@@ -562,11 +569,58 @@ export const Account: React.FC = () => {
                 <h2 className="text-base font-black text-slate-900 tracking-tight">
                   {activeAccount.broker || (activeAccount.server ? activeAccount.server.split('-')[0] : 'MetaTrader')} ({activeAccount.platform || 'MT5'})
                 </h2>
-                <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
-                  <CheckCircle2 size={10} /> Connected
-                </span>
+                {(() => {
+                  const fetchedTime = activeAccount.fetched_at ? new Date(activeAccount.fetched_at).getTime() : 0;
+                  const isStale = activeAccount.conn_status === 'error' || 
+                                  activeAccount.conn_status === 'reconnecting' ||
+                                  !fetchedTime || 
+                                  (Date.now() - fetchedTime) > 5 * 60 * 1000;
+
+                  if (activeAccount.conn_status === 'error') {
+                    return (
+                      <span className="bg-rose-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-rose-500/10">
+                        <AlertTriangle size={10} /> Sync Error
+                      </span>
+                    );
+                  }
+                  if (activeAccount.conn_status === 'reconnecting') {
+                    return (
+                      <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10 animate-pulse">
+                        <RefreshCw size={10} className="animate-spin" /> Reconnecting
+                      </span>
+                    );
+                  }
+                  if (isStale) {
+                    return (
+                      <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10">
+                        <AlertCircle size={10} /> Data Stale
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
+                      <CheckCircle2 size={10} /> Connected
+                    </span>
+                  );
+                })()}
               </div>
               <p className="text-[11px] text-slate-500 font-medium">Account ID: <span className="font-bold text-slate-800">{activeAccount.login}</span> • Server: <span className="font-bold text-slate-800">{activeAccount.server}</span></p>
+              
+              {activeAccount.error_message && (
+                <div className="mt-3 p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-[10px] text-rose-600 flex items-start gap-1.5 font-medium">
+                  <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold uppercase tracking-wider text-[8px] block mb-0.5">Sync Error Details</span>
+                    {activeAccount.error_message}
+                  </div>
+                </div>
+              )}
+              
+              {activeAccount.fetched_at && (
+                <p className="text-[9px] text-slate-400 mt-2 font-mono">
+                  Last synced: {new Date(activeAccount.fetched_at).toLocaleString()}
+                </p>
+              )}
             </div>
             <div className="flex gap-2">
               <button
