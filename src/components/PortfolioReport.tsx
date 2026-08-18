@@ -754,22 +754,22 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
   const mainRiskItem = stats.behaviorInsights.hurts[1]?.title || "Increasing exposure after losses";
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen text-slate-900 font-sans pb-16">
+    <div className="bg-white dark:bg-[#121620] text-slate-900 dark:text-white font-sans rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden pb-8 shadow-xs">
       
       {/* 1. HEADER SECTION */}
-      <div className="bg-white border-b border-slate-100 px-4 py-4.5 sticky top-0 z-20 shadow-xs">
-        <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
+      <div className="bg-slate-50 dark:bg-[#181d28] border-b border-slate-100 dark:border-slate-800 px-4 py-3.5 shadow-xs">
+        <div className="w-full flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button 
               onClick={onBack}
-              className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl transition cursor-pointer active:scale-95"
+              className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition cursor-pointer active:scale-95 border border-slate-200 dark:border-slate-700"
             >
               <ArrowLeft size={16} />
             </button>
             <div className="space-y-0.5">
-              <h1 className="text-base font-black text-slate-900 tracking-tight font-roboto">Portfolio Report</h1>
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                <span className="font-semibold text-slate-700">{activeAccountInfo.broker || 'Broker Account'}</span>
+              <h1 className="text-base font-black text-slate-900 dark:text-white tracking-tight font-roboto">Portfolio Report</h1>
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{activeAccountInfo.broker || 'Broker Account'}</span>
                 <span>•</span>
                 <span>{activeAccountInfo.login}</span>
                 <span>•</span>
@@ -782,7 +782,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-xs outline-hidden focus:border-indigo-500 transition cursor-pointer"
+              className="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold shadow-xs outline-hidden focus:border-indigo-500 transition cursor-pointer"
             >
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
@@ -793,16 +793,16 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
             <button 
               onClick={handleRefreshClick}
               disabled={isRefreshing}
-              className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl border border-slate-200 transition cursor-pointer active:scale-95"
+              className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer active:scale-95"
               title="Sync Trades"
             >
-              <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-indigo-600' : ''} />
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''} />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-xl mx-auto px-4 py-4 space-y-4">
+      <div className="w-full px-4 py-4 space-y-4">
 
         {/* 2. ACCOUNT HEALTH CARD */}
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs flex justify-between items-center relative overflow-hidden">

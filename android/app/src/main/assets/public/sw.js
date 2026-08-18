@@ -121,26 +121,10 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/tarapti_logo_1784421680053.jpg',
-      badge: '/tarapti_logo_1784421680053.jpg',
+      icon: 'https://img.icons8.com/color/192/000000/bullish.png',
+      badge: 'https://img.icons8.com/color/192/000000/bullish.png',
       vibrate: [150, 100, 150],
       sound: 'default'
-    })
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow('/');
-      }
     })
   );
 });

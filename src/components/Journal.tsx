@@ -2404,6 +2404,19 @@ export const Journal: React.FC = () => {
 
         </div>
       )}
+
+      {/* TAB 3: DEDICATED AI ANALYSIS & INVESTIGATION (PORTFOLIO REPORT) */}
+      {activeTab === 'history' && (
+        <PortfolioReport 
+          trades={trades}
+          activeAccountInfo={activeAccountInfo}
+          loadingTrades={loadingTrades}
+          onBack={() => setActiveTab('goals')}
+          onRefresh={async () => {
+            await fetchTradesAndAccount();
+          }}
+        />
+      )}
     </div>
         
         {/* Desktop Right Sidebar: Monthly Calendar & Analytics (Desktop Only) */}
@@ -2502,19 +2515,6 @@ export const Journal: React.FC = () => {
 
       </div>
     </div>
-
-      {/* TAB 3: DEDICATED AI ANALYSIS & INVESTIGATION (PORTFOLIO REPORT) */}
-      {activeTab === 'history' && (
-        <PortfolioReport 
-          trades={trades}
-          activeAccountInfo={activeAccountInfo}
-          loadingTrades={loadingTrades}
-          onBack={() => setActiveTab('goals')}
-          onRefresh={async () => {
-            await fetchTradesAndAccount();
-          }}
-        />
-      )}
 
       {/* POPUP 1: CALENDAR DAY TRANSACTION DETAIL DIALOG */}
       <AnimatePresence>
