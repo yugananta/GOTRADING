@@ -528,13 +528,8 @@ export const Outlook: React.FC = () => {
   }, []);
 
   const activeCalendarData = React.useMemo(() => {
-    return calendarData
-      .filter(item => {
-        if (!item.datetime) return false;
-        return new Date(item.datetime).getTime() > currentTime;
-      })
-      .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
-  }, [calendarData, currentTime]);
+    return [...calendarData].sort((a, b) => new Date(a.datetime || 0).getTime() - new Date(b.datetime || 0).getTime());
+  }, [calendarData]);
   const [calendarImpactFilter, setCalendarImpactFilter] = useState<'all' | 'high'>('high');
   const [newsFeed, setNewsFeed] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -633,11 +628,16 @@ export const Outlook: React.FC = () => {
   const releasedEventsRef = React.useRef(releasedEvents);
   const hasManuallySelectedRef = React.useRef<boolean>(false);
 
+  const handleSelectNews = (id: any) => {
+    hasManuallySelectedRef.current = true;
+    setSelectedNewsId(id);
+  };
+
   useEffect(() => {
     releasedEventsRef.current = releasedEvents;
   }, [releasedEvents]);
 
-  // Automatically select the next upcoming event matching the active news impact filter
+  // Automatically select the next upcoming event matching the active news impact filter on initial load
   useEffect(() => {
     if (isLoading || activeCalendarData.length === 0) return;
 
@@ -650,10 +650,10 @@ export const Outlook: React.FC = () => {
     });
 
     if (filtered.length > 0) {
-      // If the user has manually selected, and their selection still matches the active filter, keep it.
+      // If the user has manually selected, keep their selection if it still exists in calendar data
       if (hasManuallySelectedRef.current) {
-        const matchesActiveFilter = filtered.some(e => e.id === selectedNewsId);
-        if (matchesActiveFilter) return;
+        const stillInCalendar = activeCalendarData.some(e => e.id === selectedNewsId);
+        if (stillInCalendar) return;
       }
 
       // Otherwise, select the closest upcoming event that matches the filter
@@ -735,17 +735,7 @@ export const Outlook: React.FC = () => {
       const diff = targetTime - now;
 
       if (!targetTime || isNaN(targetTime) || diff <= 0) {
-        setCountdown('00:00:00');
-        // If current selected event has passed, automatically auto-advance to next upcoming event if available
-        if (activeCalendarData.length > 0) {
-          const upcoming = activeCalendarData.filter((e: any) => new Date(e.datetime).getTime() > now);
-          if (upcoming.length > 0) {
-            const nextClosest = [...upcoming].sort((a: any, b: any) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0];
-            if (nextClosest.id !== selectedNewsId) {
-              setSelectedNewsId(nextClosest.id);
-            }
-          }
-        }
+        setCountdown('RELEASED');
         return;
       }
 
@@ -1342,7 +1332,7 @@ export const Outlook: React.FC = () => {
             ).map((item) => (
               <div 
                 key={item.id} 
-                onClick={() => setSelectedNewsId(item.id)}
+                onClick={() => handleSelectNews(item.id)}
                 className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                   selectedNewsId === item.id
                     ? 'bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-800 ring-1 ring-indigo-400/30'

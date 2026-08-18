@@ -659,10 +659,10 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
   // --- RENDER EMPTY / LOADING STATE CORES ---
   if (loadingTrades) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-        <RefreshCw className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
-        <h4 className="text-sm font-bold text-slate-800 font-roboto">Retrieving MT5 account history...</h4>
-        <p className="text-xs text-slate-400 mt-1">Calculating trading curves and exposure metrics.</p>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-slate-50 dark:bg-[#121620] p-6 rounded-3xl border border-slate-200 dark:border-slate-800">
+        <RefreshCw className="w-10 h-10 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
+        <h4 className="text-sm font-bold text-slate-900 dark:text-white font-roboto">Retrieving MT5 account history...</h4>
+        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">Calculating trading curves and exposure metrics.</p>
       </div>
     );
   }
@@ -671,19 +671,19 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
 
   if (isBrokerDisconnected) {
     return (
-      <div className="bg-slate-50/50 min-h-[60vh] flex flex-col items-center justify-center p-6 text-center rounded-3xl border border-slate-200/60 max-w-md mx-auto">
-        <div className="p-4 bg-rose-50 border border-rose-100 text-rose-500 rounded-2xl mb-4 shadow-sm">
+      <div className="bg-slate-50 dark:bg-[#121620] min-h-[60vh] flex flex-col items-center justify-center p-6 text-center rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md mx-auto">
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 rounded-2xl mb-4 shadow-sm">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <h3 className="text-base font-black text-slate-900 font-roboto">MT5 Data Unavailable</h3>
-        <p className="text-xs text-slate-500 leading-relaxed max-w-sm mt-2 font-roboto">
+        <h3 className="text-base font-black text-slate-900 dark:text-white font-roboto">MT5 Data Unavailable</h3>
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed max-w-sm mt-2 font-roboto">
           {activeAccountInfo?.error_message || "Unable to retrieve the latest account data. Please reconnect your broker credential under the Account/Broker tab."}
         </p>
         <div className="flex items-center gap-2 mt-6 w-full max-w-xs">
           <button 
             onClick={handleRefreshClick}
             disabled={isRefreshing}
-            className="flex-1 py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+            className="flex-1 py-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             Retry Sync
@@ -695,19 +695,19 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
 
   if (stats.totalTrades === 0) {
     return (
-      <div className="bg-slate-50/50 min-h-[60vh] flex flex-col items-center justify-center p-6 text-center rounded-3xl border border-slate-200/60 max-w-md mx-auto">
-        <div className="p-4 bg-slate-100 border border-slate-200 text-slate-400 rounded-2xl mb-4 shadow-sm">
+      <div className="bg-slate-50 dark:bg-[#121620] min-h-[60vh] flex flex-col items-center justify-center p-6 text-center rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md mx-auto">
+        <div className="p-4 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl mb-4 shadow-sm">
           <Activity className="w-8 h-8" />
         </div>
-        <h3 className="text-base font-black text-slate-900 font-roboto">No Trading History Available</h3>
-        <p className="text-xs text-slate-400 leading-relaxed max-w-sm mt-2 font-roboto">
+        <h3 className="text-base font-black text-slate-900 dark:text-white font-roboto">No Trading History Available</h3>
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed max-w-sm mt-2 font-roboto">
           We found your MT5 account ({activeAccountInfo.login}) successfully connected, but there is no closed trading history detected for the selected period ({selectedPeriod === '30d' ? 'Last 30 Days' : selectedPeriod}).
         </p>
         <div className="flex gap-2 mt-6 w-full max-w-xs">
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value as any)}
-            className="flex-1 px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold shadow-xs outline-hidden focus:border-indigo-500"
+            className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold shadow-xs outline-hidden focus:border-indigo-500"
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -757,19 +757,19 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
     <div className="bg-white dark:bg-[#121620] text-slate-900 dark:text-white font-sans rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden pb-8 shadow-xs">
       
       {/* 1. HEADER SECTION */}
-      <div className="bg-slate-50 dark:bg-[#181d28] border-b border-slate-100 dark:border-slate-800 px-4 py-3.5 shadow-xs">
+      <div className="bg-slate-50 dark:bg-[#181d28] border-b border-slate-200 dark:border-slate-800 px-4 py-3.5 shadow-xs">
         <div className="w-full flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button 
               onClick={onBack}
-              className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition cursor-pointer active:scale-95 border border-slate-200 dark:border-slate-700"
+              className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer active:scale-95 border border-slate-200 dark:border-slate-700"
             >
               <ArrowLeft size={16} />
             </button>
             <div className="space-y-0.5">
               <h1 className="text-base font-black text-slate-900 dark:text-white tracking-tight font-roboto">Portfolio Report</h1>
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">{activeAccountInfo.broker || 'Broker Account'}</span>
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{activeAccountInfo.broker || 'Broker Account'}</span>
                 <span>•</span>
                 <span>{activeAccountInfo.login}</span>
                 <span>•</span>
@@ -782,7 +782,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold shadow-xs outline-hidden focus:border-indigo-500 transition cursor-pointer"
+              className="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold shadow-xs outline-hidden focus:border-indigo-500 transition cursor-pointer"
             >
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
@@ -793,7 +793,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
             <button 
               onClick={handleRefreshClick}
               disabled={isRefreshing}
-              className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer active:scale-95"
+              className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer active:scale-95"
               title="Sync Trades"
             >
               <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''} />
@@ -805,33 +805,33 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
       <div className="w-full px-4 py-4 space-y-4">
 
         {/* 2. ACCOUNT HEALTH CARD */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs flex justify-between items-center relative overflow-hidden">
+        <div className="bg-white dark:bg-[#181d28] rounded-3xl p-5 border border-slate-200 dark:border-slate-700/80 shadow-xs flex justify-between items-center relative overflow-hidden">
           <div className="space-y-4 flex-1">
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-black uppercase tracking-wider font-roboto">
+              <div className="flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider font-roboto">
                 <span>Account Health</span>
-                <Info size={11} className="text-slate-300" />
+                <Info size={11} className="text-slate-400 dark:text-slate-400" />
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-4xl font-black text-indigo-600 tracking-tight font-roboto">{stats.healthScore}</span>
-                <span className="text-sm font-bold text-slate-300">/ 100</span>
+                <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight font-roboto">{stats.healthScore}</span>
+                <span className="text-sm font-bold text-slate-400 dark:text-slate-400">/ 100</span>
               </div>
             </div>
 
             <div className="space-y-2.5">
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                 <div 
-                  className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
+                  className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-1000"
                   style={{ width: `${stats.healthScore}%` }}
                 />
               </div>
               <div className="space-y-1">
                 <h4 className={`text-xs font-black uppercase tracking-wide ${
-                  stats.healthScore >= 80 ? 'text-emerald-500' : stats.healthScore >= 65 ? 'text-indigo-500' : 'text-amber-500'
+                  stats.healthScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : stats.healthScore >= 65 ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'
                 }`}>
                   {verdictStatus}
                 </h4>
-                <p className="text-[11px] text-slate-400 font-medium leading-relaxed font-roboto">
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed font-roboto">
                   Account is profitable, but trading quality and consistency need improvement.
                 </p>
               </div>
@@ -839,90 +839,90 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
           </div>
 
           {/* Premium Shield Art Frame */}
-          <div className="relative w-28 h-28 flex items-center justify-center bg-indigo-50/30 rounded-2xl border border-indigo-50/50 shrink-0 ml-4">
-            <div className="absolute inset-0 bg-radial from-indigo-50/50 via-transparent to-transparent animate-pulse rounded-2xl" />
-            <div className="relative z-10 w-16 h-16 bg-white rounded-xl border border-indigo-100 flex items-center justify-center text-indigo-500 shadow-md">
-              <Shield size={32} className="fill-indigo-50 text-indigo-600" />
+          <div className="relative w-28 h-28 flex items-center justify-center bg-indigo-50/50 dark:bg-indigo-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 shrink-0 ml-4">
+            <div className="absolute inset-0 bg-radial from-indigo-50/50 dark:from-indigo-900/20 via-transparent to-transparent animate-pulse rounded-2xl" />
+            <div className="relative z-10 w-16 h-16 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 dark:border-slate-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-md">
+              <Shield size={32} className="fill-indigo-50 dark:fill-indigo-950 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
         </div>
 
         {/* 3. GOTRADING VERDICT CARD */}
-        <div className="bg-gradient-to-b from-amber-50/40 to-white rounded-3xl p-5 border border-amber-100/60 shadow-xs space-y-4">
+        <div className="bg-gradient-to-b from-amber-50/60 to-white dark:from-amber-950/30 dark:to-[#181d28] rounded-3xl p-5 border border-amber-200/80 dark:border-amber-900/50 shadow-xs space-y-4">
           <div className="space-y-1.5">
-            <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block font-roboto">GoTrading Verdict</span>
-            <div className="flex items-center gap-1.5 text-amber-600 font-bold text-xs sm:text-sm font-roboto">
+            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">GoTrading Verdict</span>
+            <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs sm:text-sm font-roboto">
               <AlertTriangle size={15} className="shrink-0" />
               <span>{verdictTitle}</span>
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed font-roboto">
+            <p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-200 leading-relaxed font-roboto">
               {verdictExplanation}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 divide-y divide-slate-100 border-t border-slate-100 pt-3 gap-3">
+          <div className="grid grid-cols-1 divide-y divide-slate-200 dark:divide-slate-700/80 border-t border-slate-200 dark:border-slate-700/80 pt-3 gap-3">
             <div className="flex items-center justify-between text-xs pt-1.5">
-              <span className="text-slate-400 font-medium font-roboto flex items-center gap-1.5">
+              <span className="text-slate-600 dark:text-slate-300 font-semibold font-roboto flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 STRENGTH
               </span>
-              <span className="font-extrabold text-slate-800">{strengthItem}</span>
+              <span className="font-extrabold text-slate-900 dark:text-white">{strengthItem}</span>
             </div>
             <div className="flex items-center justify-between text-xs pt-3">
-              <span className="text-slate-400 font-medium font-roboto flex items-center gap-1.5">
+              <span className="text-slate-600 dark:text-slate-300 font-semibold font-roboto flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                 WEAKNESS
               </span>
-              <span className="font-extrabold text-slate-800">{weaknessItem}</span>
+              <span className="font-extrabold text-slate-900 dark:text-white">{weaknessItem}</span>
             </div>
             <div className="flex items-center justify-between text-xs pt-3">
-              <span className="text-slate-400 font-medium font-roboto flex items-center gap-1.5">
+              <span className="text-slate-600 dark:text-slate-300 font-semibold font-roboto flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                 MAIN RISK
               </span>
-              <span className="font-extrabold text-slate-800">{mainRiskItem}</span>
+              <span className="font-extrabold text-slate-900 dark:text-white">{mainRiskItem}</span>
             </div>
           </div>
         </div>
 
         {/* 4. KEY PERFORMANCE GRID */}
         <div className="space-y-1.5">
-          <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block font-roboto">Key Performance</span>
+          <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">Key Performance</span>
           <div className="grid grid-cols-2 gap-2">
             
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-xs space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-roboto">Equity</span>
+            <div className="bg-white dark:bg-[#181d28] rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-roboto">Equity</span>
               <div className="space-y-0.5">
-                <span className="text-sm font-black text-slate-800 font-roboto">${(activeAccountInfo.equity || stats.equityPoints[stats.equityPoints.length-1]?.equity || 0).toLocaleString('en-US', {minimumFractionDigits:2})}</span>
-                <span className="text-[9px] text-slate-400 block font-bold tracking-tight">USD</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white font-roboto">${(activeAccountInfo.equity || stats.equityPoints[stats.equityPoints.length-1]?.equity || 0).toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 block font-bold tracking-tight">USD</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-xs space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-roboto">Net Profit</span>
+            <div className="bg-white dark:bg-[#181d28] rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-roboto">Net Profit</span>
               <div className="space-y-0.5">
-                <span className={`text-sm font-black font-roboto ${stats.netPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                <span className={`text-sm font-black font-roboto ${stats.netPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {stats.netPnL >= 0 ? '+' : ''}${stats.netPnL.toLocaleString('en-US', {minimumFractionDigits:2})}
                 </span>
-                <span className={`text-[9px] block font-bold tracking-tight ${stats.netPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className={`text-[9px] block font-bold tracking-tight ${stats.netPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {stats.netPnL >= 0 ? '+' : ''}{((stats.netPnL / (stats.equityPoints[0]?.equity || 1)) * 100).toFixed(2)}%
                 </span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-xs space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-roboto">Max Drawdown</span>
+            <div className="bg-white dark:bg-[#181d28] rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-roboto">Max Drawdown</span>
               <div className="space-y-0.5">
-                <span className="text-sm font-black text-rose-500 font-roboto">{stats.maxDrawdownPercent.toFixed(1)}%</span>
-                <span className="text-[9px] text-slate-400 block font-bold tracking-tight">Max historical</span>
+                <span className="text-sm font-black text-rose-600 dark:text-rose-400 font-roboto">{stats.maxDrawdownPercent.toFixed(1)}%</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 block font-bold tracking-tight">Max historical</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-xs space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-roboto">Win Rate</span>
+            <div className="bg-white dark:bg-[#181d28] rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block font-roboto">Win Rate</span>
               <div className="space-y-0.5">
-                <span className="text-sm font-black text-slate-800 font-roboto">{stats.winRate.toFixed(1)}%</span>
-                <span className="text-[9px] text-slate-400 block font-bold tracking-tight">{stats.winsCount} Wins of {stats.totalTrades} Trades</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white font-roboto">{stats.winRate.toFixed(1)}%</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 block font-bold tracking-tight">{stats.winsCount} Wins of {stats.totalTrades} Trades</span>
               </div>
             </div>
 
@@ -930,10 +930,10 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
         </div>
 
         {/* 5. EQUITY CURVE */}
-        <div className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs space-y-3">
+        <div className="bg-white dark:bg-[#181d28] rounded-3xl p-4.5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block font-roboto">Equity Curve</span>
-            <span className="text-[11px] font-bold text-indigo-600 font-roboto">${(activeAccountInfo.equity || 0).toLocaleString('en-US', {minimumFractionDigits:2})} USD</span>
+            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">Equity Curve</span>
+            <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 font-roboto">${(activeAccountInfo.equity || 0).toLocaleString('en-US', {minimumFractionDigits:2})} USD</span>
           </div>
           
           <div className="h-44 w-full">
@@ -945,27 +945,27 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
                     <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.01}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="name" fontSize={9} tickLine={false} axisLine={false} stroke="#94a3b8" />
-                <YAxis fontSize={9} tickLine={false} axisLine={false} stroke="#94a3b8" domain={['auto', 'auto']} />
+                <XAxis dataKey="name" fontSize={9} tickLine={false} axisLine={false} stroke="#64748b" />
+                <YAxis fontSize={9} tickLine={false} axisLine={false} stroke="#64748b" domain={['auto', 'auto']} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f5f9', borderRadius: '12px', fontSize: '11px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+                  contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff', borderRadius: '12px', fontSize: '11px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                   formatter={(value: any) => [`$${value}`, 'Equity']}
                 />
                 <Area type="monotone" dataKey="equity" stroke="#4f46e5" strokeWidth={2} fillOpacity={1} fill="url(#colorEquity)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 flex items-center gap-2 text-[11px] text-slate-500 font-roboto">
-            <TrendingUp size={14} className="text-indigo-500" />
+          <div className="p-3 bg-slate-100/70 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 text-[11px] text-slate-700 dark:text-slate-200 font-roboto">
+            <TrendingUp size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
             <span>Equity trend shows chronological performance based on closed trades.</span>
           </div>
         </div>
 
         {/* 6. DRAWDOWN */}
-        <div className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs space-y-3">
+        <div className="bg-white dark:bg-[#181d28] rounded-3xl p-4.5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block font-roboto">Drawdown</span>
-            <span className="text-[11px] font-bold text-rose-500 font-roboto">{stats.currentDrawdownPercent.toFixed(1)}% Current</span>
+            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">Drawdown</span>
+            <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 font-roboto">{stats.currentDrawdownPercent.toFixed(1)}% Current</span>
           </div>
           
           <div className="h-32 w-full">
@@ -977,33 +977,33 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0.01}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="name" fontSize={9} tickLine={false} axisLine={false} stroke="#94a3b8" />
-                <YAxis fontSize={9} tickLine={false} axisLine={false} stroke="#94a3b8" domain={['auto', 0]} />
+                <XAxis dataKey="name" fontSize={9} tickLine={false} axisLine={false} stroke="#64748b" />
+                <YAxis fontSize={9} tickLine={false} axisLine={false} stroke="#64748b" domain={['auto', 0]} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f5f9', borderRadius: '12px', fontSize: '11px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+                  contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff', borderRadius: '12px', fontSize: '11px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                   formatter={(value: any) => [`${value}%`, 'Drawdown']}
                 />
                 <Area type="monotone" dataKey="drawdown" stroke="#ef4444" strokeWidth={1.5} fillOpacity={1} fill="url(#colorDrawdown)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 flex items-center gap-2 text-[11px] text-slate-500 font-roboto">
-            <AlertTriangle size={14} className="text-rose-500" />
+          <div className="p-3 bg-slate-100/70 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 text-[11px] text-slate-700 dark:text-slate-200 font-roboto">
+            <AlertTriangle size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
             <span>Peak-to-trough degradation shows temporary drawdowns of overall equity.</span>
           </div>
         </div>
 
         {/* 7. TRADING QUALITY SCORE */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
-          <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block font-roboto">Trading Quality</span>
+        <div className="bg-white dark:bg-[#181d28] rounded-3xl p-5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-4">
+          <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">Trading Quality</span>
           
           <div className="flex flex-col sm:flex-row items-center gap-6">
             {/* Donut Circle */}
-            <div className="relative w-32 h-32 flex items-center justify-center bg-slate-50 rounded-full shrink-0">
+            <div className="relative w-32 h-32 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-full shrink-0">
               <svg className="w-full h-full transform -rotate-90">
                 <circle 
                   cx="64" cy="64" r="54" 
-                  stroke="#f1f5f9" strokeWidth="8" fill="transparent" 
+                  stroke="currentColor" className="text-slate-200 dark:text-slate-700" strokeWidth="8" fill="transparent" 
                 />
                 <circle 
                   cx="64" cy="64" r="54" 
@@ -1014,59 +1014,59 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
                 />
               </svg>
               <div className="absolute text-center">
-                <span className="text-3xl font-black text-slate-800 font-roboto">{stats.qualityScores.overall}</span>
-                <span className="text-[10px] text-slate-400 font-bold block">/ 100</span>
+                <span className="text-3xl font-black text-slate-900 dark:text-white font-roboto">{stats.qualityScores.overall}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">/ 100</span>
               </div>
             </div>
 
             {/* Quality Breakdown Bars */}
             <div className="flex-1 w-full space-y-3">
               <div className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold text-slate-600 font-roboto">
+                <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200 font-roboto">
                   <span>Risk Management</span>
                   <span>{stats.qualityScores.risk}/100</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${stats.qualityScores.risk}%` }} />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold text-slate-600 font-roboto">
+                <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200 font-roboto">
                   <span>Profitability</span>
                   <span>{stats.qualityScores.profit}/100</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="bg-amber-500 h-full rounded-full" style={{ width: `${stats.qualityScores.profit}%` }} />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold text-slate-600 font-roboto">
+                <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200 font-roboto">
                   <span>Consistency</span>
                   <span>{stats.qualityScores.consistency}/100</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="bg-rose-500 h-full rounded-full" style={{ width: `${stats.qualityScores.consistency}%` }} />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold text-slate-600 font-roboto">
+                <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200 font-roboto">
                   <span>Trading Discipline</span>
                   <span>{stats.qualityScores.discipline}/100</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${stats.qualityScores.discipline}%` }} />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold text-slate-600 font-roboto">
+                <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200 font-roboto">
                   <span>Exposure Control</span>
                   <span>{stats.qualityScores.exposure}/100</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${stats.qualityScores.exposure}%` }} />
                 </div>
               </div>
@@ -1075,25 +1075,25 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
         </div>
 
         {/* 8. WHAT'S HURTING YOU */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
-          <span className="text-[10px] text-rose-500 font-black uppercase tracking-wider block font-roboto">What's Hurting You</span>
+        <div className="bg-white dark:bg-[#181d28] rounded-3xl p-5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-4">
+          <span className="text-[10px] text-rose-600 dark:text-rose-400 font-extrabold uppercase tracking-wider block font-roboto">What's Hurting You</span>
           
           <div className="space-y-3">
             {stats.behaviorInsights.hurts.length === 0 ? (
-              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl text-xs text-slate-500 font-roboto">
+              <div className="flex items-center gap-2 p-3 bg-slate-100/70 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-roboto">
                 <CheckCircle2 className="text-emerald-500 shrink-0" size={16} />
                 <span>No harmful trading habits detected in this period. Outstanding discipline!</span>
               </div>
             ) : (
               stats.behaviorInsights.hurts.map((h: any) => (
-                <div key={h.id} className="p-3 bg-rose-50/30 border border-rose-100/50 rounded-2xl flex items-start gap-3 transition hover:bg-rose-50/50">
-                  <div className="p-2 bg-rose-50 border border-rose-100 text-rose-500 rounded-xl shrink-0">
+                <div key={h.id} className="p-3 bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-2xl flex items-start gap-3 transition hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                  <div className="p-2 bg-white dark:bg-rose-900/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 rounded-xl shrink-0">
                     <AlertTriangle size={15} />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <h4 className="text-xs font-black text-slate-800 font-roboto">{h.title}</h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-roboto">{h.desc}</p>
-                    <div className="flex items-center gap-1 text-[9px] text-rose-500 font-extrabold tracking-wide font-roboto uppercase">
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white font-roboto">{h.title}</h4>
+                    <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed font-roboto">{h.desc}</p>
+                    <div className="flex items-center gap-1 text-[9px] text-rose-600 dark:text-rose-400 font-extrabold tracking-wide font-roboto uppercase">
                       <span>EVIDENCE:</span>
                       <span>{h.evidence}</span>
                     </div>
@@ -1105,25 +1105,25 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
         </div>
 
         {/* 9. WHAT'S WORKING */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
-          <span className="text-[10px] text-emerald-500 font-black uppercase tracking-wider block font-roboto">What's Working</span>
+        <div className="bg-white dark:bg-[#181d28] rounded-3xl p-5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-4">
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wider block font-roboto">What's Working</span>
           
           <div className="space-y-3">
             {stats.behaviorInsights.works.length === 0 ? (
-              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl text-xs text-slate-500 font-roboto">
-                <Info className="text-slate-400 shrink-0" size={16} />
+              <div className="flex items-center gap-2 p-3 bg-slate-100/70 dark:bg-slate-800/60 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-roboto">
+                <Info className="text-slate-500 shrink-0" size={16} />
                 <span>Not enough statistical evidence for specific trading edges yet. Keep executing.</span>
               </div>
             ) : (
               stats.behaviorInsights.works.map((w: any) => (
-                <div key={w.id} className="p-3 bg-emerald-50/20 border border-emerald-100/50 rounded-2xl flex items-start gap-3 transition hover:bg-emerald-50/40">
-                  <div className="p-2 bg-emerald-50 border border-emerald-100 text-emerald-500 rounded-xl shrink-0">
+                <div key={w.id} className="p-3 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl flex items-start gap-3 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/40">
+                  <div className="p-2 bg-white dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
                     <CheckCircle2 size={15} />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <h4 className="text-xs font-black text-slate-800 font-roboto">{w.title}</h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-roboto">{w.desc}</p>
-                    <div className="flex items-center gap-1 text-[9px] text-emerald-500 font-extrabold tracking-wide font-roboto uppercase">
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white font-roboto">{w.title}</h4>
+                    <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed font-roboto">{w.desc}</p>
+                    <div className="flex items-center gap-1 text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold tracking-wide font-roboto uppercase">
                       <span>EVIDENCE:</span>
                       <span>{w.evidence}</span>
                     </div>
@@ -1136,16 +1136,16 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
 
         {/* 10. NEXT 3 ACTIONS */}
         <div className="space-y-2.5">
-          <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block font-roboto">Next 3 Actions</span>
+          <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">Next 3 Actions</span>
           
           {stats.totalTrades < 10 ? (
-            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs flex flex-col items-center justify-center text-center space-y-3">
-              <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
+            <div className="bg-white dark:bg-[#181d28] rounded-3xl p-6 border border-slate-200 dark:border-slate-700/80 shadow-xs flex flex-col items-center justify-center text-center space-y-3">
+              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400">
                 <Info size={24} />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-black text-slate-800 font-roboto">Not enough trading history</h4>
-                <p className="text-xs text-slate-500 font-roboto max-w-sm">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white font-roboto">Not enough trading history</h4>
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-roboto max-w-sm">
                   Complete at least 10 closed trades to generate behavior-based personalized recommendations and dynamic action plans.
                 </p>
               </div>
@@ -1156,55 +1156,55 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
                 const isCompleted = completedActions[action.id] || false;
 
                 return (
-                  <div key={action.id} className={`bg-white rounded-3xl border shadow-xs transition-colors overflow-hidden ${isCompleted ? 'border-emerald-200' : 'border-slate-100'}`}>
-                    <div className={`p-4 border-b flex items-center gap-3 ${isCompleted ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
-                      <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs font-black shrink-0 font-roboto shadow-inner ${isCompleted ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'bg-white border-slate-200 text-slate-700'}`}>
+                  <div key={action.id} className={`bg-white dark:bg-[#181d28] rounded-3xl border shadow-xs transition-colors overflow-hidden ${isCompleted ? 'border-emerald-300 dark:border-emerald-800' : 'border-slate-200 dark:border-slate-700/80'}`}>
+                    <div className={`p-4 border-b flex items-center gap-3 ${isCompleted ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60' : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700'}`}>
+                      <div className={`w-8 h-8 rounded-full border flex items-center justify-center text-xs font-black shrink-0 font-roboto shadow-inner ${isCompleted ? 'bg-emerald-100 dark:bg-emerald-900/60 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200'}`}>
                         {action.id}
                       </div>
-                      <h4 className={`text-sm font-black font-roboto ${isCompleted ? 'text-emerald-800' : 'text-slate-800'}`}>
+                      <h4 className={`text-sm font-black font-roboto ${isCompleted ? 'text-emerald-900 dark:text-emerald-300' : 'text-slate-900 dark:text-white'}`}>
                         {action.title}
                       </h4>
                     </div>
                     
                     <div className={`p-5 space-y-4 ${isCompleted ? 'opacity-60 grayscale' : ''}`}>
                       <div className="space-y-1">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-roboto">Problem</span>
-                        <p className="text-xs text-slate-700 font-medium font-roboto">{action.problem}</p>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider font-roboto">Problem</span>
+                        <p className="text-xs text-slate-900 dark:text-slate-100 font-medium font-roboto">{action.problem}</p>
                       </div>
                       
                       <div className="space-y-1">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-roboto">Evidence</span>
-                        <p className="text-xs text-slate-600 font-roboto bg-slate-50 p-2 rounded-lg border border-slate-100">{action.evidence}</p>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider font-roboto">Evidence</span>
+                        <p className="text-xs text-slate-800 dark:text-slate-200 font-roboto bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">{action.evidence}</p>
                       </div>
                       
                       <div className="space-y-1">
-                        <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider font-roboto">Action</span>
-                        <p className="text-xs text-indigo-900 font-medium font-roboto bg-indigo-50/50 p-2 rounded-lg border border-indigo-100">{action.action}</p>
+                        <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold uppercase tracking-wider font-roboto">Action</span>
+                        <p className="text-xs text-indigo-950 dark:text-indigo-100 font-medium font-roboto bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/80">{action.action}</p>
                       </div>
                       
                       <div className="space-y-1">
-                        <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider font-roboto">Target</span>
-                        <p className="text-xs text-emerald-900 font-medium font-roboto bg-emerald-50/50 p-2 rounded-lg border border-emerald-100">{action.target}</p>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wider font-roboto">Target</span>
+                        <p className="text-xs text-emerald-950 dark:text-emerald-100 font-medium font-roboto bg-emerald-50 dark:bg-emerald-950/50 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/80">{action.target}</p>
                       </div>
                     </div>
 
-                    <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end">
                       <button
                         onClick={() => setCompletedActions(prev => ({ ...prev, [action.id]: !prev[action.id] }))}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${
                           isCompleted 
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 shadow-sm'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-200' 
+                            : 'bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-600 shadow-xs'
                         }`}
                       >
                         {isCompleted ? (
                           <>
-                            <CheckCircle2 size={14} className="text-emerald-600" />
+                            <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
                             <span>Completed</span>
                           </>
                         ) : (
                           <>
-                            <Circle size={14} className="text-slate-400" />
+                            <Circle size={14} className="text-slate-500 dark:text-slate-400" />
                             <span>Mark as Done</span>
                           </>
                         )}
