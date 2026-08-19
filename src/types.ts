@@ -180,6 +180,42 @@ export interface ChatSession {
   isConnected?: boolean;
 }
 
+export interface MetaTraderAccount {
+  id?: string;
+  login: string;
+  broker?: string;
+  platform?: string;
+  server?: string;
+  balance?: number;
+  equity?: number;
+  margin?: number;
+  marginFree?: number;
+  margin_free?: number;
+  leverage?: number;
+  currency?: string;
+  conn_status?: 'connected' | 'error' | 'reconnecting';
+  error_message?: string;
+  fetched_at?: string;
+  // New backend computed metrics
+  total_pnl?: number;
+  totalPnl?: number;
+  totalPnL?: number;
+  performance_pct?: number;
+  performancePct?: number;
+  performancePercent?: number;
+  drawdown_pct?: number;
+  drawdownPct?: number;
+  drawdownPercent?: number;
+  max_drawdown?: number;
+  maxDrawdown?: number;
+  peak_equity?: number;
+  peakEquity?: number;
+  total_deposit?: number;
+  totalDeposit?: number;
+  total_withdrawal?: number;
+  totalWithdrawal?: number;
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   data: T | null;

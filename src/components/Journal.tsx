@@ -428,8 +428,11 @@ export const Journal: React.FC = () => {
 
   // All-time Total P&L and All-time Drawdown (%)
   const totalPnLAllTime = useMemo(() => {
+    if (typeof activeAccountInfo?.total_pnl === 'number') return activeAccountInfo.total_pnl;
+    if (typeof activeAccountInfo?.totalPnl === 'number') return activeAccountInfo.totalPnl;
+    if (typeof activeAccountInfo?.totalPnL === 'number') return activeAccountInfo.totalPnL;
     return closedTrades.reduce((acc, t) => acc + (t.pl || 0), 0);
-  }, [closedTrades]);
+  }, [activeAccountInfo, closedTrades]);
 
   const currentEffectiveBalance = useMemo(() => {
     if (typeof activeAccountInfo?.balance === 'number') return activeAccountInfo.balance;
@@ -440,6 +443,10 @@ export const Journal: React.FC = () => {
   const balanceDeals = useMemo(() => trades.filter(t => isBalanceDeal(t)), [trades]);
   
   const { initialDepositAmount, additionalDepositsAmount, totalDepositsAmount } = useMemo(() => {
+    const beTotalDeposit = typeof activeAccountInfo?.total_deposit === 'number'
+      ? activeAccountInfo.total_deposit
+      : (typeof activeAccountInfo?.totalDeposit === 'number' ? activeAccountInfo.totalDeposit : null);
+
     // Deduplicate balance deals by ID, ticket, or signature
     const seen = new Set<string>();
     const uniqueBalanceDeals = balanceDeals.filter(deal => {
@@ -459,7 +466,14 @@ export const Journal: React.FC = () => {
       return {
         initialDepositAmount: initial,
         additionalDepositsAmount: additional,
-        totalDepositsAmount: initial + additional,
+        totalDepositsAmount: beTotalDeposit !== null ? beTotalDeposit : (initial + additional),
+      };
+    }
+    if (beTotalDeposit !== null) {
+      return {
+        initialDepositAmount: beTotalDeposit,
+        additionalDepositsAmount: 0,
+        totalDepositsAmount: beTotalDeposit,
       };
     }
     if (currentEffectiveBalance > 0) {
@@ -476,15 +490,20 @@ export const Journal: React.FC = () => {
       additionalDepositsAmount: 0,
       totalDepositsAmount: 10000,
     };
-  }, [balanceDeals, currentEffectiveBalance, totalPnLAllTime]);
+  }, [activeAccountInfo, balanceDeals, currentEffectiveBalance, totalPnLAllTime]);
 
   const totalWithdrawalsAmount = useMemo(() => {
+    if (typeof activeAccountInfo?.total_withdrawal === 'number') return Math.abs(activeAccountInfo.total_withdrawal);
+    if (typeof activeAccountInfo?.totalWithdrawal === 'number') return Math.abs(activeAccountInfo.totalWithdrawal);
     return Math.abs(balanceDeals.filter(t => (t.pl || 0) < 0).reduce((acc, t) => acc + (t.pl || 0), 0));
-  }, [balanceDeals]);
+  }, [activeAccountInfo, balanceDeals]);
 
   const totalPnLAllTimePercent = useMemo(() => {
+    if (typeof activeAccountInfo?.performance_pct === 'number') return activeAccountInfo.performance_pct;
+    if (typeof activeAccountInfo?.performancePct === 'number') return activeAccountInfo.performancePct;
+    if (typeof activeAccountInfo?.performancePercent === 'number') return activeAccountInfo.performancePercent;
     return totalDepositsAmount > 0 ? (totalPnLAllTime / totalDepositsAmount) * 100 : 0;
-  }, [totalPnLAllTime, totalDepositsAmount]);
+  }, [activeAccountInfo, totalPnLAllTime, totalDepositsAmount]);
 
   // Current Week Progress Calculations
   const now = new Date();
@@ -503,8 +522,17 @@ export const Journal: React.FC = () => {
   const weeklyDDPercent = weeklyRiskAmount > 0 ? Math.min(100, Math.max(0, (currentWeeklyDD / weeklyRiskAmount) * 100)) : 0;
 
   const maxDrawdownAllTimePercent = useMemo(() => {
+    if (typeof activeAccountInfo?.drawdown_pct === 'number') return activeAccountInfo.drawdown_pct;
+    if (typeof activeAccountInfo?.drawdownPct === 'number') return activeAccountInfo.drawdownPct;
+    if (typeof activeAccountInfo?.drawdownPercent === 'number') return activeAccountInfo.drawdownPercent;
+    if (typeof activeAccountInfo?.max_drawdown === 'number') return activeAccountInfo.max_drawdown;
+    if (typeof activeAccountInfo?.maxDrawdown === 'number') return activeAccountInfo.maxDrawdown;
+
     const sorted = [...closedTrades].sort((a, b) => parseUTCDate(a.closeTime).getTime() - parseUTCDate(b.closeTime).getTime());
-    let peak = totalDepositsAmount > 0 ? totalDepositsAmount : (currentEffectiveBalance || 10000);
+    const peakEquityVal = typeof activeAccountInfo?.peak_equity === 'number'
+      ? activeAccountInfo.peak_equity
+      : (typeof activeAccountInfo?.peakEquity === 'number' ? activeAccountInfo.peakEquity : null);
+    let peak = peakEquityVal !== null && peakEquityVal > 0 ? peakEquityVal : (totalDepositsAmount > 0 ? totalDepositsAmount : (currentEffectiveBalance || 10000));
     let running = peak;
     let maxDD = 0;
     sorted.forEach(t => {
@@ -514,7 +542,7 @@ export const Journal: React.FC = () => {
       if (dd > maxDD) maxDD = dd;
     });
     return peak > 0 ? Math.min(100, (maxDD / peak) * 100) : (weeklyDDPercent > 0 ? weeklyDDPercent : 0);
-  }, [closedTrades, totalDepositsAmount, currentEffectiveBalance, weeklyDDPercent]);
+  }, [activeAccountInfo, closedTrades, totalDepositsAmount, currentEffectiveBalance, weeklyDDPercent]);
 
   // Daily Progress Calculations
   const todayStart = new Date();
@@ -1629,8 +1657,15 @@ export const Journal: React.FC = () => {
             {/* TAB 1: PORTOFOLIO */}
       {/* TAB 1: PORTFOLIO (MQL5 MODEL) */}
       {activeTab === 'goals' && (() => {
-        // Real Calculations from closedTrades & activeAccountInfo
-        const profit = closedTrades.reduce((acc, t) => acc + (t.pl || 0), 0);
+        // Real Calculations from BE fields & closedTrades
+        const profit = typeof activeAccountInfo?.total_pnl === 'number'
+          ? activeAccountInfo.total_pnl
+          : (typeof activeAccountInfo?.totalPnl === 'number' ? activeAccountInfo.totalPnl : (typeof activeAccountInfo?.totalPnL === 'number' ? activeAccountInfo.totalPnL : totalPnLAllTime));
+        
+        const performancePct = typeof activeAccountInfo?.performance_pct === 'number'
+          ? activeAccountInfo.performance_pct
+          : (typeof activeAccountInfo?.performancePct === 'number' ? activeAccountInfo.performancePct : totalPnLAllTimePercent);
+
         const winTrades = closedTrades.filter(t => t.pl > 0).length;
         const lossTrades = closedTrades.filter(t => t.pl < 0).length;
         const totalTrades = closedTrades.length;
@@ -1638,7 +1673,7 @@ export const Journal: React.FC = () => {
         const lossRate = totalTrades > 0 ? (lossTrades / totalTrades) * 100 : 0;
         
         const currentBalance = activeAccountInfo?.balance ?? (currentBalanceValue > 0 ? currentBalanceValue : ((connectedBroker as any)?.balance ?? 0));
-        const equity = activeAccountInfo?.equity ?? (currentBalance > 0 ? currentBalance + profit : 0);
+        const equity = activeAccountInfo?.equity ?? (currentBalance > 0 ? currentBalance + (activeAccountInfo?.total_pnl ?? profit) : 0);
         const margin = activeAccountInfo?.margin || 0;
         
         const depositLoad = equity > 0 && margin > 0 ? Math.min(100, (margin / equity) * 100) : 0;
@@ -1655,18 +1690,12 @@ export const Journal: React.FC = () => {
         ).length;
         const algoTrading = totalTrades > 0 ? (algoTradesCount / totalTrades) * 100 : 0;
         
-        // Real Peak-to-Valley Max Drawdown calculation using totalDeposits
-        let peak = totalDeposits || currentBalance || 0;
-        let runningBalance = peak;
-        let maxDDAmt = 0;
-        const sortedTrades = [...closedTrades].sort((a, b) => new Date(a.closeTime).getTime() - new Date(b.closeTime).getTime());
-        sortedTrades.forEach(t => {
-          runningBalance += (t.pl || 0);
-          if (runningBalance > peak) peak = runningBalance;
-          const dd = peak - runningBalance;
-          if (dd > maxDDAmt) maxDDAmt = dd;
-        });
-        const maxDrawdown = peak > 0 ? Math.min(100, (maxDDAmt / peak) * 100) : (weeklyDDPercent > 0 ? weeklyDDPercent : 0);
+        // Real Peak-to-Valley Max Drawdown using BE drawdown_pct or computed all-time max DD
+        const maxDrawdown = typeof activeAccountInfo?.drawdown_pct === 'number'
+          ? activeAccountInfo.drawdown_pct
+          : (typeof activeAccountInfo?.drawdownPct === 'number' 
+             ? activeAccountInfo.drawdownPct 
+             : (typeof activeAccountInfo?.max_drawdown === 'number' ? activeAccountInfo.max_drawdown : maxDrawdownAllTimePercent));
         
         // Real Trading Activity based on unique trading days
         const uniqueTradingDays = new Set(closedTrades.map(t => new Date(t.closeTime).toDateString())).size;
@@ -1702,29 +1731,67 @@ export const Journal: React.FC = () => {
         // --- GOTRADING VERDICT CALCULATION ---
         let verdictHeadline = 'Not enough data yet.';
         let verdictDesc = 'Continue trading to generate enough data for a meaningful account assessment.';
-        let verdictStatus = 'neutral';
+        let verdictStatus: 'healthy' | 'warning' | 'risk' | 'neutral' = 'neutral';
 
-        if (totalTrades >= 5) {
-          if (profit > 0 && maxDrawdown <= 5 && winRate >= 45) {
-            verdictHeadline = 'Profitable and well controlled.';
-            verdictDesc = 'Performance remains positive, while drawdown and position sizing are currently well controlled.';
-            verdictStatus = 'healthy';
-          } else if (profit > 0 && maxDrawdown > 5 && maxDrawdown <= 15) {
-            verdictHeadline = 'Profitable, but inconsistent.';
-            verdictDesc = 'Your account is profitable, but recent trading behavior shows signs of inconsistency.';
-            verdictStatus = 'warning';
-          } else if (profit > 0 && maxDrawdown > 15) {
-            verdictHeadline = 'Profitable, but at risk.';
-            verdictDesc = 'Your account is profitable, but recent trading behavior shows increasing risk after losses.';
-            verdictStatus = 'warning';
-          } else if (profit <= 0 && maxDrawdown <= 10) {
-             verdictHeadline = 'Performance needs improvement.';
-             verdictDesc = 'Trading performance is currently negative, but risk and drawdown remain relatively controlled.';
-             verdictStatus = 'warning';
-          } else if (profit <= 0 && maxDrawdown > 10) {
-             verdictHeadline = 'Account is under significant pressure.';
-             verdictDesc = 'Your account is currently under pressure, with drawdown increasing and recent trades showing negative expectancy.';
-             verdictStatus = 'risk';
+        const hasAccountData = totalTrades > 0 || (typeof activeAccountInfo?.total_pnl === 'number' && activeAccountInfo.total_pnl !== 0) || totalDeposits > 0 || (typeof activeAccountInfo?.performance_pct === 'number' && activeAccountInfo.performance_pct !== 0);
+
+        if (hasAccountData) {
+          // 1. Critical Capital Depletion / Margin Call Risk / Severe Loss (performance <= -70% or DD >= 70% or blown equity)
+          if (
+            performancePct <= -70 || 
+            maxDrawdown >= 70 || 
+            (equity <= 0 && totalDeposits > 0) || 
+            (totalDeposits > 0 && equity < totalDeposits * 0.15 && (profit < 0 || performancePct < -50))
+          ) {
+            verdictHeadline = 'Critical Loss / Margin Call Risk';
+            verdictDesc = 'Your account has suffered severe capital depletion. Stop trading immediately, review risk management, and avoid high-leverage positions.';
+            verdictStatus = 'risk';
+          } 
+          // 2. High Risk / Significant Pressure (-25% to -70% or Drawdown >= 35%)
+          else if (
+            performancePct <= -25 || 
+            maxDrawdown >= 35 || 
+            (profit < 0 && maxDrawdown >= 20) ||
+            (performancePct < 0 && maxDrawdown >= 20)
+          ) {
+            verdictHeadline = 'High Risk / Account under significant pressure.';
+            verdictDesc = 'Your account is currently under pressure, with drawdown increasing and performance showing negative expectancy. Immediate risk reduction required.';
+            verdictStatus = 'risk';
+          } 
+          // 3. Performance Needs Improvement (Negative P&L, but moderate DD)
+          else if (profit < 0 || performancePct < 0) {
+            if (maxDrawdown <= 15) {
+              verdictHeadline = 'Performance needs improvement.';
+              verdictDesc = 'Trading performance is currently negative, but risk and drawdown remain relatively controlled.';
+              verdictStatus = 'warning';
+            } else {
+              verdictHeadline = 'Account is under pressure.';
+              verdictDesc = 'Drawdown is elevated with negative expectancy. Refine trade execution and tighten stop loss limits.';
+              verdictStatus = 'risk';
+            }
+          } 
+          // 4. Profitable with High Risk / Elevated Drawdown (DD > 20%)
+          else if (profit > 0 || performancePct > 0) {
+            if (maxDrawdown > 20) {
+              verdictHeadline = 'Profitable, but high risk.';
+              verdictDesc = 'Your account is profitable overall, but elevated drawdown indicates high risk exposure. Tighten risk parameters.';
+              verdictStatus = 'warning';
+            } else if (maxDrawdown > 8) {
+              verdictHeadline = 'Profitable, but inconsistent.';
+              verdictDesc = 'Your account is profitable, but trading consistency can be improved to minimize drawdown phases.';
+              verdictStatus = 'warning';
+            } else {
+              // 5. Profitable and well controlled (Healthy: profit > 0 and DD <= 8%)
+              verdictHeadline = 'Profitable and well controlled.';
+              verdictDesc = 'Performance remains positive, while drawdown and position sizing are currently well controlled.';
+              verdictStatus = 'healthy';
+            }
+          } 
+          // 6. Flat / Breakeven
+          else {
+            verdictHeadline = 'Performance is break-even.';
+            verdictDesc = 'Your account performance is currently flat. Continue monitoring risk-reward ratios on upcoming trades.';
+            verdictStatus = 'neutral';
           }
         }
 

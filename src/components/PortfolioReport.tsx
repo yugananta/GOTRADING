@@ -567,7 +567,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
       largestLoss,
       consecutiveWins,
       consecutiveLosses,
-      maxDrawdownPercent: maxDrawdownPct,
+      maxDrawdownPercent: (selectedPeriod === 'all' && typeof activeAccountInfo?.drawdown_pct === 'number') ? activeAccountInfo.drawdown_pct : maxDrawdownPct,
       currentDrawdownPercent,
       averageLotSize,
       equityPoints,
