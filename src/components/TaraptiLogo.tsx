@@ -18,10 +18,16 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
   type = 'main',
   align = type === 'login' ? 'center' : 'left'
 }) => {
-  const [imgSrc, setImgSrc] = useState('/logo_gotrading.png');
+  const initialLogo = type === 'login' ? '/login_logo.png' : '/logo_gotrading.png';
+  const [imgSrc, setImgSrc] = useState(initialLogo);
   const [timestamp] = useState(() => Date.now());
   const [hasError, setHasError] = useState(false);
   const logoHeight = typeof height === 'number' ? `${height}px` : height;
+
+  React.useEffect(() => {
+    setImgSrc(type === 'login' ? '/login_logo.png' : '/logo_gotrading.png');
+    setHasError(false);
+  }, [type]);
 
   return (
     <div className={`flex items-center shrink-0 select-none ${align === 'center' ? 'justify-center mx-auto' : ''} ${className}`} style={{ height: logoHeight }}>
@@ -36,14 +42,26 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
             objectPosition: align === 'center' ? 'center' : 'left center' 
           }}
           onError={() => {
-            if (imgSrc === '/logo_gotrading.png') {
-              setImgSrc('/login_logo.png');
-            } else if (imgSrc === '/login_logo.png') {
-              setImgSrc('/gotrading_logo.png');
-            } else if (imgSrc === '/gotrading_logo.png') {
-              setImgSrc('/company_logo.png');
+            if (type === 'login') {
+              if (imgSrc === '/login_logo.png') {
+                setImgSrc('/logo_gotrading.png');
+              } else if (imgSrc === '/logo_gotrading.png') {
+                setImgSrc('/gotrading_logo.png');
+              } else if (imgSrc === '/gotrading_logo.png') {
+                setImgSrc('/company_logo.png');
+              } else {
+                setHasError(true);
+              }
             } else {
-              setHasError(true);
+              if (imgSrc === '/logo_gotrading.png') {
+                setImgSrc('/gotrading_logo.png');
+              } else if (imgSrc === '/gotrading_logo.png') {
+                setImgSrc('/login_logo.png');
+              } else if (imgSrc === '/login_logo.png') {
+                setImgSrc('/company_logo.png');
+              } else {
+                setHasError(true);
+              }
             }
           }}
         />
