@@ -384,66 +384,7 @@ function MainAppLayout() {
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mainRef = useRef<HTMLDivElement | null>(null);
 
-  // Mobile bottom navigation tabs sequence for swipe navigation
-  const MOBILE_BOTTOM_TABS: ScreenView[] = ['feed', 'journal', 'account', 'outlook', 'profile'];
 
-  const touchStartXRef = useRef<number | null>(null);
-  const touchStartYRef = useRef<number | null>(null);
-  const touchStartTimeRef = useRef<number>(0);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStartXRef.current = touch.clientX;
-    touchStartYRef.current = touch.clientY;
-    touchStartTimeRef.current = Date.now();
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
-
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartXRef.current;
-    const deltaY = touch.clientY - touchStartYRef.current;
-    const duration = Date.now() - touchStartTimeRef.current;
-
-    touchStartXRef.current = null;
-    touchStartYRef.current = null;
-
-    if (
-      Math.abs(deltaX) > 40 &&
-      Math.abs(deltaX) > Math.abs(deltaY) * 1.3 &&
-      duration < 600
-    ) {
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        target.closest('input, textarea, select, button, [role="slider"], .recharts-wrapper, .no-swipe, [data-no-swipe]')
-      ) {
-        return;
-      }
-
-      const currentIndex = MOBILE_BOTTOM_TABS.indexOf(activeView as ScreenView);
-      if (deltaX < 0) {
-        // Swiped LEFT -> Next tab (Feed -> Journal -> Account -> Outlook -> Profile)
-        if (currentIndex !== -1 && currentIndex < MOBILE_BOTTOM_TABS.length - 1) {
-          const nextTab = MOBILE_BOTTOM_TABS[currentIndex + 1];
-          setActiveView(nextTab as ScreenView);
-          if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-            window.navigator.vibrate(10);
-          }
-        }
-      } else {
-        // Swiped RIGHT -> Previous tab (Profile -> Outlook -> Account -> Journal -> Feed)
-        if (currentIndex !== -1 && currentIndex > 0) {
-          const prevTab = MOBILE_BOTTOM_TABS[currentIndex - 1];
-          setActiveView(prevTab as ScreenView);
-          if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-            window.navigator.vibrate(10);
-          }
-        }
-      }
-    }
-  };
 
   const refreshPendingCount = async () => {
     try {
@@ -1610,8 +1551,6 @@ function MainAppLayout() {
         {/* CENTER MAIN CONTENT */}
         <main 
           ref={mainRef} 
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
           className={`flex-1 min-w-0 w-full ${
             isFullWidthDesktopView ? 'max-w-none' : 'max-w-[580px] lg:max-w-[650px]'
           } h-full overflow-y-auto no-scrollbar ${activeView !== 'messages' ? `lg:bg-transparent bg-white shadow-2xl lg:shadow-none border-x lg:border-none border-slate-200 pb-28 lg:pb-0 ${activeView === 'feed' ? '' : 'space-y-4'}` : 'overflow-hidden flex flex-col lg:bg-white lg:border lg:border-slate-200 lg:rounded-2xl lg:shadow-sm'}`}
@@ -2297,17 +2236,11 @@ function MainAppLayout() {
         )}
       </AnimatePresence>
 
-      {/* BOTTOM NAVIGATION BAR WITH SWIPE-TO-NAVIGATE GESTURE */}
+      {/* BOTTOM NAVIGATION BAR */}
       {activeView !== 'messages' && (
         <footer 
-          onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
             className={`lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md border-t border-slate-200/90 pt-1.5 pb-2.5 px-3 w-full max-w-lg z-40 shrink-0 shadow-[0_-4px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300 ease-in-out ${isFooterVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
           >
-        {/* Swipe Handle Indicator */}
-        <div className="flex flex-col items-center mb-1">
-          <div className="w-9 h-1 bg-slate-200/90 rounded-full cursor-grab active:cursor-grabbing" title="Swipe left/right to navigate tabs" />
-        </div>
 
         <div className="grid grid-cols-5 gap-1 text-center relative">
           
