@@ -27,9 +27,10 @@ export const formatToK = (value: any): string => {
     const sign = num < 0 ? '-' : (value.startsWith('+') ? '+' : '');
     const currency = value.includes('$') ? '$' : '';
     
-    // Construct properly: +$1.2K or $12.4K
-    if (prefix.includes('+') && prefix.includes('$')) return `+$${formattedNum}`;
-    if (prefix.includes('$')) return `$${formattedNum}`;
+    // Construct properly: -$1.2K, +$1.2K or $12.4K
+    if (num < 0) return `-$${formattedNum}`;
+    if (prefix.includes('+') && currency) return `+$${formattedNum}`;
+    if (currency) return `$${formattedNum}`;
     if (sign) return `${sign}${formattedNum}`;
     return formattedNum;
   }

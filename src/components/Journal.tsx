@@ -1463,8 +1463,10 @@ export const Journal: React.FC = () => {
               <span className="text-[8.5px] uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 font-bold block font-roboto truncate">
                 Balance
               </span>
-              <span className="text-base sm:text-lg font-black block leading-none font-roboto text-slate-900 dark:text-white">
-                ${currentEffectiveBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span className={`text-base sm:text-lg font-black block leading-none font-roboto ${
+                currentEffectiveBalance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'
+              }`}>
+                {currentEffectiveBalance < 0 ? '-' : ''}${Math.abs(currentEffectiveBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block truncate font-medium">
                 Effective Balance
@@ -1476,9 +1478,16 @@ export const Journal: React.FC = () => {
               <span className="text-[8.5px] uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 font-bold block font-roboto truncate">
                 Equity
               </span>
-              <span className="text-base sm:text-lg font-black block leading-none font-roboto text-indigo-600 dark:text-indigo-400">
-                ${(activeAccountInfo?.equity ?? (currentEffectiveBalance + floatingProfitUSD)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+              {(() => {
+                const currentEquity = activeAccountInfo?.equity ?? (currentEffectiveBalance + floatingProfitUSD);
+                return (
+                  <span className={`text-base sm:text-lg font-black block leading-none font-roboto ${
+                    currentEquity < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'
+                  }`}>
+                    {currentEquity < 0 ? '-' : ''}${Math.abs(currentEquity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                );
+              })()}
               <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block truncate font-medium">
                 Floating-adjusted Equity
               </span>
@@ -1711,12 +1720,20 @@ export const Journal: React.FC = () => {
         const displayDeposits = additionalDeposits;
 
         // Scale bar widths proportionally based on the max amount
-        const maxBarValue = Math.max(Math.abs(displayProfit), displayWithdrawals, displayEquity, displayInitialDeposit, displayDeposits, 100);
+        const maxBarValue = Math.max(
+          Math.abs(displayProfit),
+          Math.abs(displayEquity),
+          Math.abs(displayWithdrawals),
+          Math.abs(displayInitialDeposit),
+          Math.abs(displayDeposits),
+          100
+        );
 
         const formatUSD = (num: number) => {
+          const isNegative = num < 0;
           const parts = Math.abs(num).toFixed(2).split('.');
           const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-          return `${intPart}.${parts[1]} USD`;
+          return `${isNegative ? '-' : ''}${intPart}.${parts[1]} USD`;
         };
 
         const radarData = [
@@ -1975,28 +1992,34 @@ export const Journal: React.FC = () => {
               <span className="w-24 sm:w-28 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4">
                 Equity
               </span>
-              <span className="w-28 sm:w-32 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4 font-mono">
+              <span className={`w-28 sm:w-32 text-right shrink-0 pr-3 sm:pr-4 font-mono ${
+                displayEquity < 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'font-normal text-slate-800 dark:text-slate-200'
+              }`}>
                 {formatUSD(displayEquity)}
               </span>
               <div className="flex-1 h-[22px] flex items-center">
                 <div 
-                  className="h-full bg-[#8be5ff]" 
-                  style={{ width: `${Math.max(2, Math.min(100, (displayEquity / maxBarValue) * 100))}%` }}
+                  className={`h-full ${displayEquity < 0 ? 'bg-rose-400 dark:bg-rose-500' : 'bg-[#8be5ff]'}`} 
+                  style={{ width: `${Math.max(2, Math.min(100, (Math.abs(displayEquity) / maxBarValue) * 100))}%` }}
                 />
               </div>
             </div>
 
-            {/* 2. Profit */}
+            {/* 2. Profit / Loss */}
             <div className="flex items-center text-[13.5px] sm:text-[14.5px]">
-              <span className="w-24 sm:w-28 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4">
-                Profit
+              <span className={`w-24 sm:w-28 text-right shrink-0 pr-3 sm:pr-4 ${
+                displayProfit < 0 ? 'text-rose-600 dark:text-rose-400 font-medium' : 'font-normal text-slate-800 dark:text-slate-200'
+              }`}>
+                {displayProfit < 0 ? 'Loss' : 'Profit'}
               </span>
-              <span className="w-28 sm:w-32 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4 font-mono">
+              <span className={`w-28 sm:w-32 text-right shrink-0 pr-3 sm:pr-4 font-mono ${
+                displayProfit < 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'font-normal text-slate-800 dark:text-slate-200'
+              }`}>
                 {formatUSD(displayProfit)}
               </span>
               <div className="flex-1 h-[22px] flex items-center">
                 <div 
-                  className="h-full bg-[#00b0ff]" 
+                  className={`h-full ${displayProfit < 0 ? 'bg-[#ef4444] dark:bg-rose-500' : 'bg-[#00b0ff]'}`} 
                   style={{ width: displayProfit !== 0 ? `${Math.max(2, Math.min(100, (Math.abs(displayProfit) / maxBarValue) * 100))}%` : '2px' }}
                 />
               </div>
@@ -2013,7 +2036,7 @@ export const Journal: React.FC = () => {
               <div className="flex-1 h-[22px] flex items-center">
                 <div 
                   className="h-full bg-[#8be5ff]" 
-                  style={{ width: displayInitialDeposit > 0 ? `${Math.max(2, Math.min(100, (displayInitialDeposit / maxBarValue) * 100))}%` : '2px' }}
+                  style={{ width: displayInitialDeposit > 0 ? `${Math.max(2, Math.min(100, (Math.abs(displayInitialDeposit) / maxBarValue) * 100))}%` : '2px' }}
                 />
               </div>
             </div>
@@ -2029,7 +2052,7 @@ export const Journal: React.FC = () => {
               <div className="flex-1 h-[22px] flex items-center">
                 <div 
                   className="h-full bg-[#00b0ff]" 
-                  style={{ width: displayWithdrawals > 0 ? `${Math.max(2, Math.min(100, (displayWithdrawals / maxBarValue) * 100))}%` : '2px' }}
+                  style={{ width: displayWithdrawals > 0 ? `${Math.max(2, Math.min(100, (Math.abs(displayWithdrawals) / maxBarValue) * 100))}%` : '2px' }}
                 />
               </div>
             </div>
@@ -2045,7 +2068,7 @@ export const Journal: React.FC = () => {
               <div className="flex-1 h-[22px] flex items-center">
                 <div 
                   className="h-full bg-[#8be5ff]" 
-                  style={{ width: displayDeposits > 0 ? `${Math.max(2, Math.min(100, (displayDeposits / maxBarValue) * 100))}%` : '2px' }}
+                  style={{ width: displayDeposits > 0 ? `${Math.max(2, Math.min(100, (Math.abs(displayDeposits) / maxBarValue) * 100))}%` : '2px' }}
                 />
               </div>
             </div>
