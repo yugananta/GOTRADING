@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from './AppContext.tsx';
-import { Send, Paperclip, Video as VideoIcon, Calendar, Image, Smile, TrendingUp, TrendingDown, Pin, Loader2 } from 'lucide-react';
+import { Send, Paperclip, Video as VideoIcon, Calendar, Image, Smile, TrendingUp, TrendingDown, Pin, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { apiFetch } from '../utils/apiFetch';
 import imageCompression from 'browser-image-compression';
@@ -235,125 +235,143 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   if (!currentUser) return null;
 
   return (
-    <div id="create-post-module" className="bg-white rounded-2xl border border-slate-200 p-3 shadow-[0_2px_8px_rgba(0,0,0,0.08)] mb-3">
-      <div className="flex gap-3">
-        <div 
-          onClick={() => viewUserProfile(currentUser.id)}
-          className="w-10 h-10 rounded-full overflow-hidden bg-indigo-500 text-white font-bold flex items-center justify-center text-sm shrink-0 border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
-        >
-          {currentUser.avatar && (currentUser.avatar.startsWith('http') || currentUser.avatar.startsWith('data:')) ? (
-            <img src={currentUser.avatar} alt="avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          ) : (
-            currentUser.avatar || "👤"
-          )}
-        </div>
-
-        <div className="flex-1 space-y-3">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={`Write a post or share your market analysis with members...`}
-            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none min-h-[50px]"
-          />
-
-          {/* Uploading Progress Spinner */}
-          {isUploading && (
-            <div className="flex items-center gap-2 text-xs text-indigo-600 font-bold bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/30 animate-pulse">
-              <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-              <span>Mengunggah media ke Cloud Storage... Silakan tunggu.</span>
-            </div>
-          )}
-
-          {/* Attached Media Preview */}
-          {attachedMedia.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {attachedMedia.map((media, i) => {
-                const isVideo = media.type === 'video';
-                return (
-                  <div key={i} className="relative w-28 h-20 rounded-xl overflow-hidden border border-slate-200">
-                    {isVideo ? (
-                      <video src={media.url} className="w-full h-full object-cover bg-black" muted playsInline />
-                    ) : (
-                      <img src={media.url} className="w-full h-full object-cover" alt="Preview" />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setAttachedMedia(prev => prev.filter((_, idx) => idx !== i))}
-                      className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-black cursor-pointer text-xs"
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
-            <div className="flex items-center gap-2">
-              <label className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition flex items-center gap-1.5 text-xs font-semibold">
-                <Image size={16} className="text-emerald-500" />
-                <span className="hidden sm:inline">Foto/Gambar/Video</span>
-                <input 
-                  type="file" 
-                  accept="image/*,video/*" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleMediaUpload}
-                  disabled={isUploading}
-                />
-              </label>
-
-              {/* Sentiment selector */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setNewPostSentiment(newPostSentiment === 'Bullish' ? null : 'Bullish')}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${newPostSentiment === 'Bullish' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
-                >
-                  <TrendingUp size={12} /> Bullish
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNewPostSentiment(newPostSentiment === 'Bearish' ? null : 'Bearish')}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${newPostSentiment === 'Bearish' ? 'bg-rose-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
-                >
-                  <TrendingDown size={12} /> Bearish
-                </button>
-              </div>
-
-              {/* Pin & Official Toggles for Admin/Verified */}
-              {canPinOrOfficial && (
-                <div className="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => setIsPinnedPost(!isPinnedPost)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${isPinnedPost ? 'bg-blue-600 text-white' : 'text-blue-700 hover:bg-blue-100'}`}
-                    title="Sematkan postingan di paling atas feed"
-                  >
-                    <Pin size={12} /> Pin
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsOfficialPost(!isOfficialPost)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${isOfficialPost ? 'bg-amber-600 text-white' : 'text-amber-700 hover:bg-amber-100'}`}
-                    title="Tandai sebagai Post Official"
-                  >
-                    Official
-                  </button>
-                </div>
-              )}
-            </div>
-
+    <div id="create-post-wrapper" className="mb-3">
+      {/* Admin/Verified Pin & Official Controls OUTSIDE the Create Post Card */}
+      {canPinOrOfficial && (
+        <div className="flex items-center justify-between px-2 mb-1.5 text-xs">
+          <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+            <Pin size={12} className="text-indigo-600" />
+            Opsi Publikasi Feed:
+          </span>
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={handlePost}
-              disabled={isReading || isUploading || isSubmitting || (!content.trim() && attachedMedia.length === 0)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100 cursor-pointer"
+              onClick={() => setIsPinnedPost(!isPinnedPost)}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 border shadow-xs ${
+                isPinnedPost 
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-blue-500/20' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+              title="Sematkan postingan di paling atas feed"
             >
-              <Send size={14} />
-              <span>Posting</span>
+              <Pin size={12} className={isPinnedPost ? "fill-white text-white" : "text-blue-600"} />
+              <span>Pin Post</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setIsOfficialPost(!isOfficialPost)}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 border shadow-xs ${
+                isOfficialPost 
+                  ? 'bg-amber-600 border-amber-600 text-white shadow-amber-500/20' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+              title="Tandai sebagai Post Official"
+            >
+              <CheckCircle2 size={12} className={isOfficialPost ? "text-white" : "text-amber-600"} />
+              <span>Official Post</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div id="create-post-module" className="bg-white rounded-2xl border border-slate-200 p-3 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+        <div className="flex gap-3">
+          <div 
+            onClick={() => viewUserProfile(currentUser.id)}
+            className="w-10 h-10 rounded-full overflow-hidden bg-indigo-500 text-white font-bold flex items-center justify-center text-sm shrink-0 border border-slate-200 cursor-pointer hover:scale-105 transition-transform"
+          >
+            {currentUser.avatar && (currentUser.avatar.startsWith('http') || currentUser.avatar.startsWith('data:')) ? (
+              <img src={currentUser.avatar} alt="avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              currentUser.avatar || "👤"
+            )}
+          </div>
+
+          <div className="flex-1 space-y-3">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={`Write a post or share your market analysis with members...`}
+              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none min-h-[50px]"
+            />
+
+            {/* Uploading Progress Spinner */}
+            {isUploading && (
+              <div className="flex items-center gap-2 text-xs text-indigo-600 font-bold bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/30 animate-pulse">
+                <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                <span>Mengunggah media ke Cloud Storage... Silakan tunggu.</span>
+              </div>
+            )}
+
+            {/* Attached Media Preview */}
+            {attachedMedia.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {attachedMedia.map((media, i) => {
+                  const isVideo = media.type === 'video';
+                  return (
+                    <div key={i} className="relative w-28 h-20 rounded-xl overflow-hidden border border-slate-200">
+                      {isVideo ? (
+                        <video src={media.url} className="w-full h-full object-cover bg-black" muted playsInline />
+                      ) : (
+                        <img src={media.url} className="w-full h-full object-cover" alt="Preview" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setAttachedMedia(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-black cursor-pointer text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+              <div className="flex items-center gap-2">
+                <label className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition flex items-center gap-1.5 text-xs font-semibold">
+                  <Image size={16} className="text-emerald-500" />
+                  <span className="hidden sm:inline">Foto/Gambar/Video</span>
+                  <input 
+                    type="file" 
+                    accept="image/*,video/*" 
+                    className="hidden" 
+                    ref={fileInputRef}
+                    onChange={handleMediaUpload}
+                    disabled={isUploading}
+                  />
+                </label>
+
+                {/* Sentiment selector */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setNewPostSentiment(newPostSentiment === 'Bullish' ? null : 'Bullish')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${newPostSentiment === 'Bullish' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
+                  >
+                    <TrendingUp size={12} /> Bullish
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewPostSentiment(newPostSentiment === 'Bearish' ? null : 'Bearish')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${newPostSentiment === 'Bearish' ? 'bg-rose-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
+                  >
+                    <TrendingDown size={12} /> Bearish
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handlePost}
+                disabled={isReading || isUploading || isSubmitting || (!content.trim() && attachedMedia.length === 0)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100 cursor-pointer"
+              >
+                <Send size={14} />
+                <span>Posting</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -44,7 +44,6 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
 
   const isOfficial = post.isOfficial || post.authorRole?.toLowerCase().includes('admin');
   const isPinned = post.isPinned || isOfficial;
-  const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(true);
 
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [liked, setLiked] = useState(currentUser ? post.likedBy.includes(currentUser.id) : false);
@@ -731,72 +730,32 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
   };
 
   return (
-    <motion.div 
-      id={`post-card-${post.id}`} 
-      className="mb-3 bg-white dark:bg-slate-900/40 rounded-2xl overflow-hidden relative border border-slate-200 dark:border-gray-800/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-slate-300 dark:hover:border-gray-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)]"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.96, y: -10 }}
-      transition={{ 
-        type: "spring",
-        stiffness: 350,
-        damping: 30,
-        opacity: { duration: 0.25 }
-      }}
-    >
-      {/* Official/Pinned Header with Expand/Collapse Summary State */}
+    <div className="mb-4 select-text">
+      {/* Official/Pinned Header outside the Card */}
       {isPinned && (
-        <div 
-          className={`bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-gray-800 px-3.5 py-2 flex items-center justify-between transition-all cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800/80 select-none ${
-            isPinnedCollapsed ? 'rounded-2xl' : 'rounded-t-2xl'
-          }`}
-          onClick={() => setIsPinnedCollapsed(!isPinnedCollapsed)}
-        >
-          <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-200 min-w-0 pr-2">
-            <div className="p-1.5 bg-slate-200/60 dark:bg-gray-800 rounded-lg shrink-0">
-              <Pin size={13} className="fill-slate-500 text-slate-500 dark:text-slate-400 shrink-0" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {isOfficial ? (t('common.post.official') || 'Official Announcement') : (t('common.post.pinned') || 'Pinned Post')}
-                </span>
-                {isPinnedCollapsed && (
-                  <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                    Summary
-                  </span>
-                )}
-              </div>
-              {isPinnedCollapsed && (
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
-                  {post.title || post.content.split('\n')[0] || 'See full announcement'}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1 bg-slate-200/60 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black text-slate-600 dark:text-slate-300 transition">
-              <span>{isPinnedCollapsed ? 'Expand' : 'Collapse'}</span>
-              <motion.div animate={{ rotate: isPinnedCollapsed ? 0 : 180 }} transition={{ duration: 0.2 }}>
-                <ChevronDown size={14} className="text-slate-500" />
-              </motion.div>
-            </div>
-          </div>
+        <div className="flex items-center gap-1.5 px-3 py-1 mb-1.5 text-slate-500 dark:text-slate-400 select-none">
+          <Pin size={13} className="fill-blue-600 text-blue-600 dark:fill-blue-400 dark:text-blue-400 -rotate-45 shrink-0" />
+          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 tracking-wide">
+            {isOfficial ? (t('common.post.official') || 'Official Announcement') : (t('common.post.pinned') || 'Pinned Post')}
+          </span>
         </div>
       )}
 
-      <AnimatePresence mode="wait">
-        {(!isPinned || !isPinnedCollapsed) && (
-          <motion.div
-            key="expanded-content"
-            initial={isPinned ? { height: 0, opacity: 0 } : false}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            {/* Top Header */}
-            <div className="p-4 pb-2 flex items-start justify-between gap-3">
+      <motion.div 
+        id={`post-card-${post.id}`} 
+        className="bg-white dark:bg-slate-900/40 rounded-2xl overflow-hidden relative border border-slate-200 dark:border-gray-800/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-slate-300 dark:hover:border-gray-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)]"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: -10 }}
+        transition={{ 
+          type: "spring",
+          stiffness: 350,
+          damping: 30,
+          opacity: { duration: 0.25 }
+        }}
+      >
+        {/* Top Header */}
+        <div className="p-4 pb-2 flex items-start justify-between gap-3">
         <div 
           className="flex items-start gap-3 cursor-pointer"
           onClick={() => viewUserProfile(post.userId)}
@@ -1149,9 +1108,6 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
           </motion.div>
         )}
       </AnimatePresence>
-      </motion.div>
-      )}
-      </AnimatePresence>
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
@@ -1199,6 +1155,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
         />
       )}
     </motion.div>
+    </div>
   );
 };
 
