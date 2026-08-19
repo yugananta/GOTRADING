@@ -42,7 +42,8 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
             height: '100%', 
             width: 'auto', 
             objectFit: 'contain', 
-            objectPosition: align === 'center' ? 'center' : 'left center' 
+            objectPosition: align === 'center' ? 'center' : 'left center',
+            filter: type === 'main' ? 'invert(0.85) hue-rotate(180deg) brightness(0.9) contrast(1.2)' : undefined
           }}
           onError={() => {
             setCandidateIndex(prev => prev + 1);
