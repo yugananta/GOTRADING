@@ -10,59 +10,57 @@ interface TaraptiLogoProps {
   align?: 'left' | 'center';
 }
 
+// Logo untuk halaman app (navbar, dsb)
+const APP_LOGO = '/logo_gotrading.png';
+// Logo khusus halaman login
+const LOGIN_LOGO = '/logo_login.png';
+
 export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({ 
   className = '', 
-  height = '70px',
-  showText = true,
-  textColor = 'text-slate-900',
+  height = '64px',
   type = 'main',
   align = type === 'login' ? 'center' : 'left'
 }) => {
-  const candidates = type === 'login'
-    ? ['/logo_login.png?v=3', '/logo_gotrading.png?v=3', '/login_logo.png', '/gotrading_logo.png', '/company_logo.png']
-    : ['/logo_gotrading.png?v=3', '/logo_login.png?v=3', '/gotrading_logo.png', '/login_logo.png', '/company_logo.png'];
-
-  const [candidateIndex, setCandidateIndex] = useState(0);
   const logoHeight = typeof height === 'number' ? `${height}px` : height;
 
-  useEffect(() => {
-    setCandidateIndex(0);
-  }, [type]);
+  // Pilih source dari awal berdasarkan `type`, bukan menunggu onError.
+  // Ini mencegah navbar app ikut jatuh ke logo_login.png, dan mencegah
+  // salah tampil logo di konteks yang salah.
+  const primarySrc = type === 'login' ? LOGIN_LOGO : APP_LOGO;
+  const [imgSrc, setImgSrc] = useState(primarySrc);
 
-  const currentSrc = candidates[candidateIndex];
-  const isExhausted = candidateIndex >= candidates.length;
+  // Kalau prop `type` berubah (komponen dipakai ulang di route berbeda),
+  // reset ke source yang benar untuk type tsb.
+  useEffect(() => {
+    setImgSrc(primarySrc);
+  }, [primarySrc]);
 
   return (
-    <div className={`flex items-center shrink-0 select-none ${align === 'center' ? 'justify-center mx-auto' : ''} ${className}`} style={{ height: logoHeight }}>
-      {!isExhausted ? (
-        <img 
-          src={currentSrc}
-          alt="GoTrading Logo" 
-          style={{ 
-            height: '100%', 
-            width: 'auto', 
-            objectFit: 'contain', 
-            objectPosition: align === 'center' ? 'center' : 'left center',
-            filter: type === 'main' ? 'invert(0.85) hue-rotate(180deg) brightness(0.9) contrast(1.2)' : undefined
-          }}
-          onError={() => {
-            setCandidateIndex(prev => prev + 1);
-          }}
-          referrerPolicy="no-referrer"
-          loading="eager"
-        />
-      ) : (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-base shadow-sm">
-            G
-          </div>
-          {showText && (
-            <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white">
-              GOTRADING
-            </span>
-          )}
-        </div>
-      )}
+    <div 
+      className={`flex items-center shrink-0 select-none ${align === 'center' ? 'justify-center mx-auto' : ''} ${className}`} 
+      style={{ height: logoHeight }}
+    >
+      <img 
+        src={imgSrc}
+        alt="GoTrading Logo" 
+        style={{ 
+          height: '100%', 
+          width: 'auto', 
+          objectFit: 'contain', 
+          objectPosition: align === 'center' ? 'center' : 'left center'
+        }}
+        onError={() => {
+          // Fallback HANYA ke versi lain dari logo jenis yang sama
+          // (bukan menyeberang ke logo type lain). Kalau app logo gagal,
+          // coba nama file alternatif; kalau tetap gagal, biarkan alt text
+          // tampil daripada diam-diam pakai logo login.
+          if (type !== 'login' && imgSrc === APP_LOGO) {
+            setImgSrc('/gotrading_logo.png');
+          }
+        }}
+        referrerPolicy="no-referrer"
+        loading="eager"
+      />
     </div>
   );
 };

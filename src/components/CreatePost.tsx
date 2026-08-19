@@ -238,36 +238,36 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
     <div id="create-post-wrapper" className="mb-3">
       {/* Admin/Verified Pin & Official Controls OUTSIDE the Create Post Card */}
       {canPinOrOfficial && (
-        <div className="flex items-center justify-between px-2 mb-1.5 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-y-1.5 gap-x-2 px-2 mb-1.5 text-xs">
           <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-            <Pin size={12} className="text-indigo-600" />
+            <Pin size={12} className="text-indigo-600 shrink-0" />
             Opsi Publikasi Feed:
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={() => setIsPinnedPost(!isPinnedPost)}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 border shadow-xs ${
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 border shadow-xs shrink-0 ${
                 isPinnedPost 
                   ? 'bg-blue-600 border-blue-600 text-white shadow-blue-500/20' 
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
               title="Sematkan postingan di paling atas feed"
             >
-              <Pin size={12} className={isPinnedPost ? "fill-white text-white" : "text-blue-600"} />
+              <Pin size={12} className={isPinnedPost ? "fill-white text-white shrink-0" : "text-blue-600 shrink-0"} />
               <span>Pin Post</span>
             </button>
             <button
               type="button"
               onClick={() => setIsOfficialPost(!isOfficialPost)}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 border shadow-xs ${
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 border shadow-xs shrink-0 ${
                 isOfficialPost 
                   ? 'bg-amber-600 border-amber-600 text-white shadow-amber-500/20' 
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
               title="Tandai sebagai Post Official"
             >
-              <CheckCircle2 size={12} className={isOfficialPost ? "text-white" : "text-amber-600"} />
+              <CheckCircle2 size={12} className={isOfficialPost ? "text-white shrink-0" : "text-amber-600 shrink-0"} />
               <span>Official Post</span>
             </button>
           </div>
@@ -328,10 +328,10 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
               </div>
             )}
 
-            <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
-              <div className="flex items-center gap-2">
-                <label className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition flex items-center gap-1.5 text-xs font-semibold">
-                  <Image size={16} className="text-emerald-500" />
+            <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-1.5 border-t border-slate-100 pt-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <label className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition flex items-center gap-1.5 text-xs font-semibold shrink-0">
+                  <Image size={16} className="text-emerald-500 shrink-0" />
                   <span className="hidden sm:inline">Foto/Gambar/Video</span>
                   <input 
                     type="file" 
@@ -344,20 +344,20 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
                 </label>
 
                 {/* Sentiment selector */}
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
                   <button
                     type="button"
                     onClick={() => setNewPostSentiment(newPostSentiment === 'Bullish' ? null : 'Bullish')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${newPostSentiment === 'Bullish' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 shrink-0 ${newPostSentiment === 'Bullish' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
                   >
-                    <TrendingUp size={12} /> Bullish
+                    <TrendingUp size={12} className="shrink-0" /> Bullish
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewPostSentiment(newPostSentiment === 'Bearish' ? null : 'Bearish')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${newPostSentiment === 'Bearish' ? 'bg-rose-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 shrink-0 ${newPostSentiment === 'Bearish' ? 'bg-rose-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
                   >
-                    <TrendingDown size={12} /> Bearish
+                    <TrendingDown size={12} className="shrink-0" /> Bearish
                   </button>
                 </div>
               </div>
@@ -366,9 +366,9 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
                 type="button"
                 onClick={handlePost}
                 disabled={isReading || isUploading || isSubmitting || (!content.trim() && attachedMedia.length === 0)}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100 cursor-pointer"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100 cursor-pointer shrink-0 ml-auto"
               >
-                <Send size={14} />
+                <Send size={14} className="shrink-0" />
                 <span>Posting</span>
               </button>
             </div>
