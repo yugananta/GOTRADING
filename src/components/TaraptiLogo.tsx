@@ -19,8 +19,8 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
   align = type === 'login' ? 'center' : 'left'
 }) => {
   const candidates = type === 'login'
-    ? ['/logo_login.png', '/logo_gotrading.png', '/login_logo.png', '/gotrading_logo.png', '/company_logo.png']
-    : ['/logo_gotrading.png', '/gotrading_logo.png', '/logo_login.png', '/login_logo.png', '/company_logo.png'];
+    ? ['/logo_login.png?v=3', '/logo_gotrading.png?v=3', '/login_logo.png', '/gotrading_logo.png', '/company_logo.png']
+    : ['/logo_gotrading.png?v=3', '/logo_login.png?v=3', '/gotrading_logo.png', '/login_logo.png', '/company_logo.png'];
 
   const [candidateIndex, setCandidateIndex] = useState(0);
   const logoHeight = typeof height === 'number' ? `${height}px` : height;
