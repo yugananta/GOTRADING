@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface TaraptiLogoProps {
   className?: string;
@@ -18,23 +18,26 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
   type = 'main',
   align = type === 'login' ? 'center' : 'left'
 }) => {
-  const initialLogo = type === 'login' ? '/login_logo.png' : '/logo_gotrading.png';
-  const [imgSrc, setImgSrc] = useState(initialLogo);
-  const [timestamp] = useState(() => Date.now());
-  const [hasError, setHasError] = useState(false);
+  const candidates = type === 'login'
+    ? ['/login_logo.png', '/logo_gotrading.png', '/gotrading_logo.png', '/company_logo.png']
+    : ['/logo_gotrading.png', '/gotrading_logo.png', '/login_logo.png', '/company_logo.png'];
+
+  const [candidateIndex, setCandidateIndex] = useState(0);
   const logoHeight = typeof height === 'number' ? `${height}px` : height;
 
-  React.useEffect(() => {
-    setImgSrc(type === 'login' ? '/login_logo.png' : '/logo_gotrading.png');
-    setHasError(false);
+  useEffect(() => {
+    setCandidateIndex(0);
   }, [type]);
+
+  const currentSrc = candidates[candidateIndex];
+  const isExhausted = candidateIndex >= candidates.length;
 
   return (
     <div className={`flex items-center shrink-0 select-none ${align === 'center' ? 'justify-center mx-auto' : ''} ${className}`} style={{ height: logoHeight }}>
-      {!hasError && (
+      {!isExhausted ? (
         <img 
-          src={`${imgSrc}?t=${timestamp}`}
-          alt="Logo" 
+          src={currentSrc}
+          alt="GoTrading Logo" 
           style={{ 
             height: '100%', 
             width: 'auto', 
@@ -42,29 +45,22 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
             objectPosition: align === 'center' ? 'center' : 'left center' 
           }}
           onError={() => {
-            if (type === 'login') {
-              if (imgSrc === '/login_logo.png') {
-                setImgSrc('/logo_gotrading.png');
-              } else if (imgSrc === '/logo_gotrading.png') {
-                setImgSrc('/gotrading_logo.png');
-              } else if (imgSrc === '/gotrading_logo.png') {
-                setImgSrc('/company_logo.png');
-              } else {
-                setHasError(true);
-              }
-            } else {
-              if (imgSrc === '/logo_gotrading.png') {
-                setImgSrc('/gotrading_logo.png');
-              } else if (imgSrc === '/gotrading_logo.png') {
-                setImgSrc('/login_logo.png');
-              } else if (imgSrc === '/login_logo.png') {
-                setImgSrc('/company_logo.png');
-              } else {
-                setHasError(true);
-              }
-            }
+            setCandidateIndex(prev => prev + 1);
           }}
+          referrerPolicy="no-referrer"
+          loading="eager"
         />
+      ) : (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-base shadow-sm">
+            G
+          </div>
+          {showText && (
+            <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white">
+              GOTRADING
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

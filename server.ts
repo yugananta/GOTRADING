@@ -122,7 +122,7 @@ async function startServer() {
 
   // Restore logos from persistent assets folder to public and dist directories on boot
   try {
-    const logoFiles = ['gotrading_logo.png', 'chat_logo.png', 'login_logo.png', 'company_logo.png'];
+    const logoFiles = ['logo_gotrading.png', 'gotrading_logo.png', 'chat_logo.png', 'login_logo.png', 'company_logo.png'];
     const assetsDir = path.join(process.cwd(), 'assets');
     const publicDir = path.join(process.cwd(), 'public');
     const distDir = path.join(process.cwd(), 'dist');
