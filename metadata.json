@@ -1,0 +1,6 @@
+{
+  "name": "GOTRADING ADMIN",
+  "description": "Master IB & Sub-IB Trading Platform, Broker Commission & Financial Control Center",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
