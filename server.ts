@@ -21,6 +21,7 @@ import { AuthService } from './src/services/AuthService.ts';
 import { authenticate } from './src/middleware/authMiddleware.ts';
 import { generateAccessToken, generateRefreshToken } from './src/utils/auth.ts';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { supabase } from './src/lib/supabaseClient.ts';
 import { LocationRepository } from './src/repositories/LocationRepository.ts';
 import { GroupRepository } from './src/repositories/GroupRepository.ts';
@@ -1571,9 +1572,79 @@ INSTRUCTIONS:
     }
   });
 
+  // Helper to resolve referrer from any referral code variant
+  const resolveReferrer = async (rawRef: string) => {
+    if (!rawRef || typeof rawRef !== 'string') return null;
+    const trimmed = rawRef.trim();
+    if (!trimmed) return null;
+    const stripped = trimmed.replace(/^(GOTRADING|TARAPTI)-/i, '').trim();
+
+    try {
+      // 1. Direct match on users.referral_code
+      let { data: u1 } = await supabase.from('users').select('id, email, username, referral_code, full_name').ilike('referral_code', trimmed).maybeSingle();
+      if (u1) return u1;
+
+      // 2. Stripped match on users.referral_code
+      if (stripped) {
+        let { data: u2 } = await supabase.from('users').select('id, email, username, referral_code, full_name').ilike('referral_code', '%' + stripped + '%').maybeSingle();
+        if (u2) return u2;
+
+        // 3. Username match on users table
+        let { data: u3 } = await supabase.from('users').select('id, email, username, referral_code, full_name').ilike('username', stripped).maybeSingle();
+        if (u3) return u3;
+
+        // 4. UUID prefix match on users table
+        let { data: u4 } = await supabase.from('users').select('id, email, username, referral_code, full_name').ilike('id', stripped + '%').maybeSingle();
+        if (u4) return u4;
+
+        // 5. Username match on User table
+        let { data: U1 } = await supabase.from('User').select('id, email, username, firstName, lastName').ilike('username', stripped).maybeSingle();
+        if (U1) {
+          // Check if there is a referral_code in users table for this ID
+          const { data: uFromU1 } = await supabase.from('users').select('referral_code').eq('id', U1.id).maybeSingle();
+          return { ...U1, referral_code: uFromU1?.referral_code || `GOTRADING-${U1.username?.toUpperCase() || U1.id.slice(0, 6).toUpperCase()}` };
+        }
+
+        // 6. UUID prefix match on User table
+        let { data: U2 } = await supabase.from('User').select('id, email, username, firstName, lastName').ilike('id', stripped + '%').maybeSingle();
+        if (U2) {
+          const { data: uFromU2 } = await supabase.from('users').select('referral_code').eq('id', U2.id).maybeSingle();
+          return { ...U2, referral_code: uFromU2?.referral_code || `GOTRADING-${U2.username?.toUpperCase() || U2.id.slice(0, 6).toUpperCase()}` };
+        }
+      }
+    } catch (e: any) {
+      console.warn('[REFERRAL RESOLVE] Error searching referrer:', e?.message || e);
+    }
+    return null;
+  };
+
+  app.get("/api/auth/check-referral", async (req: any, res) => {
+    try {
+      const code = req.query.code || req.query.ref;
+      if (!code) {
+        return res.status(400).json({ valid: false, error: "Code parameter is required" });
+      }
+      const referrer = await resolveReferrer(String(code));
+      if (referrer && referrer.id) {
+        return res.json({
+          valid: true,
+          referrerId: referrer.id,
+          referrerUsername: referrer.username || referrer.email?.split('@')[0] || 'Partner',
+          referrerName: referrer.full_name || (referrer.firstName ? `${referrer.firstName} ${referrer.lastName || ''}`.trim() : (referrer.username || 'Partner')),
+          referralCode: referrer.referral_code || String(code)
+        });
+      } else {
+        return res.json({ valid: false, message: "Referral code not found" });
+      }
+    } catch (err: any) {
+      return res.status(500).json({ valid: false, error: err.message || "Internal error" });
+    }
+  });
+
   app.post("/api/auth/register", async (req: any, res) => {
     try {
       let { firstName, lastName, username, email, whatsappNumber, country, province, city, password } = req.body;
+      const incomingRef = (req.body.referralCode || req.body.referral_code || req.body.ref || req.body.referredBy || req.body.referred_by || '').toString().trim();
       
       if (!firstName || !lastName || !username || !email) {
         return res.status(400).json({ error: "Missing required fields" });
@@ -1582,6 +1653,20 @@ INSTRUCTIONS:
       if (!password) {
         // Auto-generate a secure password since user is not supplying one
         password = Math.random().toString(36).substring(2, 15) + "A1!";
+      }
+
+      // Resolve referrer from code if present
+      let referrerId: string | null = null;
+      let referrerUser: any = null;
+
+      if (incomingRef) {
+        referrerUser = await resolveReferrer(incomingRef);
+        if (referrerUser && referrerUser.id) {
+          referrerId = referrerUser.id;
+          console.log(`[REFERRAL MATCH] User registered with referral code "${incomingRef}", resolved to referrer ID: ${referrerId} (${referrerUser.email || referrerUser.username})`);
+        } else {
+          console.warn(`[REFERRAL MATCH] Referral code "${incomingRef}" was supplied but no matching referrer was found in database.`);
+        }
       }
 
       const profileData = {
@@ -1622,7 +1707,62 @@ INSTRUCTIONS:
       }, profileData as any);
       
       // Auto-verify for now as in the original logic there was no verification step mentioned
-      await authService.verifyEmail(user.id); // This might need a real token if we implement verification
+      await authService.verifyEmail(user.id);
+
+      // Generate consistent referral code for the new user
+      const userRefCode = `GOTRADING-${user.username ? user.username.toUpperCase() : user.id.slice(0, 6).toUpperCase()}`;
+
+      // Synchronize new user record into 'users' table in Supabase including referred_by
+      try {
+        const passwordHash = await bcrypt.hash(password, 10);
+        const { error: syncUsersErr } = await supabase.from('users').upsert({
+          id: user.id,
+          email: user.email,
+          password_hash: passwordHash,
+          username: user.username || username,
+          full_name: `${firstName} ${lastName}`.trim(),
+          whatsapp: whatsappNumber || '',
+          country: country || 'Indonesia',
+          province: province || '',
+          city: city || '',
+          role: 'user',
+          status: 'active',
+          verification_status: 'verified',
+          referred_by: referrerId || null,
+          referral_code: userRefCode,
+          locale: 'id'
+        });
+        if (syncUsersErr) {
+          console.error('[SUPABASE USERS SYNC] Error upserting to users table:', syncUsersErr.message);
+        } else {
+          console.log(`[SUPABASE USERS SYNC] Successfully synced user ${user.id} to users table with referred_by: ${referrerId}`);
+        }
+      } catch (syncErr: any) {
+        console.warn('[SUPABASE USERS SYNC] Exception during sync:', syncErr?.message || syncErr);
+      }
+
+      // Also register on Railway backend to keep DB & sessions synchronized if applicable
+      try {
+        fetch(`${BACKEND_API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            full_name: `${firstName} ${lastName}`.trim(),
+            whatsapp: whatsappNumber || '',
+            referralCode: referrerUser?.referral_code || incomingRef || undefined
+          })
+        }).then(async r => {
+          if (r.ok) {
+            console.log('[RAILWAY BE SYNC] User registered on Railway backend');
+          } else {
+            console.warn('[RAILWAY BE SYNC] Railway backend register status:', r.status);
+          }
+        }).catch(e => {
+          console.warn('[RAILWAY BE SYNC] Failed to reach Railway backend:', e.message);
+        });
+      } catch {}
 
       const ip = req.ip || 'unknown';
       const device = {
@@ -1656,6 +1796,9 @@ INSTRUCTIONS:
         firstName,
         lastName,
         whatsappNumber,
+        referred_by: referrerId,
+        referredBy: referrerId,
+        referralCode: userRefCode,
         tradingExperience: "Beginner",
         tradingAsset: "Forex",
         onlineStatus: "online",
@@ -4012,29 +4155,38 @@ INSTRUCTIONS:
   // Helper to query IB summary directly from Supabase
   const getIbSummaryFromDb = async (userId: string) => {
     try {
-      const [commissionsRes, payoutsRes, userRes] = await Promise.all([
+      const [commissionsRes, payoutsRes, userRes, usersTableUserRes, referredUsersRes] = await Promise.all([
         supabase.from('ib_commissions').select('*').eq('ib_id', userId),
         supabase.from('ib_payouts').select('*').eq('ib_id', userId),
-        supabase.from('User').select('id, username').eq('id', userId).maybeSingle()
+        supabase.from('User').select('id, username').eq('id', userId).maybeSingle(),
+        supabase.from('users').select('id, referral_code, username').eq('id', userId).maybeSingle(),
+        supabase.from('users').select('id, email, username, full_name, created_at, status').eq('referred_by', userId)
       ]);
 
       const commissions = commissionsRes.data || [];
       const payouts = payoutsRes.data || [];
       const user = userRes.data;
+      const usersTableUser = usersTableUserRes.data;
+      const referredUsers = referredUsersRes.data || [];
 
       const totalCommission = commissions.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
       const totalPayout = payouts.filter((p: any) => p.status === 'PAID' || p.status === 'completed' || p.status === 'paid').reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
       const pendingPayout = Math.max(0, totalCommission - totalPayout);
 
-      const uniqueClients = new Set(commissions.map((c: any) => c.referred_user_id).filter(Boolean));
-      const totalReferrals = uniqueClients.size;
-      const activeReferrals = commissions.filter((c: any) => c.status === 'active' || (Number(c.volume) || 0) > 0).length;
+      const uniqueClientIds = new Set<string>();
+      referredUsers.forEach((u: any) => uniqueClientIds.add(u.id));
+      commissions.forEach((c: any) => { if (c.referred_user_id) uniqueClientIds.add(c.referred_user_id); });
 
-      const referralCode = `GOTRADING-${user?.username ? user.username.toUpperCase() : userId.slice(0, 6).toUpperCase()}`;
+      const totalReferrals = uniqueClientIds.size;
+      const activeReferralsCount = referredUsers.filter((u: any) => u.status === 'active').length;
+      const activeFromCommissions = commissions.filter((c: any) => c.status === 'active' || (Number(c.volume) || 0) > 0).length;
+      const activeReferrals = Math.max(activeReferralsCount, activeFromCommissions);
+
+      const customRefCode = usersTableUser?.referral_code || (user?.username ? `GOTRADING-${user.username.toUpperCase()}` : `GOTRADING-${userId.slice(0, 6).toUpperCase()}`);
 
       return {
-        referralCode,
-        referralLink: `https://gotrading.id/register?ref=${referralCode}`,
+        referralCode: customRefCode,
+        referralLink: `https://gotrading.id/register?ref=${customRefCode}`,
         totalCommission,
         totalPayout,
         pendingPayout,
@@ -4066,33 +4218,94 @@ INSTRUCTIONS:
   // Helper to query IB commissions list directly from Supabase
   const getIbCommissionsFromDb = async (userId: string) => {
     try {
-      const commissionsRes = await supabase.from('ib_commissions').select('*').eq('ib_id', userId);
+      const [commissionsRes, referredUsersRes] = await Promise.all([
+        supabase.from('ib_commissions').select('*').eq('ib_id', userId),
+        supabase.from('users').select('id, email, username, full_name, created_at, status, country').eq('referred_by', userId)
+      ]);
       const commissions = commissionsRes.data || [];
-      if (commissions.length === 0) return [];
+      const referredUsers = referredUsersRes.data || [];
 
-      const referredUserIds = commissions.map((c: any) => c.referred_user_id).filter(Boolean);
-      let userMap: Record<string, any> = {};
-      if (referredUserIds.length > 0) {
-        const { data: users } = await supabase.from('User').select('id, firstName, lastName, username, avatar, country').in('id', referredUserIds);
-        if (users) {
-          users.forEach((u: any) => { userMap[u.id] = u; });
+      // Dapatkan juga data detail nama dari tabel User untuk id terkait
+      const allUserIds = Array.from(new Set([
+        ...referredUsers.map((u: any) => u.id),
+        ...commissions.map((c: any) => c.referred_user_id).filter(Boolean)
+      ]));
+
+      let userProfileMap: Record<string, any> = {};
+      if (allUserIds.length > 0) {
+        const { data: userProfiles } = await supabase
+          .from('User')
+          .select('id, firstName, lastName, username, avatar, country, createdAt, mt5Connected')
+          .in('id', allUserIds);
+        if (userProfiles) {
+          userProfiles.forEach((u: any) => { userProfileMap[u.id] = u; });
         }
       }
 
-      return commissions.map((c: any) => {
-        const u = userMap[c.referred_user_id] || {};
-        return {
-          id: c.id,
-          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || 'Trader',
-          username: u.username || 'trader',
-          avatar: u.avatar || '',
-          country: u.country || 'Indonesia',
-          joinDate: c.created_at ? new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
-          status: c.status || 'active',
-          volumeLots: Number(c.volume) || 0,
-          commissionEarned: Number(c.amount) || 0
-        };
+      // Map commission data per user
+      const userCommissionMap: Record<string, { volume: number; commission: number; lastDate?: string }> = {};
+      commissions.forEach((c: any) => {
+        const uid = c.referred_user_id;
+        if (!uid) return;
+        if (!userCommissionMap[uid]) {
+          userCommissionMap[uid] = { volume: 0, commission: 0, lastDate: c.created_at };
+        }
+        userCommissionMap[uid].volume += Number(c.volume) || 0;
+        userCommissionMap[uid].commission += Number(c.amount) || 0;
+        if (c.created_at) userCommissionMap[uid].lastDate = c.created_at;
       });
+
+      const clientsList: any[] = [];
+      const processedUserIds = new Set<string>();
+
+      // 1. Masukkan semua user yang terdaftar via referred_by
+      for (const u of referredUsers) {
+        processedUserIds.add(u.id);
+        const profile = userProfileMap[u.id] || {};
+        const comm = userCommissionMap[u.id] || { volume: 0, commission: 0 };
+        const rawDate = u.created_at || profile.createdAt || comm.lastDate;
+        
+        const fullName = profile.firstName || profile.lastName 
+          ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim()
+          : (u.full_name || u.username || profile.username || u.email?.split('@')[0] || 'Trader');
+
+        clientsList.push({
+          id: u.id,
+          name: fullName,
+          username: profile.username || u.username || u.email?.split('@')[0] || 'trader',
+          avatar: profile.avatar || '',
+          country: profile.country || u.country || 'Indonesia',
+          joinDate: rawDate ? new Date(rawDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+          status: profile.mt5Connected ? 'active' : (u.status || 'active'),
+          volumeLots: comm.volume,
+          commissionEarned: comm.commission
+        });
+      }
+
+      // 2. Masukkan user lain yang ada di commissions jika belum ada di referredUsers
+      for (const c of commissions) {
+        const uid = c.referred_user_id;
+        if (uid && !processedUserIds.has(uid)) {
+          processedUserIds.add(uid);
+          const profile = userProfileMap[uid] || {};
+          const fullName = profile.firstName || profile.lastName 
+            ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim()
+            : (profile.username || 'Trader');
+          clientsList.push({
+            id: c.id,
+            name: fullName,
+            username: profile.username || 'trader',
+            avatar: profile.avatar || '',
+            country: profile.country || 'Indonesia',
+            joinDate: c.created_at ? new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+            status: c.status || 'active',
+            volumeLots: Number(c.volume) || 0,
+            commissionEarned: Number(c.amount) || 0
+          });
+        }
+      }
+
+      return clientsList;
     } catch (e: any) {
       console.error('[IB DB] Error querying IB commissions:', e);
       return [];
