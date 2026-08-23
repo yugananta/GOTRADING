@@ -14,8 +14,6 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "paths": {
       "@/*": [
@@ -23,6 +21,7 @@
       ]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["vite/client"]
   }
 }

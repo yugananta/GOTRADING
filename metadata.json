@@ -1,6 +1,6 @@
 {
-  "name": "GOTRADING ADMIN",
-  "description": "Master IB & Sub-IB Trading Platform, Broker Commission & Financial Control Center",
-  "requestFramePermissions": [],
+  "name": "GoTrading Hub",
+  "description": "A professional social networking platform exclusively for traders.",
+  "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
