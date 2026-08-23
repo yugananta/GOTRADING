@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-if (!API_BASE_URL) {
-  console.error('[httpClient] VITE_API_BASE_URL is not set. API calls will fail.');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+if (!import.meta.env.VITE_API_BASE_URL) {
+  console.warn('[httpClient] VITE_API_BASE_URL is not explicitly set; defaulting to "/api".');
 }
 
 export const httpClient = axios.create({
