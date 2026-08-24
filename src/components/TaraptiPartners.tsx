@@ -170,8 +170,12 @@ export const TaraptiPartners: React.FC = () => {
   const totalPayoutSum = Number(ibSummary?.totalPayout) || (payouts.filter(p => p.status === 'PAID' || p.status === 'paid' || p.status === 'completed').reduce((sum, p) => sum + (Number(p.amount) || 0), 0));
   const totalPendingPayout = Number(ibSummary?.pendingPayout) ?? Math.max(0, totalCommissionGenerated - totalPayoutSum);
 
-  const totalClientsCount = Number(ibSummary?.totalReferrals) || referrals.length;
-  const activeClientsCount = Number(ibSummary?.activeReferrals) || referrals.filter(r => r.status === 'active' || r.status === 'connected').length;
+  const totalClientsCount = (ibSummary?.totalReferrals !== undefined && ibSummary?.totalReferrals !== null)
+    ? Number(ibSummary.totalReferrals)
+    : referrals.length;
+  const activeClientsCount = (ibSummary?.activeReferrals !== undefined && ibSummary?.activeReferrals !== null)
+    ? Number(ibSummary.activeReferrals)
+    : referrals.filter(r => r.status === 'active' || r.status === 'connected').length;
 
   // Filtered Referral List
   const filteredReferrals = referrals.filter(item => {
@@ -657,9 +661,9 @@ export const TaraptiPartners: React.FC = () => {
                             Connected Acc
                           </span>
                         )}
-                        {client.status === 'registered' && (
+                        {client.status !== 'active' && client.status !== 'connected' && (
                           <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[9px] px-2.5 py-1 rounded-full uppercase tracking-wider">
-                            Terdaftar
+                            {client.status === 'registered' ? 'Terdaftar' : (client.status === 'inactive' ? 'Belum Connect MT5' : (client.status || 'Terdaftar'))}
                           </span>
                         )}
                       </div>
