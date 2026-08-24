@@ -9,7 +9,7 @@
     "notifications": "Thông báo",
     "search": "Tìm kiếm",
     "settings": "Cài đặt",
-    "account": "Partner",
+    "account": "Connect",
     "admin": "Quản trị viên"
   },
   "common": {
@@ -54,7 +54,7 @@
     "checkingRegistration": "Đang kiểm tra đăng ký IB Tarapti",
     "unregisteredTitle": "Tài khoản chưa đăng ký",
     "unregisteredDesc": "Tài khoản của bạn chưa được đăng ký dưới IB Tarapti. Vui lòng tạo tài khoản Axi qua liên kết IB của chúng tôi để tiếp tục kết nối.",
-    "partnerBroker": "Nhà môi giới đối tác",
+    "partnerBroker": "Connect Broker",
     "createAxiAccount": "Tạo tài khoản Axi",
     "createAxiDesc": "Mở tài khoản giao dịch Axi bằng liên kết giới thiệu Tarapti để mở khóa tất cả các tính năng phân tích.",
     "openAxiButton": "Mở tài khoản Axi",

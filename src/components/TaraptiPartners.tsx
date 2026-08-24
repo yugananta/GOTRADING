@@ -205,7 +205,7 @@ export const TaraptiPartners: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
       
-      {/* GOTRADING PARTNERS Banner & Info */}
+      {/* GOTRADING CONNECT Banner & Info */}
       <div className="bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xs relative overflow-hidden space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export const TaraptiPartners: React.FC = () => {
             </div>
             <div>
               <h1 className="text-base font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                GOTRADING PARTNERS
+                GOTRADING CONNECT
                 <span className="bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border border-indigo-200/60 dark:border-indigo-800">
                   IB Portal
                 </span>
@@ -234,7 +234,7 @@ export const TaraptiPartners: React.FC = () => {
             </button>
             <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800">
               <ShieldCheck size={14} />
-              <span>Status: Active Partner</span>
+              <span>Status: Active Connect</span>
             </div>
           </div>
         </div>

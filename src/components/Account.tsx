@@ -375,7 +375,7 @@ export const Account: React.FC = () => {
           </div>
           {(typeof error === 'string' && error.includes('registered')) && (
             <a href="https://www.axi.com" target="_blank" rel="noreferrer" className="inline-block px-3 py-2 bg-rose-600 text-white rounded-lg text-center font-bold shadow-sm mt-1">
-              Create Account at Partner Broker GoTrading
+              Create Account at Connect Broker GoTrading
             </a>
           )}
         </div>
@@ -723,7 +723,7 @@ export const Account: React.FC = () => {
                 Open Account
               </h3>
               <p className="text-[9px] sm:text-[10px] text-indigo-100/90 font-medium mt-0.5 line-clamp-1">
-                Buka akun broker partner
+                Buka akun broker Connect
               </p>
             </div>
           </div>
@@ -782,14 +782,14 @@ export const Account: React.FC = () => {
   return (
     <div className="py-4 space-y-6 w-full max-w-none relative px-2">
       
-      {/* Detail Page Mode: GOTRADING PARTNERS */}
+      {/* Detail Page Mode: GOTRADING CONNECT */}
       {selectedSubView === 'partners_detail' ? (
         <div className="space-y-4">
           <button
             onClick={() => setSelectedSubView('main')}
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs w-fit"
           >
-            <span>← Kembali ke Connect Account & Partners</span>
+            <span>← Kembali ke Connect Account</span>
           </button>
 
           <TaraptiPartners />
@@ -806,10 +806,10 @@ export const Account: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-base font-black text-slate-900 dark:text-white tracking-wider uppercase">
-                  Connect Account & Partners
+                  Connect Account
                 </h1>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                  Kelola koneksi MetaTrader 5 dan program komisi GOTRADING PARTNERS Anda
+                  Kelola koneksi MetaTrader 5 dan program komisi GOTRADING CONNECT Anda
                 </p>
               </div>
             </div>
@@ -827,62 +827,7 @@ export const Account: React.FC = () => {
             </div>
           )}
 
-          {/* GOTRADING PARTNERS (CLEAN, ELEGANT & SIMPLES) */}
-          <div 
-            onClick={() => setSelectedSubView('partners_detail')}
-            className="bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xs flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-600 transition h-full"
-          >
-            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
-
-            <div className="space-y-4 relative z-10">
-              {/* Header Row */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center font-black shadow-2xs">
-                    <Handshake size={22} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-1.5">
-                      GOTRADING PARTNERS
-                    </h2>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                      Program Afiliasi & Portal IB
-                    </p>
-                  </div>
-                </div>
-
-                <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[9px] font-black uppercase px-2.5 py-1 rounded-full">
-                  Active IB
-                </span>
-              </div>
-
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                Program Afiliasi & IB Resmi GoTrading. Dapatkan komisi <strong className="text-indigo-600 dark:text-indigo-400">hingga 50%</strong> dari setiap transaksi trader yang Anda referensikan.
-              </p>
-
-              {/* Metric Previews */}
-              <div className="grid grid-cols-2 gap-2.5 pt-2 max-w-md">
-                <div className="bg-slate-50 dark:bg-slate-900/80 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <div className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Total Komisi</div>
-                  <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    $0.00
-                  </div>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-900/80 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <div className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Klien Aktif</div>
-                  <div className="text-sm font-black text-indigo-600 dark:text-indigo-400 mt-0.5">0 Active Trader</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Button */}
-            <div className="mt-6 pt-3 border-t border-slate-100 dark:border-slate-800 relative z-10">
-              <div className="w-full sm:w-auto sm:px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl transition shadow-sm shadow-indigo-600/15 flex items-center justify-center gap-2 group-hover:gap-3">
-                <span>Buka Detail GOTRADING PARTNERS</span>
-                <ArrowRight size={14} />
-              </div>
-            </div>
-          </div>
+          {/* GOTRADING CONNECT card hidden per user request */}
 
         </div>
       )}

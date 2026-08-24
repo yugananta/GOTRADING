@@ -1515,9 +1515,6 @@ function MainAppLayout() {
               >
                 <ShieldCheck size={18} className={`transition-transform duration-200 ${activeView === 'account' ? 'scale-110' : 'group-hover:scale-110 group-hover:text-indigo-500'}`} />
                 <span className="text-sm">{t('nav.account')}</span>
-                <span className="ml-auto text-[9px] font-extrabold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                  Partners
-                </span>
               </motion.button>
 
               <motion.button 

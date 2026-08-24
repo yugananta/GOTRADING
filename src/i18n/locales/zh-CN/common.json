@@ -9,7 +9,7 @@
     "notifications": "通知",
     "search": "搜索",
     "settings": "设置",
-    "account": "Partner",
+    "account": "Connect",
     "admin": "管理员"
   },
   "common": {
@@ -54,7 +54,7 @@
     "checkingRegistration": "正在检查 IB Tarapti 注册状态",
     "unregisteredTitle": "账户未注册",
     "unregisteredDesc": "您的账户尚未在 IB Tarapti 下注册。请通过我们的 IB 链接创建 Axi 账户以继续连接。",
-    "partnerBroker": "合作经纪商",
+    "partnerBroker": "Connect Broker",
     "createAxiAccount": "创建 Axi 账户",
     "createAxiDesc": "使用 Tarapti 推荐链接开设 Axi 交易账户，以解锁所有分析功能。",
     "openAxiButton": "开设 Axi 账户",

@@ -9,7 +9,7 @@
     "notifications": "Mga Notipikasyon",
     "search": "Maghanap",
     "settings": "Mga Seting",
-    "account": "Partner",
+    "account": "Connect",
     "admin": "Admin"
   },
   "common": {
@@ -54,7 +54,7 @@
     "checkingRegistration": "Sinusuri ang pagpaparehistro sa IB Tarapti",
     "unregisteredTitle": "Akawnt Hindi Nakarehistro",
     "unregisteredDesc": "Ang iyong akawnt ay hindi pa nakarehistro sa ilalim ng IB Tarapti. Mangyaring gumawa ng Axi akawnt sa pamamagitan ng aming IB link upang magpatuloy sa koneksyon.",
-    "partnerBroker": "Partner Broker",
+    "partnerBroker": "Connect Broker",
     "createAxiAccount": "Gumawa ng Axi Akawnt",
     "createAxiDesc": "Magbukas ng Axi trading akawnt gamit ang Tarapti reference link upang ma-unlock ang lahat ng analytic feature.",
     "openAxiButton": "Magbukas ng Axi Akawnt",

@@ -9,7 +9,7 @@
     "notifications": "Notifikasi",
     "search": "Cari",
     "settings": "Tetapan",
-    "account": "Partner",
+    "account": "Connect",
     "admin": "Admin"
   },
   "common": {
@@ -54,7 +54,7 @@
     "checkingRegistration": "Menyemak pendaftaran IB Tarapti",
     "unregisteredTitle": "Akaun Tidak Berdaftar",
     "unregisteredDesc": "Akaun anda belum berdaftar di bawah IB Tarapti. Sila buat akaun Axi melalui pautan IB kami untuk meneruskan sambungan.",
-    "partnerBroker": "Broker Rakan Kongsi",
+    "partnerBroker": "Connect Broker",
     "createAxiAccount": "Buat Akaun Axi",
     "createAxiDesc": "Buka akaun dagangan Axi menggunakan pautan rujukan Tarapti untuk membuka semua ciri analitik.",
     "openAxiButton": "Buka Akaun Axi",
