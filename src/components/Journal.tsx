@@ -1274,35 +1274,6 @@ export const Journal: React.FC = () => {
     <div className="py-2 w-full max-w-none relative">
       <div className="w-full animate-in fade-in duration-300">
 
-      {/* MULTI-ACCOUNT QUICK SWITCHER PILLS */}
-      {connectedAccounts && connectedAccounts.length > 1 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-3 scrollbar-none">
-          {connectedAccounts.map((acc: any, idx: number) => {
-            const isSelected = String(activeAccountLogin || activeAccount?.login || activeAccountInfo?.login) === String(acc.login);
-            return (
-              <button
-                key={acc.id || acc.login || idx}
-                onClick={() => {
-                  console.log('[JOURNAL-ACCOUNT-SWITCH]', { from: activeAccountLogin || activeAccountInfo?.login, to: acc.login });
-                  setActiveAccountLogin(String(acc.login));
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 border shrink-0 cursor-pointer ${
-                  isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                    : 'bg-white dark:bg-[#121620] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                }`}
-              >
-                <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-300 animate-pulse' : 'bg-emerald-500'}`} />
-                <span>{acc.broker || 'MT5'} ({acc.login})</span>
-                <span className="text-[10px] opacity-80 font-semibold font-mono">
-                  ${Number(acc.equity || acc.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* ACCOUNT SELECTOR DROPDOWN (IF MULTIPLE ACCOUNTS CONNECTED) */}
       {connectedAccounts && connectedAccounts.length > 1 && (
         <div className="relative mb-4 w-full" ref={dropdownRef}>
