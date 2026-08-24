@@ -215,6 +215,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
   // Group Posts State
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [errorPosts, setErrorPosts] = useState<string | null>(null);
 
   // New Post Form State
   const [newPostContent, setNewPostContent] = useState('');
@@ -440,6 +441,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
     });
   };
   const fetchPosts = async () => {
+    setErrorPosts(null);
     try {
       const res = await apiFetch(`/api/posts?groupId=${currentGroupId}&_t=${Date.now()}`);
       if (res.ok) {
@@ -456,9 +458,15 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
           // This ensures deleted posts are removed from the view
           return [...sendingPosts, ...serverPosts.filter(p => !sendingPosts.some(sp => sp.id === p.id))];
         });
+      } else {
+        console.error("Failed to fetch group posts, status:", res.status);
+        setErrorPosts("Gagal memuat postingan dari server. Periksa koneksi jaringan Anda.");
       }
     } catch (err) {
       console.error("Error fetching group posts:", err);
+      setErrorPosts("Terjadi gangguan saat memuat feed komunitas. Silakan coba lagi.");
+    } finally {
+      setLoadingPosts(false);
     }
   };
 
@@ -1411,6 +1419,25 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                 <div className="h-40 bg-slate-50 rounded-xl" />
               </div>
             ))}
+          </div>
+        ) : errorPosts && posts.length === 0 ? (
+          <div className="bg-white p-8 rounded-2xl border border-rose-100 text-center text-slate-500 text-xs shadow-sm space-y-3">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
+              <AlertCircle size={24} />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800 text-sm">Gagal Memuat Postingan</p>
+              <p className="text-[11px] text-slate-500 mt-1">{errorPosts}</p>
+            </div>
+            <button
+              onClick={() => {
+                setLoadingPosts(true);
+                fetchPosts();
+              }}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <span>Coba Lagi</span>
+            </button>
           </div>
         ) : (() => {
           let feedPosts = posts.filter(p => activePinnedPost ? p.id !== activePinnedPost.id : true);
