@@ -15,6 +15,7 @@ export const Notifications: React.FC = () => {
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
+    deleteNotification,
     viewUserProfile,
     triggerTestNotification,
     acceptConnectionRequest,
@@ -433,8 +434,18 @@ export const Notifications: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Right Chevron Down */}
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition" />
+                  {/* Action controls: Delete & Chevron */}
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      title="Hapus notifikasi"
+                      onClick={() => deleteNotification(n.id)}
+                      className="p-1 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                    <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition" />
+                  </div>
                 </div>
 
                 {/* Body Content & Right Side Image Thumbnail */}

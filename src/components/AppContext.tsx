@@ -25,6 +25,7 @@ interface AppContextType {
   fetchNotifications: () => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
   unreadNotificationsCount: number;
   sessions: ChatSession[];
   fetchSessions: () => Promise<void>;
@@ -338,26 +339,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) return;
 
     fetchPendingConnections();
+    fetchNotifications();
 
-    // Sync notifications every 60s
+    // Sync notifications every 30s
     const stopNotifPolling = poll<Notification[]>(
       `/api/notifications/${currentUser.id}?_t=${Date.now()}`,
       (data) => setNotifications(data),
       (e) => console.warn("Notification poll notice:", e),
-      60000
+      30000
     );
 
-    // Sync sessions every 60s
+    // Sync sessions every 30s
     const stopSessionPolling = poll<ChatSession[]>(
       `/api/messages/sessions/${currentUser.id}?_t=${Date.now()}`,
       (data) => setSessions(data),
       (e) => console.warn("Session poll notice:", e),
-      60000
+      30000
     );
+
+    // Auto-refetch when window gains focus or tab becomes visible
+    const handleVisibilityAndFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications();
+        fetchSessions();
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityAndFocus);
+    document.addEventListener('visibilitychange', handleVisibilityAndFocus);
 
     return () => {
       stopNotifPolling();
       stopSessionPolling();
+      window.removeEventListener('focus', handleVisibilityAndFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityAndFocus);
     };
   }, [currentUser]);
 
@@ -628,25 +643,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const markNotificationRead = async (id: string) => {
+    const previous = notifications;
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
     try {
       const res = await apiFetch(`/api/notifications/${id}/read`, { method: 'PUT' });
-      if (res.ok) {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      if (!res.ok) {
+        setNotifications(previous);
+        console.error("Failed to mark notification as read on server, rolling back");
       }
     } catch (e) {
-      console.error("error send:", e);
+      setNotifications(previous);
+      console.error("Error marking notification as read:", e);
     }
   };
 
   const markAllNotificationsRead = async () => {
     if (!currentUser) return;
+    const previous = notifications;
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     try {
       const res = await apiFetch(`/api/notifications/user/${currentUser.id}/read-all`, { method: 'PUT' });
-      if (res.ok) {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      if (!res.ok) {
+        setNotifications(previous);
+        console.error("Failed to mark all notifications as read on server, rolling back");
       }
     } catch (e) {
-      console.error("error send:", e);
+      setNotifications(previous);
+      console.error("Error marking all notifications as read:", e);
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    const previous = notifications;
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    try {
+      const res = await apiFetch(`/api/notifications/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        setNotifications(previous);
+        showToast("Gagal menghapus notifikasi");
+        console.error("Failed to delete notification on server, rolling back");
+      }
+    } catch (e) {
+      setNotifications(previous);
+      showToast("Gagal menghapus notifikasi");
+      console.error("Error deleting notification:", e);
     }
   };
 
@@ -896,6 +936,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fetchNotifications,
       markNotificationRead,
       markAllNotificationsRead,
+      deleteNotification,
       unreadNotificationsCount,
       sessions,
       fetchSessions,

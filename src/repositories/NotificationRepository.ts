@@ -6,74 +6,78 @@ export class NotificationRepository implements INotificationRepository {
     private static memoryNotifications: Notification[] = [];
 
     async list(): Promise<Notification[]> {
-        const listMap = new Map<string, Notification>();
-        // Add memory notifications
-        NotificationRepository.memoryNotifications.forEach(n => listMap.set(n.id, n));
-
         try {
             const { data, error } = await supabase
                 .from('Notification')
                 .select('*')
                 .order('timestamp', { ascending: false });
-            if (error) throw error;
-            if (data) {
-                data.forEach((n: any) => listMap.set(n.id, n as Notification));
+            if (!error && data) {
+                // Sync memory cache snapshot with DB
+                NotificationRepository.memoryNotifications = data as Notification[];
+                return data as Notification[];
             }
         } catch (e) {
-            console.error('Failed to list notifications from Supabase:', e);
+            console.error('Failed to list notifications from Supabase, using memory fallback:', e);
         }
-        return Array.from(listMap.values()).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        return [...NotificationRepository.memoryNotifications].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     }
 
     async listByUserId(userId: string): Promise<Notification[]> {
-        const listMap = new Map<string, Notification>();
-        // Add memory notifications
-        NotificationRepository.memoryNotifications
-            .filter(n => n.toUserId === userId)
-            .forEach(n => listMap.set(n.id, n));
-
         try {
             const { data, error } = await supabase
                 .from('Notification')
                 .select('*')
                 .eq('toUserId', userId)
                 .order('timestamp', { ascending: false });
-            if (error) throw error;
-            if (data) {
-                data.forEach((n: any) => listMap.set(n.id, n as Notification));
+            if (!error && data) {
+                // Sync memory cache for this user
+                const otherUserNotifs = NotificationRepository.memoryNotifications.filter(n => n.toUserId !== userId);
+                NotificationRepository.memoryNotifications = [...otherUserNotifs, ...(data as Notification[])];
+                return data as Notification[];
             }
         } catch (e: any) {
-            console.error('Failed to list notifications by user from Supabase:', e?.message || e);
+            console.error('Failed to list notifications by user from Supabase, using memory fallback:', e?.message || e);
         }
-        return Array.from(listMap.values()).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        return NotificationRepository.memoryNotifications
+            .filter(n => n.toUserId === userId)
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     }
 
     async findById(id: string): Promise<Notification | null> {
-        // Find in memory first
-        const memNotif = NotificationRepository.memoryNotifications.find(n => n.id === id);
-        if (memNotif) return memNotif;
-
         try {
             const { data, error } = await supabase
                 .from('Notification')
                 .select('*')
                 .eq('id', id)
                 .maybeSingle();
-            if (error) throw error;
-            return data as Notification;
+            if (!error && data) {
+                const idx = NotificationRepository.memoryNotifications.findIndex(n => n.id === id);
+                if (idx !== -1) {
+                    NotificationRepository.memoryNotifications[idx] = data as Notification;
+                } else {
+                    NotificationRepository.memoryNotifications.push(data as Notification);
+                }
+                return data as Notification;
+            }
         } catch (e) {
             console.error('Failed to find notification by id from Supabase:', e);
-            return null;
         }
+        const memNotif = NotificationRepository.memoryNotifications.find(n => n.id === id);
+        return memNotif || null;
     }
 
     async create(notification: Omit<Notification, 'id'> & { id?: string }): Promise<Notification> {
         const id = notification.id || "notify_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
         
+        let validFromUserId = notification.fromUserId || "tarapti_official_admin";
+        if (validFromUserId === "system" || validFromUserId.startsWith("system_") || validFromUserId === "user_sim") {
+            validFromUserId = "tarapti_official_admin";
+        }
+
         const newNotif: Notification = {
             id,
             toUserId: notification.toUserId,
-            fromUserId: notification.fromUserId || "system",
+            fromUserId: validFromUserId,
             fromUserName: notification.fromUserName || "Tarapti Alert",
             fromUserAvatar: notification.fromUserAvatar || "🚨",
             type: notification.type,
@@ -82,25 +86,42 @@ export class NotificationRepository implements INotificationRepository {
             timestamp: notification.timestamp || new Date().toISOString()
         };
 
-        // Save to memory
-        NotificationRepository.memoryNotifications.unshift(newNotif);
+        // Cache in memory fallback
+        const existingIdx = NotificationRepository.memoryNotifications.findIndex(n => n.id === id);
+        if (existingIdx >= 0) {
+            NotificationRepository.memoryNotifications[existingIdx] = newNotif;
+        } else {
+            NotificationRepository.memoryNotifications.unshift(newNotif);
+        }
 
         try {
             const { data, error } = await supabase
                 .from('Notification')
-                .insert([newNotif])
+                .upsert([newNotif])
                 .select()
                 .single();
-            if (error) throw error;
-            return data as Notification;
+            if (!error && data) {
+                return data as Notification;
+            }
+            if (error) {
+                // If it was FK error on fromUserId, retry with tarapti_official_admin
+                if (error.code === '23503') {
+                    newNotif.fromUserId = 'tarapti_official_admin';
+                    const retry = await supabase.from('Notification').upsert([newNotif]).select().single();
+                    if (!retry.error && retry.data) {
+                        return retry.data as Notification;
+                    }
+                }
+                throw error;
+            }
         } catch (e) {
-            console.error('Failed to create notification in Supabase, using memory fallback:', e);
-            return newNotif;
+            console.error('Failed to persist notification in Supabase, using memory fallback:', e);
         }
+        return newNotif;
     }
 
     async markAllAsRead(userId: string): Promise<void> {
-        // Mark in memory
+        // Mark in memory cache
         NotificationRepository.memoryNotifications
             .filter(n => n.toUserId === userId)
             .forEach(n => n.isRead = true);
@@ -116,7 +137,7 @@ export class NotificationRepository implements INotificationRepository {
     }
 
     async delete(id: string): Promise<void> {
-        // Delete from memory
+        // Delete from memory cache
         NotificationRepository.memoryNotifications = NotificationRepository.memoryNotifications.filter(n => n.id !== id);
 
         try {
@@ -130,7 +151,7 @@ export class NotificationRepository implements INotificationRepository {
     }
 
     async update(id: string, updates: Partial<Notification>): Promise<void> {
-        // Update in memory
+        // Update in memory cache
         const memNotif = NotificationRepository.memoryNotifications.find(n => n.id === id);
         if (memNotif) {
             Object.assign(memNotif, updates);
@@ -146,3 +167,4 @@ export class NotificationRepository implements INotificationRepository {
         }
     }
 }
+

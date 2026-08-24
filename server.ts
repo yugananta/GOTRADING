@@ -3661,6 +3661,24 @@ INSTRUCTIONS:
     res.json({ success: true });
   });
 
+  app.post("/api/notifications/read-all", async (req: any, res) => {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: "userId is required" });
+    const notifRepo = new NotificationRepository();
+    await notifRepo.markAllAsRead(userId);
+    res.json({ success: true });
+  });
+
+  // API: Delete specific notification
+  app.delete("/api/notifications/:notificationId", async (req: any, res) => {
+    const notifRepo = new NotificationRepository();
+    await notifRepo.delete(req.params.notificationId);
+    if (req.db && req.db.notifications) {
+      req.db.notifications = req.db.notifications.filter((n: any) => n.id !== req.params.notificationId);
+    }
+    res.json({ success: true });
+  });
+
   // API: Clear all market pulse notifications for a user
   app.delete("/api/notifications/user/:userId/market_pulse", async (req: any, res) => {
     const notifRepo = new NotificationRepository();
@@ -4108,10 +4126,16 @@ INSTRUCTIONS:
       eventName = "NOTIFICATION";
     }
 
-    req.db.notifications.push(notification);
+    const notifRepo = new NotificationRepository();
+    const createdNotif = await notifRepo.create(notification);
+
+    if (req.db) {
+      if (!req.db.notifications) req.db.notifications = [];
+      req.db.notifications.unshift(createdNotif);
+    }
     if (typeof req.save === "function") req.save();
 
-    res.json({ success: true, notification, eventName });
+    res.json({ success: true, notification: createdNotif, eventName });
   });
 
   // API: Broadcast Notification to all users
