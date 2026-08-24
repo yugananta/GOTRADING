@@ -23,14 +23,9 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
 }) => {
   const logoHeight = typeof height === 'number' ? `${height}px` : height;
 
-  // Pilih source dari awal berdasarkan `type`, bukan menunggu onError.
-  // Ini mencegah navbar app ikut jatuh ke logo_login.png, dan mencegah
-  // salah tampil logo di konteks yang salah.
   const primarySrc = type === 'login' ? LOGIN_LOGO : APP_LOGO;
   const [imgSrc, setImgSrc] = useState(primarySrc);
 
-  // Kalau prop `type` berubah (komponen dipakai ulang di route berbeda),
-  // reset ke source yang benar untuk type tsb.
   useEffect(() => {
     setImgSrc(primarySrc);
   }, [primarySrc]);
@@ -50,12 +45,9 @@ export const TaraptiLogo: React.FC<TaraptiLogoProps> = ({
           objectPosition: align === 'center' ? 'center' : 'left center'
         }}
         onError={() => {
-          // Fallback HANYA ke versi lain dari logo jenis yang sama
-          // (bukan menyeberang ke logo type lain). Kalau app logo gagal,
-          // coba nama file alternatif; kalau tetap gagal, biarkan alt text
-          // tampil daripada diam-diam pakai logo login.
+          // Jika terjadi error saat memuat, coba fallback ke file lokal alternatif jika ada
           if (type !== 'login' && imgSrc === APP_LOGO) {
-            setImgSrc('/gotrading_logo.png');
+            setImgSrc('/logo_gotrading.png');
           }
         }}
         referrerPolicy="no-referrer"

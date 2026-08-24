@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gotrading-v4';
+const CACHE_NAME = 'tarapti-v2';
 const ASSETS = [
   '/',
   '/index.html',
