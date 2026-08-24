@@ -35,42 +35,105 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
     showToast
   } = useApp();
 
-  // Member list modal states
+  // Member list modal states with batch pagination and parallel fetching
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [loadingMoreMembers, setLoadingMoreMembers] = useState(false);
+  const [memberPage, setMemberPage] = useState(1);
+  const [hasMoreMembers, setHasMoreMembers] = useState(false);
+  const [totalMembersCount, setTotalMembersCount] = useState(0);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [unfollowConfirmUser, setUnfollowConfirmUser] = useState<any | null>(null);
 
-  const handleOpenMemberList = async () => {
-    setIsMemberListOpen(true);
-    setLoadingMembers(true);
+  const fetchGroupMembers = async (
+    pageToFetch: number,
+    isInitial: boolean = false,
+    targetTab?: 'city' | 'province',
+    querySearch?: string
+  ) => {
+    const tabToUse = targetTab || activeTab;
+    const locationVal = tabToUse === 'city' ? selectedCity : selectedProvince;
+    const searchParam = (querySearch !== undefined ? querySearch : memberSearchQuery).trim();
+
+    if (isInitial) {
+      setLoadingMembers(true);
+      setGroupMembers([]);
+      setMemberPage(1);
+    } else {
+      setLoadingMoreMembers(true);
+    }
+
     try {
-      const locationVal = activeTab === 'city' ? selectedCity : selectedProvince;
-      const url = activeTab === 'city'
-        ? `/api/users?city=${encodeURIComponent(locationVal)}`
-        : `/api/users?province=${encodeURIComponent(locationVal)}`;
-      
-      const res = await apiFetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        // Exclude current user from the list
-        const filtered = currentUser ? data.filter((u: any) => u.id !== currentUser.id) : data;
-        setGroupMembers(filtered);
+      const url = `/api/users?${
+        tabToUse === 'city'
+          ? `city=${encodeURIComponent(locationVal)}`
+          : `province=${encodeURIComponent(locationVal)}`
+      }&page=${pageToFetch}&limit=20&paginated=true${
+        searchParam ? `&search=${encodeURIComponent(searchParam)}` : ''
+      }`;
+
+      // Concurrent parallel fetch of members list and follow relationships
+      const [membersRes, followsRes] = await Promise.all([
+        apiFetch(url),
+        (isInitial && currentUser) ? apiFetch(`/api/users/${currentUser.id}/follows`) : Promise.resolve(null)
+      ]);
+
+      if (membersRes.ok) {
+        const json = await membersRes.json();
+        const rawList = Array.isArray(json) ? json : (json.users || []);
+        const total = typeof json.total === 'number'
+          ? json.total
+          : (parseInt(membersRes.headers.get('X-Total-Count') || '0', 10) || rawList.length);
+        const hasMore = typeof json.hasMore === 'boolean'
+          ? json.hasMore
+          : (membersRes.headers.get('X-Has-More') === 'true' || rawList.length >= 20);
+
+        // Exclude current user from member list
+        const filtered = currentUser ? rawList.filter((u: any) => u.id !== currentUser.id) : rawList;
+
+        if (isInitial) {
+          setGroupMembers(filtered);
+        } else {
+          setGroupMembers(prev => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const newUnique = filtered.filter((m: any) => !existingIds.has(m.id));
+            return [...prev, ...newUnique];
+          });
+        }
+
+        setMemberPage(pageToFetch);
+        setHasMoreMembers(hasMore);
+        setTotalMembersCount(total);
       }
 
-      if (currentUser) {
-        const followsRes = await apiFetch(`/api/users/${currentUser.id}/follows`);
-        if (followsRes.ok) {
-          const followsData = await followsRes.json();
-          setFollowingIds(followsData.following || []);
-        }
+      if (followsRes && followsRes.ok) {
+        const followsData = await followsRes.json();
+        setFollowingIds(followsData.following || []);
       }
     } catch (e) {
       console.error("Error fetching group members:", e);
     } finally {
-      setLoadingMembers(false);
+      if (isInitial) setLoadingMembers(false);
+      setLoadingMoreMembers(false);
     }
+  };
+
+  const handleOpenMemberList = (targetTab?: 'city' | 'province') => {
+    setIsMemberListOpen(true);
+    setMemberSearchQuery('');
+    fetchGroupMembers(1, true, targetTab, '');
+  };
+
+  const handleLoadMoreMembers = () => {
+    if (loadingMoreMembers || !hasMoreMembers) return;
+    fetchGroupMembers(memberPage + 1, false);
+  };
+
+  const handleSearchMembers = (query: string) => {
+    setMemberSearchQuery(query);
+    fetchGroupMembers(1, true, activeTab, query);
   };
 
   const handleFollowMember = async (targetId: string) => {
@@ -1398,101 +1461,164 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
               className="bg-white dark:bg-[#121620] rounded-3xl border border-slate-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]"
             >
               {/* Modal Header */}
-              <div className="p-4 border-b border-slate-100 dark:border-gray-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/20">
-                <div className="flex items-center gap-2">
-                  <Users size={18} className="text-indigo-600 dark:text-indigo-400" />
-                  <div>
-                    <h3 className="text-sm font-black text-slate-950 dark:text-white leading-none">
-                      {activeTab === 'city' ? selectedCity : selectedProvince} Members
-                    </h3>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                      Connect and network with fellow local traders
-                    </p>
+              <div className="p-4 border-b border-slate-100 dark:border-gray-800 bg-slate-50 dark:bg-slate-900/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users size={18} className="text-indigo-600 dark:text-indigo-400" />
+                    <div>
+                      <h3 className="text-sm font-black text-slate-950 dark:text-white leading-none">
+                        {activeTab === 'city' ? selectedCity : selectedProvince} Members
+                      </h3>
+                      <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                        {totalMembersCount > 0 ? `${totalMembersCount} member terdaftar` : 'Connect & network dengan trader lokal'}
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => setIsMemberListOpen(false)}
+                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-gray-800 text-slate-500 hover:text-slate-850 dark:hover:text-white transition flex items-center justify-center cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsMemberListOpen(false)}
-                  className="w-7 h-7 rounded-full bg-slate-100 dark:bg-gray-800 text-slate-500 hover:text-slate-850 dark:hover:text-white transition flex items-center justify-center cursor-pointer"
-                >
-                  <X size={14} />
-                </button>
+
+                {/* In-Modal Fast Search */}
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={memberSearchQuery}
+                    onChange={(e) => handleSearchMembers(e.target.value)}
+                    placeholder="Cari nama trader atau instrumen..."
+                    className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-indigo-500 transition"
+                  />
+                  {memberSearchQuery && (
+                    <button
+                      onClick={() => handleSearchMembers('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
                 {loadingMembers ? (
-                  <div className="py-12 flex flex-col items-center justify-center gap-2.5">
-                    <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Loading member list...</p>
+                  /* Skeleton Loaders */
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className="p-3 bg-slate-50 dark:bg-gray-800/20 rounded-2xl border border-slate-100 dark:border-gray-800/60 flex items-center justify-between gap-3 animate-pulse"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-gray-700 shrink-0" />
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="h-3.5 bg-slate-200 dark:bg-gray-700 rounded-md w-28" />
+                            <div className="h-2.5 bg-slate-200 dark:bg-gray-700 rounded-md w-36" />
+                          </div>
+                        </div>
+                        <div className="h-7 w-16 bg-slate-200 dark:bg-gray-700 rounded-xl shrink-0" />
+                      </div>
+                    ))}
                   </div>
                 ) : groupMembers.length === 0 ? (
                   <div className="py-12 text-center text-slate-400 text-xs">
-                    No other registered members in the {activeTab === 'city' ? selectedCity : selectedProvince} group yet.
+                    {memberSearchQuery
+                      ? `Tidak ditemukan member dengan kata kunci "${memberSearchQuery}".`
+                      : `Belum ada member lain yang terdaftar di grup ${activeTab === 'city' ? selectedCity : selectedProvince}.`}
                   </div>
                 ) : (
-                  groupMembers.map((member) => {
-                    const isFollowing = followingIds.includes(member.id);
-                    return (
-                      <div
-                        key={member.id}
-                        className="p-3.5 bg-slate-50 dark:bg-gray-800/20 hover:bg-slate-100/50 dark:hover:bg-gray-800/40 rounded-2xl border border-slate-100 dark:border-gray-800/60 transition flex items-center justify-between gap-3"
-                      >
-                        {/* Member Details */}
-                        <div 
-                          className="flex items-center gap-2.5 min-w-0 cursor-pointer group"
-                          onClick={() => {
-                            setIsMemberListOpen(false);
-                            viewUserProfile(member.id);
-                          }}
+                  <>
+                    {groupMembers.map((member) => {
+                      const isFollowing = followingIds.includes(member.id);
+                      return (
+                        <div
+                          key={member.id}
+                          className="p-3 bg-slate-50 dark:bg-gray-800/20 hover:bg-slate-100/50 dark:hover:bg-gray-800/40 rounded-2xl border border-slate-100 dark:border-gray-800/60 transition flex items-center justify-between gap-3"
                         >
-                          <div className="relative shrink-0">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center font-black text-indigo-700 text-xs border border-slate-200">
-                              {member.avatar && (member.avatar.startsWith('http') || member.avatar.startsWith('data:') || member.avatar.startsWith('/')) ? (
-                                <img src={member.avatar} alt={member.firstName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                              ) : (
-                                member.avatar || "👤"
+                          {/* Member Details */}
+                          <div 
+                            className="flex items-center gap-2.5 min-w-0 cursor-pointer group flex-1"
+                            onClick={() => {
+                              setIsMemberListOpen(false);
+                              viewUserProfile(member.id);
+                            }}
+                          >
+                            <div className="relative shrink-0">
+                              <div className="w-10 h-10 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center font-black text-indigo-700 text-xs border border-slate-200">
+                                {member.avatar && (member.avatar.startsWith('http') || member.avatar.startsWith('data:') || member.avatar.startsWith('/')) ? (
+                                  <img src={member.avatar} alt={member.firstName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  member.avatar || "👤"
+                                )}
+                              </div>
+                              {member.onlineStatus === 'online' && (
+                                <span className="absolute -bottom-0.5 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
                               )}
                             </div>
-                            {member.onlineStatus === 'online' && (
-                              <span className="absolute -bottom-0.5 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
-                            )}
-                          </div>
 
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-tight">
-                                {member.firstName} {member.lastName}
-                              </h4>
-                              <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-200/60 dark:bg-gray-700 text-slate-600 dark:text-gray-300 rounded-md uppercase tracking-wider scale-90">
-                                {member.tradingExperience}
-                              </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-tight">
+                                  {member.firstName} {member.lastName}
+                                </h4>
+                                <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-200/60 dark:bg-gray-700 text-slate-600 dark:text-gray-300 rounded-md uppercase tracking-wider scale-90">
+                                  {member.tradingExperience || 'Trader'}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                {member.headline || `Trader ${member.tradingAsset || 'Forex'}`}
+                              </p>
                             </div>
-                            <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                              {member.headline || `Trader ${member.tradingAsset || 'Forex'}`}
-                            </p>
+                          </div>
+
+                          {/* Follow Action Buttons */}
+                          <div className="shrink-0">
+                            <motion.button
+                              whileTap={{ scale: 0.88 }}
+                              whileHover={{ scale: 1.04 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                              onClick={() => handleFollowMember(member.id)}
+                              className={`px-3 py-1.5 rounded-xl font-bold text-[10px] transition cursor-pointer flex items-center gap-1.5 ${
+                                isFollowing 
+                                  ? 'bg-slate-100 dark:bg-slate-850 text-slate-600 dark:text-gray-300 border border-slate-200/40 dark:border-gray-750' 
+                                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                              }`}
+                            >
+                              {isFollowing ? <Check size={12} className="text-emerald-500" /> : <UserPlus size={12} />}
+                              {isFollowing ? 'Following' : 'Follow'}
+                            </motion.button>
                           </div>
                         </div>
+                      );
+                    })}
 
-                        {/* Follow Action Buttons */}
-                        <div className="shrink-0">
-                          <motion.button
-                            whileTap={{ scale: 0.88 }}
-                            whileHover={{ scale: 1.04 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                            onClick={() => handleFollowMember(member.id)}
-                            className={`px-3 py-1.5 rounded-xl font-bold text-[10px] transition cursor-pointer flex items-center gap-1.5 ${
-                              isFollowing 
-                                ? 'bg-slate-100 dark:bg-slate-850 text-slate-600 dark:text-gray-300 border border-slate-200/40 dark:border-gray-750' 
-                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
-                            }`}
-                          >
-                            {isFollowing ? <Check size={12} className="text-emerald-500" /> : <UserPlus size={12} />}
-                            {isFollowing ? 'Following' : 'Follow'}
-                          </motion.button>
-                        </div>
+                    {/* Pagination / Load More Button */}
+                    {hasMoreMembers && (
+                      <div className="pt-2 text-center">
+                        <button
+                          onClick={handleLoadMoreMembers}
+                          disabled={loadingMoreMembers}
+                          className="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-indigo-200/60 dark:border-indigo-800/40 cursor-pointer disabled:opacity-60"
+                        >
+                          {loadingMoreMembers ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                              <span>Memuat lebih banyak...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown size={14} />
+                              <span>Muat Lebih Banyak ({groupMembers.length} dari {totalMembersCount || groupMembers.length})</span>
+                            </>
+                          )}
+                        </button>
                       </div>
-                    );
-                  })
+                    )}
+                  </>
                 )}
               </div>
             </motion.div>

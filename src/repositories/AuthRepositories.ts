@@ -125,11 +125,29 @@ export class UserRepository implements IUserRepository {
     }
   }
 
-  async list(): Promise<User[]> {
+  async list(filters?: { city?: string; province?: string; country?: string; search?: string; limit?: number; offset?: number }): Promise<User[]> {
     try {
-      const { data, error } = await supabase
-        .from('User')
-        .select('*');
+      let query = supabase.from('User').select('*');
+
+      if (filters?.city) {
+        query = query.ilike('city', filters.city);
+      }
+      if (filters?.province) {
+        query = query.ilike('province', filters.province);
+      }
+      if (filters?.country) {
+        query = query.ilike('country', filters.country);
+      }
+      if (filters?.search) {
+        const q = filters.search;
+        query = query.or(`firstName.ilike.%${q}%,lastName.ilike.%${q}%,username.ilike.%${q}%,city.ilike.%${q}%,headline.ilike.%${q}%`);
+      }
+      if (filters?.limit) {
+        const offset = filters.offset || 0;
+        query = query.range(offset, offset + filters.limit - 1);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return (data || []) as User[];

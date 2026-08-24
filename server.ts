@@ -2014,18 +2014,24 @@ INSTRUCTIONS:
     }
   });
 
-  // API: Users List with Filters
+  // API: Users List with Filters & High-Performance Pagination
   app.get("/api/users", async (req: any, res) => {
+    const { search, country, province, city, experience, asset, online, lat, lng, radius, page, limit, paginated, format } = req.query;
+    console.log(`GET /api/users - City: ${city}, Province: ${province}, Search: ${search}, Page: ${page}, Limit: ${limit}`);
+
     const userRepo = new UserRepository();
-    let list = await userRepo.list();
+    // Use direct DB filtering when query parameters are supplied
+    let list = await userRepo.list({
+      city: city ? String(city) : undefined,
+      province: province ? String(province) : undefined,
+      country: country ? String(country) : undefined,
+      search: search ? String(search) : undefined
+    });
     
     // Fall back to memory database users if Supabase returns nothing or is unconfigured
     if ((!list || list.length === 0) && req.db?.users && req.db.users.length > 0) {
       list = req.db.users;
     }
-
-    const { search, country, province, city, experience, asset, online, lat, lng, radius } = req.query;
-    console.log(`GET /api/users - Search: ${search}, Geo: ${lat}, ${lng}, Radius: ${radius}`);
 
     if (search) {
       const q = (search as string).toLowerCase().trim();
@@ -2124,13 +2130,43 @@ INSTRUCTIONS:
       });
     }
 
-    // Map relationships (following / followers)
+    // Map relationships (sanitize passwords)
     const safeList = list.map(u => {
       const { password, ...safeUser } = u;
       return safeUser;
     });
 
-    res.json(safeList);
+    const totalCount = safeList.length;
+    let paginatedList = safeList;
+    let parsedPage = page ? parseInt(page as string, 10) : 1;
+    let parsedLimit = limit ? parseInt(limit as string, 10) : 0;
+
+    if (parsedLimit > 0) {
+      if (parsedPage < 1) parsedPage = 1;
+      const startIndex = (parsedPage - 1) * parsedLimit;
+      paginatedList = safeList.slice(startIndex, startIndex + parsedLimit);
+    }
+
+    const hasMore = parsedLimit > 0 ? (parsedPage * parsedLimit < totalCount) : false;
+
+    // Set standard pagination response headers
+    res.setHeader('X-Total-Count', String(totalCount));
+    res.setHeader('X-Page', String(parsedPage));
+    res.setHeader('X-Limit', String(parsedLimit || totalCount));
+    res.setHeader('X-Has-More', String(hasMore));
+    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count, X-Page, X-Limit, X-Has-More');
+
+    if (paginated === 'true' || format === 'object') {
+      return res.json({
+        users: paginatedList,
+        total: totalCount,
+        page: parsedPage,
+        limit: parsedLimit || totalCount,
+        hasMore
+      });
+    }
+
+    res.json(paginatedList);
   });
 
   // API: Follow / Unfollow trader

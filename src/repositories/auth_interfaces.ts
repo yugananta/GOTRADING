@@ -7,7 +7,7 @@ export interface IUserRepository {
   updateStatus(id: string, status: User['status']): Promise<void>;
   updateLastLogin(id: string): Promise<void>;
   updatePassword(id: string, passwordHash: string): Promise<void>;
-  list(): Promise<User[]>;
+  list(filters?: { city?: string; province?: string; country?: string; search?: string; limit?: number; offset?: number }): Promise<User[]>;
   update(id: string, updates: Partial<User>): Promise<void>;
   delete(id: string): Promise<void>;
 }
