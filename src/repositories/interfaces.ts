@@ -35,7 +35,7 @@ export interface IMessageRepository {
 
 export interface INotificationRepository {
     list(): Promise<Notification[]>;
-    listByUserId(userId: string): Promise<Notification[]>;
+    listByUserId(userId: string): Promise<{data: Notification[], meta: {stale: boolean, source: string}}>;
     findById(id: string): Promise<Notification | null>;
     create(notification: Omit<Notification, 'id'> & { id?: string }): Promise<Notification>;
     markAllAsRead(userId: string): Promise<void>;

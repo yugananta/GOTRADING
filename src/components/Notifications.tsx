@@ -13,6 +13,7 @@ import {
 export const Notifications: React.FC = () => {
   const {
     notifications,
+    isNotificationsStale,
     markNotificationRead,
     markAllNotificationsRead,
     deleteNotification,
@@ -145,6 +146,16 @@ export const Notifications: React.FC = () => {
   return (
     <div id="notifications-view" className="space-y-4 py-2 max-w-2xl mx-auto">
       
+      {isNotificationsStale && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3 flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-400">Status jaringan lemah</h4>
+            <p className="text-[11px] text-amber-700/80 dark:text-amber-500/80 mt-0.5">Notifikasi mungkin belum terbaru. Sistem akan mencoba memperbarui secara otomatis.</p>
+          </div>
+        </div>
+      )}
+
       {/* Title Header */}
       <div className="flex items-center justify-between bg-white dark:bg-[#121620] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
         <div className="flex items-center gap-3">

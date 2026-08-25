@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.tsx';
 import { apiFetch } from '../utils/apiFetch';
 import { TaraptiPartners } from './TaraptiPartners.tsx';
+import { useOpenAccountUrl } from '../hooks/useOpenAccountUrl';
 
 
 const BROKERS: Record<string, string[]> = {
@@ -34,6 +35,7 @@ export const Account: React.FC = () => {
     fetchMetaTraderData
   } = useApp();
   
+  const { openAccountUrl, isLoading: isOpenAccountLoading } = useOpenAccountUrl();
   const [selectedSubView, setSelectedSubView] = useState<'main' | 'partners_detail'>('main');
   const [localAccounts, setLocalAccounts] = useState<any[]>(() => {
     if (connectedBroker) {
@@ -374,7 +376,12 @@ export const Account: React.FC = () => {
             <p>{typeof error === 'string' ? error : (error as any)?.message || 'An error occurred'}</p>
           </div>
           {(typeof error === 'string' && error.includes('registered')) && (
-            <a href="https://www.axi.com" target="_blank" rel="noreferrer" className="inline-block px-3 py-2 bg-rose-600 text-white rounded-lg text-center font-bold shadow-sm mt-1">
+            <a 
+              href={openAccountUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-block px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-center font-bold shadow-sm mt-1 transition cursor-pointer"
+            >
               Create Account at Connect Broker GoTrading
             </a>
           )}
@@ -706,27 +713,50 @@ export const Account: React.FC = () => {
         {/* Top Row: 2 Compact Cards Side-by-Side */}
         <div className="grid grid-cols-2 gap-2.5">
           {/* Card 1: Open Account */}
-          <div 
-            onClick={() => alert('Link pendaftaran akan dikonfigurasi melalui Admin Panel.')}
-            className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 text-white rounded-xl p-3.5 shadow-sm shadow-indigo-600/15 border border-indigo-400/20 flex flex-col justify-between h-28 sm:h-30 group cursor-pointer transition-all active:scale-[0.98]"
-          >
-            <div className="flex items-start justify-between">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-white/20 backdrop-blur-md text-white border border-white/20 flex items-center justify-center font-black shadow-inner group-hover:scale-105 transition-transform">
-                <ExternalLink size={16} />
+          {isOpenAccountLoading ? (
+            <div 
+              id="open-account-loading-skeleton"
+              className="bg-gradient-to-br from-indigo-700/80 via-indigo-800/80 to-indigo-900/80 text-white rounded-xl p-3.5 shadow-sm shadow-indigo-600/15 border border-indigo-400/20 flex flex-col justify-between h-28 sm:h-30 animate-pulse cursor-wait"
+            >
+              <div className="flex items-start justify-between">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-white/10 backdrop-blur-md flex items-center justify-center">
+                  <ExternalLink size={16} className="text-white/40" />
+                </div>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-white/10 flex items-center justify-center text-white/40">
+                  <ArrowRight size={12} />
+                </div>
               </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-white/10 flex items-center justify-center text-white group-hover:bg-white/20 group-hover:translate-x-0.5 transition-all">
-                <ArrowRight size={12} />
+              <div className="space-y-1.5">
+                <div className="h-3.5 bg-white/30 rounded w-24"></div>
+                <div className="h-2.5 bg-white/20 rounded w-32"></div>
               </div>
             </div>
-            <div>
-              <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight">
-                Open Account
-              </h3>
-              <p className="text-[9px] sm:text-[10px] text-indigo-100/90 font-medium mt-0.5 line-clamp-1">
-                Buka akun broker Connect
-              </p>
-            </div>
-          </div>
+          ) : (
+            <a 
+              id="open-account-cta-button"
+              href={openAccountUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 text-white rounded-xl p-3.5 shadow-sm shadow-indigo-600/15 border border-indigo-400/20 flex flex-col justify-between h-28 sm:h-30 group cursor-pointer transition-all active:scale-[0.98] no-underline block"
+            >
+              <div className="flex items-start justify-between">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-white/20 backdrop-blur-md text-white border border-white/20 flex items-center justify-center font-black shadow-inner group-hover:scale-105 transition-transform">
+                  <ExternalLink size={16} />
+                </div>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-white/10 flex items-center justify-center text-white group-hover:bg-white/20 group-hover:translate-x-0.5 transition-all">
+                  <ArrowRight size={12} />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight">
+                  Open Account
+                </h3>
+                <p className="text-[9px] sm:text-[10px] text-indigo-100/90 font-medium mt-0.5 line-clamp-1">
+                  Buka akun broker Connect
+                </p>
+              </div>
+            </a>
+          )}
 
           {/* Card 2: Validasi Account */}
           <div 

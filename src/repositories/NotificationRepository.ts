@@ -22,7 +22,7 @@ export class NotificationRepository implements INotificationRepository {
         return [...NotificationRepository.memoryNotifications].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     }
 
-    async listByUserId(userId: string): Promise<Notification[]> {
+    async listByUserId(userId: string): Promise<{data: Notification[], meta: {stale: boolean, source: string}}> {
         try {
             const { data, error } = await supabase
                 .from('Notification')
@@ -33,14 +33,12 @@ export class NotificationRepository implements INotificationRepository {
                 // Sync memory cache for this user
                 const otherUserNotifs = NotificationRepository.memoryNotifications.filter(n => n.toUserId !== userId);
                 NotificationRepository.memoryNotifications = [...otherUserNotifs, ...(data as Notification[])];
-                return data as Notification[];
+                return { data: data as Notification[], meta: { stale: false, source: 'supabase' } };
             }
         } catch (e: any) {
             console.error('Failed to list notifications by user from Supabase, using memory fallback:', e?.message || e);
         }
-        return NotificationRepository.memoryNotifications
-            .filter(n => n.toUserId === userId)
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const cached = NotificationRepository.memoryNotifications.filter(n => n.toUserId === userId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); return { data: cached, meta: { stale: true, source: 'memory_cache' } };
     }
 
     async findById(id: string): Promise<Notification | null> {

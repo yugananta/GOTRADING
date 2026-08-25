@@ -3638,9 +3638,8 @@ INSTRUCTIONS:
 
   app.get("/api/notifications/:userId", async (req: any, res) => {
     const notifRepo = new NotificationRepository();
-    const userNotifications = await notifRepo.listByUserId(req.params.userId);
-    userNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    res.json(userNotifications);
+    const result = await notifRepo.listByUserId(req.params.userId);
+    res.json(result); // result is already { data, meta }
   });
 
   // API: Mark notification as read
@@ -3682,8 +3681,8 @@ INSTRUCTIONS:
   // API: Clear all market pulse notifications for a user
   app.delete("/api/notifications/user/:userId/market_pulse", async (req: any, res) => {
     const notifRepo = new NotificationRepository();
-    const notifs = await notifRepo.listByUserId(req.params.userId);
-    const toDelete = notifs.filter(n => n.type === 'market_pulse');
+    const notifsResult = await notifRepo.listByUserId(req.params.userId);
+    const toDelete = notifsResult.data.filter(n => n.type === 'market_pulse');
     for (const n of toDelete) {
       await notifRepo.delete(n.id);
     }
@@ -3872,11 +3871,39 @@ INSTRUCTIONS:
         newsApiKey: "",
         telegramBotToken: "",
         telegramChatId: "",
-        fcmServerKey: ""
+        fcmServerKey: "",
+        openAccountUrl: process.env.OPEN_ACCOUNT_URL || "https://www.axi.com"
       };
     }
     return db.adminSettings;
   };
+
+  // API: Public Settings (public endpoint for dynamic app settings, e.g. openAccountUrl)
+  app.get("/api/settings/public", async (req: any, res) => {
+    try {
+      const targetUrl = `${BACKEND_API_URL}/api/settings/public`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      try {
+        const backendRes = await fetch(targetUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (backendRes.ok) {
+          const data = await backendRes.json();
+          if (data && typeof data.openAccountUrl === 'string' && data.openAccountUrl.trim()) {
+            return res.json(data);
+          }
+        }
+      } catch (err: any) {
+        clearTimeout(timeout);
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    const settings = getAdminSettings(req.db);
+    const openAccountUrl = settings?.openAccountUrl || process.env.OPEN_ACCOUNT_URL || "https://www.axi.com";
+    res.json({ openAccountUrl });
+  });
 
   // API: Get admin integration settings
   app.get("/api/admin/settings", authenticate, (req: any, res) => {
@@ -4209,10 +4236,10 @@ INSTRUCTIONS:
     }
   });
 
-  // --- PROXY /api/metatrader/* AND /api/ib/* TO BE-GOTRADING ---
+  // --- PROXY /api/metatrader/*, /api/ib/*, /api/settings/* TO BE-GOTRADING ---
   const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'https://be-gotrading-production.up.railway.app').replace(/\/+$/, '');
 
-  app.all(["/api/metatrader", "/api/metatrader/*", "/api/ib", "/api/ib/*"], async (req: any, res) => {
+  app.all(["/api/metatrader", "/api/metatrader/*", "/api/ib", "/api/ib/*", "/api/settings", "/api/settings/*"], async (req: any, res) => {
     const targetUrl = `${BACKEND_API_URL}${req.originalUrl}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);

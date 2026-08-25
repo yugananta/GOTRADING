@@ -27,6 +27,7 @@ interface AppContextType {
   markAllNotificationsRead: () => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
   unreadNotificationsCount: number;
+  isNotificationsStale: boolean;
   sessions: ChatSession[];
   fetchSessions: () => Promise<void>;
   markSessionAsRead: (partnerId: string) => void;
@@ -131,6 +132,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNewPostsQueue([]);
   }, [newPostsQueue]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isNotificationsStale, setIsNotificationsStale] = useState<boolean>(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeChatPartnerId, setActiveChatPartnerId] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
@@ -342,10 +344,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchNotifications();
 
     // Sync notifications every 30s
-    const stopNotifPolling = poll<Notification[]>(
+    const stopNotifPolling = poll<any>(
       `/api/notifications/${currentUser.id}?_t=${Date.now()}`,
-      (data) => setNotifications(data),
-      (e) => console.warn("Notification poll notice:", e),
+      (result) => {
+        if (result && Array.isArray(result.data)) {
+          setNotifications(result.data);
+          setIsNotificationsStale(result.meta?.stale || false);
+        } else if (Array.isArray(result)) {
+          setNotifications(result);
+          setIsNotificationsStale(false);
+        }
+      },
+      (e) => {
+        console.warn("Notification poll notice:", e);
+        setIsNotificationsStale(true);
+      },
       30000
     );
 
@@ -634,11 +647,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const res = await apiFetch(`/api/notifications/${currentUser.id}?_t=${Date.now()}`);
       if (isJsonResponse(res)) {
-        const data = await res.json();
-        setNotifications(data);
+        const result = await res.json();
+        // Check if backend returned the { data, meta } format or fallback to array format
+        if (result && Array.isArray(result.data)) {
+          setNotifications(result.data);
+          setIsNotificationsStale(result.meta?.stale || false);
+        } else if (Array.isArray(result)) {
+          setNotifications(result);
+          setIsNotificationsStale(false);
+        }
       }
     } catch (e) {
       console.error("error fetching notifications:", e);
+      setIsNotificationsStale(true);
     }
   };
 
@@ -938,6 +959,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       markAllNotificationsRead,
       deleteNotification,
       unreadNotificationsCount,
+      isNotificationsStale,
       sessions,
       fetchSessions,
       markSessionAsRead,
