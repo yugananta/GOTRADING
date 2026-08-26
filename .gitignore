@@ -7,3 +7,5 @@ coverage/
 !.env.example
 
 /src/generated/prisma
+bun.lock
+bun.lockb
