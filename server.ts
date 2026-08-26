@@ -4236,10 +4236,10 @@ INSTRUCTIONS:
     }
   });
 
-  // --- PROXY /api/metatrader/*, /api/ib/*, /api/settings/* TO BE-GOTRADING ---
+  // --- PROXY /api/metatrader/*, /api/ib/*, /api/settings/*, /api/validations/* TO BE-GOTRADING ---
   const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'https://be-gotrading-production.up.railway.app').replace(/\/+$/, '');
 
-  app.all(["/api/metatrader", "/api/metatrader/*", "/api/ib", "/api/ib/*", "/api/settings", "/api/settings/*"], async (req: any, res) => {
+  app.all(["/api/metatrader", "/api/metatrader/*", "/api/ib", "/api/ib/*", "/api/settings", "/api/settings/*", "/api/validations", "/api/validations/*"], async (req: any, res) => {
     const targetUrl = `${BACKEND_API_URL}${req.originalUrl}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck, LogOut, CheckCircle2, Lock, Link as LinkIcon, Database, AlertCircle, AlertTriangle, RefreshCw, Activity, ArrowRight, ExternalLink, Unplug, Handshake, Cpu, BadgeCheck } from 'lucide-react';
+import { ShieldCheck, LogOut, CheckCircle2, Lock, Link as LinkIcon, Database, AlertCircle, AlertTriangle, RefreshCw, Activity, ArrowRight, ExternalLink, Unplug, Handshake, Cpu, BadgeCheck, Clock, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.tsx';
 import { apiFetch } from '../utils/apiFetch';
@@ -22,6 +22,8 @@ const BROKERS: Record<string, string[]> = {
   'Other': []
 };
 
+type ValidationStatus = 'none' | 'pending' | 'approved' | 'rejected';
+
 export const Account: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { 
@@ -32,7 +34,8 @@ export const Account: React.FC = () => {
     setConnectedAccounts,
     activeAccountLogin,
     setActiveAccountLogin,
-    fetchMetaTraderData
+    fetchMetaTraderData,
+    showToast
   } = useApp();
   
   const { openAccountUrl, isLoading: isOpenAccountLoading } = useOpenAccountUrl();
@@ -75,6 +78,11 @@ export const Account: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Validation Status State
+  const [validationStatus, setValidationStatus] = useState<ValidationStatus>('none');
+  const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [isValidatingStatusLoading, setIsValidatingStatusLoading] = useState<boolean>(true);
+
   // Form State
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -94,7 +102,45 @@ export const Account: React.FC = () => {
 
   useEffect(() => {
     fetchAccountStatus();
+    fetchValidationStatus();
   }, []);
+
+  // Pre-fill user data when opening validation form
+  useEffect(() => {
+    if (activeAction === 'validate') {
+      if (!valName && currentUser) {
+        const name = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username || '';
+        if (name) setValName(name);
+      }
+      if (!valEmail && currentUser?.email) {
+        setValEmail(currentUser.email);
+      }
+    }
+  }, [activeAction, currentUser]);
+
+  const fetchValidationStatus = async () => {
+    setIsValidatingStatusLoading(true);
+    try {
+      console.log('[Account.tsx] Fetching GET /api/validations/status...');
+      const res = await apiFetch('/api/validations/status');
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[Account.tsx] Validation status response:', data);
+        const status = (data.status || data.data?.status || 'none') as ValidationStatus;
+        const reason = data.rejectionReason || data.data?.rejectionReason || data.reason || data.message || '';
+        setValidationStatus(status);
+        setRejectionReason(reason);
+      } else {
+        console.warn('[Account.tsx] GET /api/validations/status returned non-200:', res.status);
+        setValidationStatus('none');
+      }
+    } catch (err) {
+      console.error('[Account.tsx] Error fetching validation status:', err);
+      setValidationStatus('none');
+    } finally {
+      setIsValidatingStatusLoading(false);
+    }
+  };
 
   // Whenever selectedAccountIndex or accounts list changes, automatically sync and fetch trades for the active account
   useEffect(() => {
@@ -346,175 +392,336 @@ export const Account: React.FC = () => {
 
   const activeAccount = accounts[selectedAccountIndex] || accounts[0];
 
-  const renderConnectForm = () => (
-    <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/15 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-      
-      <div className="relative z-10 mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-            {accounts.length > 0 ? 'Hubungkan Akun MT5 Tambahan' : t('account.connectTradingAccount')}
-            <img src="/mt5-logo.png" alt="MT5" className="h-5 w-5 object-contain rounded" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          </h2>
-          <p className="text-[10px] text-slate-700 leading-relaxed mt-1">
-            {accounts.length > 0 ? 'Tambahkan koneksi akun MetaTrader 5 baru ke profil Anda' : t('account.connectServerDesc')}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => { setActiveAction('none'); setError(null); }}
-          className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
-        >
-          ← Kembali
-        </button>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex flex-col gap-2 text-rose-600 text-xs">
-          <div className="flex items-start gap-2">
-            <AlertCircle size={14} className="shrink-0 mt-0.5" />
-            <p>{typeof error === 'string' ? error : (error as any)?.message || 'An error occurred'}</p>
-          </div>
-          {(typeof error === 'string' && error.includes('registered')) && (
-            <a 
-              href={openAccountUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="inline-block px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-center font-bold shadow-sm mt-1 transition cursor-pointer"
+  const renderConnectForm = () => {
+    // 1. Loading validation status
+    if (isValidatingStatusLoading) {
+      return (
+        <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-black text-slate-900 tracking-tight">Connect Akun MT5</h2>
+            <button
+              type="button"
+              onClick={() => { setActiveAction('none'); setError(null); }}
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
             >
-              Create Account at Connect Broker GoTrading
-            </a>
-          )}
+              ← Kembali
+            </button>
+          </div>
+          <div className="py-8 flex flex-col items-center justify-center text-center gap-3">
+            <RefreshCw className="animate-spin text-indigo-600" size={24} />
+            <p className="text-xs font-semibold text-slate-600">Memeriksa status validasi akun...</p>
+          </div>
         </div>
-      )}
+      );
+    }
 
-      <form onSubmit={handleConnect} className="space-y-3 relative z-10">
-        <div className="space-y-1">
-          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-            {t('account.partnerBroker')} *
-          </label>
-          <select
-            value={broker}
-            onChange={(e) => {
-              setBroker(e.target.value);
-              setServer('');
-              setCustomBroker('');
-              setCustomServer('');
-            }}
-            className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm"
-            required
+    // 2. Gating: status 'none'
+    if (validationStatus === 'none') {
+      return (
+        <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+          
+          <div className="relative z-10 flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                <ShieldAlert size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-900 tracking-tight">Validasi Akun Diperlukan</h2>
+                <p className="text-[10px] text-slate-500 font-medium">Under IB GoTrading</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setActiveAction('none'); setError(null); }}
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
+            >
+              ← Kembali
+            </button>
+          </div>
+
+          <div className="relative z-10 space-y-4">
+            <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl text-xs text-amber-900 leading-relaxed font-medium">
+              Akun Anda belum tervalidasi under IB GoTrading. Silakan lengkapi Validasi Akun terlebih dahulu.
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveAction('validate')}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-black rounded-xl transition shadow-sm shadow-emerald-600/15 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+            >
+              <BadgeCheck size={16} />
+              <span>Lengkapi Validasi Akun</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // 3. Gating: status 'pending'
+    if (validationStatus === 'pending') {
+      return (
+        <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+          
+          <div className="relative z-10 flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                <Clock size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-900 tracking-tight">Validasi Sedang Diproses</h2>
+                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Menunggu Konfirmasi Admin</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setActiveAction('none'); setError(null); }}
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
+            >
+              ← Kembali
+            </button>
+          </div>
+
+          <div className="relative z-10 space-y-4">
+            <div className="p-3.5 bg-blue-50 border border-blue-200/80 rounded-2xl text-xs text-blue-900 leading-relaxed font-medium">
+              Validasi sedang diproses, mohon tunggu konfirmasi admin.
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={fetchValidationStatus}
+                disabled={isValidatingStatusLoading}
+                className="flex-1 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <RefreshCw size={13} className={isValidatingStatusLoading ? "animate-spin text-blue-600" : "text-slate-500"} />
+                <span>Cek Status Validasi</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 4. Gating: status 'rejected'
+    if (validationStatus === 'rejected') {
+      return (
+        <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+          
+          <div className="relative z-10 flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                <AlertTriangle size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-rose-700 tracking-tight">Validasi Ditolak</h2>
+                <p className="text-[10px] text-slate-500 font-medium">Under IB GoTrading</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setActiveAction('none'); setError(null); }}
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
+            >
+              ← Kembali
+            </button>
+          </div>
+
+          <div className="relative z-10 space-y-3">
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 leading-relaxed font-medium space-y-1">
+              <div className="font-bold text-[10px] uppercase tracking-wider text-rose-700">Alasan Penolakan:</div>
+              <p>{rejectionReason || 'Nomor akun MT5 Anda belum terdaftar under IB GoTrading atau data yang dimasukkan tidak sesuai.'}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setValSuccess(false);
+                setActiveAction('validate');
+              }}
+              className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl transition shadow-sm shadow-rose-600/15 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+            >
+              <BadgeCheck size={16} />
+              <span>Submit Ulang Validasi</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // 5. Normal Flow (status 'approved')
+    return (
+      <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/15 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+        
+        <div className="relative z-10 mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
+              {accounts.length > 0 ? 'Hubungkan Akun MT5 Tambahan' : t('account.connectTradingAccount')}
+              <img src="/mt5-logo.png" alt="MT5" className="h-5 w-5 object-contain rounded" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            </h2>
+            <p className="text-[10px] text-slate-700 leading-relaxed mt-1">
+              {accounts.length > 0 ? 'Tambahkan koneksi akun MetaTrader 5 baru ke profil Anda' : t('account.connectServerDesc')}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setActiveAction('none'); setError(null); }}
+            className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
           >
-            <option value="" disabled>Select Broker</option>
-            {Object.keys(BROKERS).map(b => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+            ← Kembali
+          </button>
         </div>
 
-        {broker === 'Other' && (
+        {error && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex flex-col gap-2 text-rose-600 text-xs">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+              <p>{typeof error === 'string' ? error : (error as any)?.message || 'An error occurred'}</p>
+            </div>
+            {(typeof error === 'string' && error.includes('registered')) && (
+              <a 
+                href={openAccountUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-block px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-center font-bold shadow-sm mt-1 transition cursor-pointer"
+              >
+                Create Account at Connect Broker GoTrading
+              </a>
+            )}
+          </div>
+        )}
+
+        <form onSubmit={handleConnect} className="space-y-3 relative z-10">
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-              Broker Name *
+              {t('account.partnerBroker')} *
+            </label>
+            <select
+              value={broker}
+              onChange={(e) => {
+                setBroker(e.target.value);
+                setServer('');
+                setCustomBroker('');
+                setCustomServer('');
+              }}
+              className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm"
+              required
+            >
+              <option value="" disabled>Select Broker</option>
+              {Object.keys(BROKERS).map(b => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
+
+          {broker === 'Other' && (
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+                Broker Name *
+              </label>
+              <input
+                type="text"
+                value={customBroker}
+                onChange={(e) => setCustomBroker(e.target.value)}
+                placeholder="Enter your broker name"
+                className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                required
+              />
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+              {t('account.tradingServerLabel')}
+            </label>
+            {broker && broker !== 'Other' && BROKERS[broker].length > 0 ? (
+              <div className="space-y-2">
+                <select
+                  value={server}
+                  onChange={(e) => setServer(e.target.value)}
+                  className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                  required
+                >
+                  <option value="" disabled>Select Server</option>
+                  {BROKERS[broker].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                  <option value="Other">Other (Manual Entry)</option>
+                </select>
+                {server === 'Other' && (
+                   <input
+                     type="text"
+                     value={customServer}
+                     onChange={(e) => setCustomServer(e.target.value)}
+                     placeholder="Enter server name manually"
+                     className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                     required
+                   />
+                )}
+              </div>
+            ) : (
+               <input
+                 type="text"
+                 value={server}
+                 onChange={(e) => setServer(e.target.value)}
+                 placeholder="e.g. Axi-US50-Live"
+                 className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
+                 required={broker === 'Other' || (broker && BROKERS[broker]?.length === 0)}
+               />
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+              {t('account.accountNoLabel')}
             </label>
             <input
               type="text"
-              value={customBroker}
-              onChange={(e) => setCustomBroker(e.target.value)}
-              placeholder="Enter your broker name"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder="e.g. 12345678"
               className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
               required
             />
           </div>
-        )}
 
-        <div className="space-y-1">
-          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-            {t('account.tradingServerLabel')}
-          </label>
-          {broker && broker !== 'Other' && BROKERS[broker].length > 0 ? (
-            <div className="space-y-2">
-              <select
-                value={server}
-                onChange={(e) => setServer(e.target.value)}
-                className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm"
-                required
-              >
-                <option value="" disabled>Select Server</option>
-                {BROKERS[broker].map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-                <option value="Other">Other (Manual Entry)</option>
-              </select>
-              {server === 'Other' && (
-                 <input
-                   type="text"
-                   value={customServer}
-                   onChange={(e) => setCustomServer(e.target.value)}
-                   placeholder="Enter server name manually"
-                   className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
-                   required
-                 />
-              )}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+                {t('account.investorPasswordLabel')}
+              </label>
+              <span className="text-[8px] text-indigo-500 uppercase font-bold tracking-wider flex items-center gap-1"><Lock size={8}/> {t('account.readOnly')}</span>
             </div>
-          ) : (
-             <input
-               type="text"
-               value={server}
-               onChange={(e) => setServer(e.target.value)}
-               placeholder="e.g. Axi-US50-Live"
-               className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
-               required={broker === 'Other' || (broker && BROKERS[broker]?.length === 0)}
-             />
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-            {t('account.accountNoLabel')}
-          </label>
-          <input
-            type="text"
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            placeholder="e.g. 12345678"
-            className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-              {t('account.investorPasswordLabel')}
-            </label>
-            <span className="text-[8px] text-indigo-500 uppercase font-bold tracking-wider flex items-center gap-1"><Lock size={8}/> {t('account.readOnly')}</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your MT5 investor password"
+              className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
+              required
+            />
           </div>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Your MT5 investor password"
-            className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
-            required
-          />
-        </div>
 
-        <div className="pt-2 flex items-center gap-2">
-          <button
-            type="submit"
-            disabled={isConnecting}
-            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-70 text-white text-xs font-black rounded-xl transition shadow-sm shadow-indigo-600/15 flex justify-center items-center gap-2 cursor-pointer"
-          >
-            {isConnecting ? (
-              <><div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"/> {connectStepText}</>
-            ) : (
-              <><LinkIcon size={14} /> {accounts.length > 0 ? '+ Connect Akun Ini' : t('account.connectAccount')}</>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+          <div className="pt-2 flex items-center gap-2">
+            <button
+              type="submit"
+              disabled={isConnecting}
+              className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-70 text-white text-xs font-black rounded-xl transition shadow-sm shadow-indigo-600/15 flex justify-center items-center gap-2 cursor-pointer"
+            >
+              {isConnecting ? (
+                <><div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"/> {connectStepText}</>
+              ) : (
+                <><LinkIcon size={14} /> {accounts.length > 0 ? '+ Connect Akun Ini' : t('account.connectAccount')}</>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  };
 
   const renderConnectedOverview = () => {
     if (!activeAccount) return null;
@@ -652,18 +859,58 @@ export const Account: React.FC = () => {
     );
   };
 
+  const handleValidationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!valName.trim() || !valEmail.trim() || !valAccount.trim()) {
+      if (showToast) showToast('Mohon lengkapi semua data formulir validasi.');
+      return;
+    }
+
+    setIsSubmittingVal(true);
+    try {
+      const payload = {
+        fullName: valName.trim(),
+        email: valEmail.trim(),
+        mt5AccountNumber: valAccount.trim()
+      };
+      console.log('[Account.tsx] Submitting POST /api/validations with payload:', payload);
+      const res = await apiFetch('/api/validations', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => null);
+      console.log('[Account.tsx] POST /api/validations response:', res.status, data);
+
+      if (res.ok && data?.success !== false) {
+        setValSuccess(true);
+        setValidationStatus('pending');
+        if (showToast) showToast('Validasi akun berhasil dikirim! Menunggu konfirmasi admin.');
+        // Refresh validation status from server
+        await fetchValidationStatus();
+      } else {
+        const errMsg = data?.error?.message || data?.error || data?.message || 'Gagal mengirim validasi. Silakan coba lagi.';
+        if (showToast) showToast(errMsg);
+      }
+    } catch (err: any) {
+      console.error('[Account.tsx] Error submitting validation:', err);
+      if (showToast) showToast(err?.message || 'Terjadi kesalahan jaringan saat mengirim validasi.');
+    } finally {
+      setIsSubmittingVal(false);
+    }
+  };
+
   const renderValidateForm = () => (
     <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-5 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/15 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/15 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
       
       <div className="relative z-10 mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
             Validasi Akun
-            <BadgeCheck className="text-indigo-600" size={18} />
+            <BadgeCheck className="text-emerald-600" size={18} />
           </h2>
           <p className="text-[10px] text-slate-700 leading-relaxed mt-1">
-            Masukkan data untuk memvalidasi akun MetaTrader Anda
+            Masukkan data untuk memvalidasi akun MetaTrader Anda under IB GoTrading
           </p>
         </div>
         <button
@@ -676,28 +923,69 @@ export const Account: React.FC = () => {
       </div>
 
       {valSuccess ? (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col items-center justify-center text-center gap-2 relative z-10">
-          <CheckCircle2 className="text-emerald-500 mb-1" size={24} />
-          <h3 className="text-sm font-bold text-emerald-700">Validasi Terkirim</h3>
-          <p className="text-[11px] text-emerald-600">Terima kasih, data validasi akun Anda telah diterima.</p>
-          <button onClick={() => { setValSuccess(false); setActiveAction('none'); }} className="mt-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-bold cursor-pointer hover:bg-emerald-700 transition">Tutup</button>
+        <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col items-center justify-center text-center gap-2.5 relative z-10">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+            <CheckCircle2 size={24} />
+          </div>
+          <h3 className="text-sm font-bold text-emerald-800">Validasi Berhasil Dikirim</h3>
+          <p className="text-xs text-emerald-700 max-w-sm leading-relaxed">
+            Data validasi akun MT5 Anda telah kami terima dan sedang dalam antrean verifikasi admin.
+          </p>
+          <div className="flex gap-2 mt-2 w-full max-w-xs">
+            <button 
+              type="button"
+              onClick={() => { setValSuccess(false); setActiveAction('none'); }} 
+              className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+            >
+              Kembali ke Menu
+            </button>
+          </div>
         </div>
       ) : (
-        <form onSubmit={(e) => { e.preventDefault(); setIsSubmittingVal(true); setTimeout(() => { setIsSubmittingVal(false); setValSuccess(true); }, 1000); }} className="space-y-3 relative z-10">
+        <form onSubmit={handleValidationSubmit} className="space-y-3 relative z-10">
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Nama Lengkap *</label>
-            <input type="text" value={valName} onChange={e => setValName(e.target.value)} required className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm" />
+            <input 
+              type="text" 
+              value={valName} 
+              onChange={e => setValName(e.target.value)} 
+              placeholder="Nama lengkap sesuai akun trading" 
+              required 
+              className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-sm" 
+            />
           </div>
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Email *</label>
-            <input type="email" value={valEmail} onChange={e => setValEmail(e.target.value)} required className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm" />
+            <input 
+              type="email" 
+              value={valEmail} 
+              onChange={e => setValEmail(e.target.value)} 
+              placeholder="Email terdaftar di broker" 
+              required 
+              className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-sm" 
+            />
           </div>
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Nomor Akun MT5 *</label>
-            <input type="text" value={valAccount} onChange={e => setValAccount(e.target.value)} required className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm" />
+            <input 
+              type="text" 
+              value={valAccount} 
+              onChange={e => setValAccount(e.target.value)} 
+              placeholder="e.g. 12345678" 
+              required 
+              className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-sm" 
+            />
           </div>
-          <button type="submit" disabled={isSubmittingVal} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-70 text-white text-xs font-black rounded-xl transition shadow-sm shadow-indigo-600/15 flex justify-center items-center gap-2 cursor-pointer mt-2">
-            {isSubmittingVal ? 'Memproses...' : 'Kirim Validasi'}
+          <button 
+            type="submit" 
+            disabled={isSubmittingVal} 
+            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 disabled:opacity-70 text-white text-xs font-black rounded-xl transition shadow-sm shadow-emerald-600/15 flex justify-center items-center gap-2 cursor-pointer mt-2"
+          >
+            {isSubmittingVal ? (
+              <><RefreshCw size={14} className="animate-spin" /> Mengirim Data...</>
+            ) : (
+              <><BadgeCheck size={15} /> Kirim Validasi</>
+            )}
           </button>
         </form>
       )}
@@ -707,6 +995,13 @@ export const Account: React.FC = () => {
   const renderTopCTASection = () => {
     if (activeAction === 'connect') return renderConnectForm();
     if (activeAction === 'validate') return renderValidateForm();
+
+    const getValidationBadgeText = () => {
+      if (validationStatus === 'approved') return 'Tervalidasi';
+      if (validationStatus === 'pending') return 'Diproses';
+      if (validationStatus === 'rejected') return 'Ditolak';
+      return 'Belum Validasi';
+    };
 
     return (
       <div className="space-y-2.5 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -767,16 +1062,28 @@ export const Account: React.FC = () => {
               <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-white/20 backdrop-blur-md text-white border border-white/20 flex items-center justify-center font-black shadow-inner group-hover:scale-105 transition-transform">
                 <BadgeCheck size={16} />
               </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-white/10 flex items-center justify-center text-white group-hover:bg-white/20 group-hover:translate-x-0.5 transition-all">
-                <ArrowRight size={12} />
+              <div className="flex items-center gap-1">
+                {validationStatus === 'approved' && (
+                  <span className="px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded text-[8px] font-black uppercase text-emerald-100">
+                    Tervalidasi
+                  </span>
+                )}
+                {validationStatus === 'pending' && (
+                  <span className="px-1.5 py-0.5 bg-amber-400/30 backdrop-blur-md rounded text-[8px] font-black uppercase text-amber-100">
+                    Diproses
+                  </span>
+                )}
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-white/10 flex items-center justify-center text-white group-hover:bg-white/20 group-hover:translate-x-0.5 transition-all">
+                  <ArrowRight size={12} />
+                </div>
               </div>
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight">
-                Validasi Account
+              <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight flex items-center gap-1.5">
+                <span>Validasi Account</span>
               </h3>
               <p className="text-[9px] sm:text-[10px] text-emerald-100/90 font-medium mt-0.5 line-clamp-1">
-                Validasi akun MT5 Anda
+                {validationStatus === 'approved' ? 'Akun Anda sudah tervalidasi' : (validationStatus === 'pending' ? 'Sedang diverifikasi admin' : 'Validasi akun MT5 Anda')}
               </p>
             </div>
           </div>
