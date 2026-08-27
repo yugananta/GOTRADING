@@ -398,18 +398,18 @@ export const Account: React.FC = () => {
       return (
         <div className="bg-[#EFF2F6]/90 backdrop-blur-md border border-[#E2E8F0] rounded-3xl p-6 shadow-[0_4px_16px_rgba(0,0,0,0.02)] relative overflow-hidden">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-black text-slate-900 tracking-tight">Connect Akun MT5</h2>
+            <h2 className="text-base font-black text-slate-900 tracking-tight">{t('account.connectAccountCardTitle')}</h2>
             <button
               type="button"
               onClick={() => { setActiveAction('none'); setError(null); }}
               className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
             >
-              ← Kembali
+              ← {t('account.backBtn')}
             </button>
           </div>
           <div className="py-8 flex flex-col items-center justify-center text-center gap-3">
             <RefreshCw className="animate-spin text-indigo-600" size={24} />
-            <p className="text-xs font-semibold text-slate-600">Memeriksa status validasi akun...</p>
+            <p className="text-xs font-semibold text-slate-600">{t('account.checkingValidationStatus')}</p>
           </div>
         </div>
       );
@@ -427,7 +427,7 @@ export const Account: React.FC = () => {
                 <ShieldAlert size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-black text-slate-900 tracking-tight">Validasi Akun Diperlukan</h2>
+                <h2 className="text-sm font-black text-slate-900 tracking-tight">{t('account.gatingNoneTitle')}</h2>
                 <p className="text-[10px] text-slate-500 font-medium">Under IB GoTrading</p>
               </div>
             </div>
@@ -436,13 +436,13 @@ export const Account: React.FC = () => {
               onClick={() => { setActiveAction('none'); setError(null); }}
               className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
             >
-              ← Kembali
+              ← {t('account.backBtn')}
             </button>
           </div>
 
           <div className="relative z-10 space-y-4">
             <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl text-xs text-amber-900 leading-relaxed font-medium">
-              Akun Anda belum tervalidasi under IB GoTrading. Silakan lengkapi Validasi Akun terlebih dahulu.
+              {t('account.gatingNoneMessage')}
             </div>
 
             <button
@@ -451,7 +451,7 @@ export const Account: React.FC = () => {
               className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-black rounded-xl transition shadow-sm shadow-emerald-600/15 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
               <BadgeCheck size={16} />
-              <span>Lengkapi Validasi Akun</span>
+              <span>{t('account.completeValidationBtn')}</span>
             </button>
           </div>
         </div>
@@ -470,8 +470,8 @@ export const Account: React.FC = () => {
                 <Clock size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-black text-slate-900 tracking-tight">Validasi Sedang Diproses</h2>
-                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Menunggu Konfirmasi Admin</p>
+                <h2 className="text-sm font-black text-slate-900 tracking-tight">{t('account.gatingPendingTitle')}</h2>
+                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">{t('account.waitingAdminConfirmation')}</p>
               </div>
             </div>
             <button
@@ -479,13 +479,13 @@ export const Account: React.FC = () => {
               onClick={() => { setActiveAction('none'); setError(null); }}
               className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
             >
-              ← Kembali
+              ← {t('account.backBtn')}
             </button>
           </div>
 
           <div className="relative z-10 space-y-4">
             <div className="p-3.5 bg-blue-50 border border-blue-200/80 rounded-2xl text-xs text-blue-900 leading-relaxed font-medium">
-              Validasi sedang diproses, mohon tunggu konfirmasi admin.
+              {t('account.gatingPendingMessage')}
             </div>
 
             <div className="flex gap-2">
@@ -496,7 +496,7 @@ export const Account: React.FC = () => {
                 className="flex-1 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw size={13} className={isValidatingStatusLoading ? "animate-spin text-blue-600" : "text-slate-500"} />
-                <span>Cek Status Validasi</span>
+                <span>{t('account.checkValidationStatusBtn')}</span>
               </button>
             </div>
           </div>
@@ -516,7 +516,7 @@ export const Account: React.FC = () => {
                 <AlertTriangle size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-black text-rose-700 tracking-tight">Validasi Ditolak</h2>
+                <h2 className="text-sm font-black text-rose-700 tracking-tight">{t('account.gatingRejectedTitle')}</h2>
                 <p className="text-[10px] text-slate-500 font-medium">Under IB GoTrading</p>
               </div>
             </div>
@@ -525,14 +525,14 @@ export const Account: React.FC = () => {
               onClick={() => { setActiveAction('none'); setError(null); }}
               className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
             >
-              ← Kembali
+              ← {t('account.backBtn')}
             </button>
           </div>
 
           <div className="relative z-10 space-y-3">
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 leading-relaxed font-medium space-y-1">
-              <div className="font-bold text-[10px] uppercase tracking-wider text-rose-700">Alasan Penolakan:</div>
-              <p>{rejectionReason || 'Nomor akun MT5 Anda belum terdaftar under IB GoTrading atau data yang dimasukkan tidak sesuai.'}</p>
+              <div className="font-bold text-[10px] uppercase tracking-wider text-rose-700">{t('account.rejectionReasonLabel')}</div>
+              <p>{rejectionReason || t('account.defaultRejectionReason')}</p>
             </div>
 
             <button
@@ -544,7 +544,7 @@ export const Account: React.FC = () => {
               className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl transition shadow-sm shadow-rose-600/15 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
               <BadgeCheck size={16} />
-              <span>Submit Ulang Validasi</span>
+              <span>{t('account.resubmitValidationBtn')}</span>
             </button>
           </div>
         </div>
@@ -559,11 +559,11 @@ export const Account: React.FC = () => {
         <div className="relative z-10 mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-              {accounts.length > 0 ? 'Hubungkan Akun MT5 Tambahan' : t('account.connectTradingAccount')}
+              {accounts.length > 0 ? t('account.connectAdditionalMt5') : t('account.connectTradingAccount')}
               <img src="/mt5-logo.png" alt="MT5" className="h-5 w-5 object-contain rounded" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             </h2>
             <p className="text-[10px] text-slate-700 leading-relaxed mt-1">
-              {accounts.length > 0 ? 'Tambahkan koneksi akun MetaTrader 5 baru ke profil Anda' : t('account.connectServerDesc')}
+              {accounts.length > 0 ? t('account.connectAdditionalMt5Desc') : t('account.connectServerDesc')}
             </p>
           </div>
           <button
@@ -571,7 +571,7 @@ export const Account: React.FC = () => {
             onClick={() => { setActiveAction('none'); setError(null); }}
             className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
           >
-            ← Kembali
+            ← {t('account.backBtn')}
           </button>
         </div>
 
@@ -610,7 +610,7 @@ export const Account: React.FC = () => {
               className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm"
               required
             >
-              <option value="" disabled>Select Broker</option>
+              <option value="" disabled>{t('account.selectBroker')}</option>
               {Object.keys(BROKERS).map(b => (
                 <option key={b} value={b}>{b}</option>
               ))}
@@ -620,13 +620,13 @@ export const Account: React.FC = () => {
           {broker === 'Other' && (
             <div className="space-y-1">
               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
-                Broker Name *
+                {t('account.brokerNameLabel', 'Broker Name *')}
               </label>
               <input
                 type="text"
                 value={customBroker}
                 onChange={(e) => setCustomBroker(e.target.value)}
-                placeholder="Enter your broker name"
+                placeholder={t('account.brokerNamePlaceholder', 'Enter your broker name')}
                 className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition shadow-sm"
                 required
               />
@@ -645,11 +645,11 @@ export const Account: React.FC = () => {
                   className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold focus:outline-none focus:border-indigo-500 transition shadow-sm"
                   required
                 >
-                  <option value="" disabled>Select Server</option>
+                  <option value="" disabled>{t('account.selectServer')}</option>
                   {BROKERS[broker].map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                  <option value="Other">Other (Manual Entry)</option>
+                  <option value="Other">{t('account.otherManualEntry', 'Other (Manual Entry)')}</option>
                 </select>
                 {server === 'Other' && (
                    <input
@@ -714,7 +714,7 @@ export const Account: React.FC = () => {
               {isConnecting ? (
                 <><div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"/> {connectStepText}</>
               ) : (
-                <><LinkIcon size={14} /> {accounts.length > 0 ? '+ Connect Akun Ini' : t('account.connectAccount')}</>
+                <><LinkIcon size={14} /> {accounts.length > 0 ? t('account.connectThisAccount') : t('account.connectAccount')}</>
               )}
             </button>
           </div>
@@ -733,7 +733,7 @@ export const Account: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Database size={12} className="text-indigo-600 dark:text-indigo-400" />
-              Akun MetaTrader Terhubung ({accounts.length})
+              {t('account.connectedMT5Accounts', { count: accounts.length })}
             </span>
             
             <button
@@ -741,7 +741,7 @@ export const Account: React.FC = () => {
               className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-lg transition shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95"
             >
               <LinkIcon size={12} />
-              <span>+ Connect Akun Baru</span>
+              <span>{t('account.connectNewAccount')}</span>
             </button>
           </div>
 
@@ -793,38 +793,38 @@ export const Account: React.FC = () => {
                   if (activeAccount.conn_status === 'error') {
                     return (
                       <span className="bg-rose-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-rose-500/10">
-                        <AlertTriangle size={10} /> Sync Error
+                        <AlertTriangle size={10} /> {t('account.syncError')}
                       </span>
                     );
                   }
                   if (activeAccount.conn_status === 'reconnecting') {
                     return (
                       <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10 animate-pulse">
-                        <RefreshCw size={10} className="animate-spin" /> Reconnecting
+                        <RefreshCw size={10} className="animate-spin" /> {t('account.statusReconnecting')}
                       </span>
                     );
                   }
                   if (isStale) {
                     return (
                       <span className="bg-amber-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-amber-500/10">
-                        <AlertCircle size={10} /> Data Stale
+                        <AlertCircle size={10} /> {t('account.statusStale')}
                       </span>
                     );
                   }
                   return (
                     <span className="bg-emerald-500 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 shadow-sm shadow-emerald-500/10">
-                      <CheckCircle2 size={10} /> Connected
+                      <CheckCircle2 size={10} /> {t('account.connectedStatus')}
                     </span>
                   );
                 })()}
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">Account ID: <span className="font-bold text-slate-800">{activeAccount.login}</span> • Server: <span className="font-bold text-slate-800">{activeAccount.server}</span></p>
+              <p className="text-[11px] text-slate-500 font-medium">{t('account.accountIdLabel')}: <span className="font-bold text-slate-800">{activeAccount.login}</span> • {t('account.serverLabel')}: <span className="font-bold text-slate-800">{activeAccount.server}</span></p>
               
               {activeAccount.error_message && (
                 <div className="mt-3 p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-[10px] text-rose-600 flex items-start gap-1.5 font-medium">
                   <AlertCircle size={12} className="shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold uppercase tracking-wider text-[8px] block mb-0.5">Sync Error Details</span>
+                    <span className="font-bold uppercase tracking-wider text-[8px] block mb-0.5">{t('account.syncErrorDetails')}</span>
                     {activeAccount.error_message}
                   </div>
                 </div>
@@ -832,7 +832,7 @@ export const Account: React.FC = () => {
               
               {activeAccount.fetched_at && (
                 <p className="text-[9px] text-slate-400 mt-2 font-mono">
-                  Last synced: {new Date(activeAccount.fetched_at).toLocaleString()}
+                  {t('account.lastSynced')}: {new Date(activeAccount.fetched_at).toLocaleString()}
                 </p>
               )}
             </div>
@@ -906,11 +906,11 @@ export const Account: React.FC = () => {
       <div className="relative z-10 mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-            Validasi Akun
+            {t('account.validateAccountTitle')}
             <BadgeCheck className="text-emerald-600" size={18} />
           </h2>
           <p className="text-[10px] text-slate-700 leading-relaxed mt-1">
-            Masukkan data untuk memvalidasi akun MetaTrader Anda under IB GoTrading
+            {t('account.valFormDesc')}
           </p>
         </div>
         <button
@@ -918,7 +918,7 @@ export const Account: React.FC = () => {
           onClick={() => setActiveAction('none')}
           className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200 transition cursor-pointer"
         >
-          ← Kembali
+          ← {t('account.backBtn')}
         </button>
       </div>
 
@@ -927,9 +927,9 @@ export const Account: React.FC = () => {
           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
             <CheckCircle2 size={24} />
           </div>
-          <h3 className="text-sm font-bold text-emerald-800">Validasi Berhasil Dikirim</h3>
+          <h3 className="text-sm font-bold text-emerald-800">{t('account.valSuccessTitle')}</h3>
           <p className="text-xs text-emerald-700 max-w-sm leading-relaxed">
-            Data validasi akun MT5 Anda telah kami terima dan sedang dalam antrean verifikasi admin.
+            {t('account.valSuccessMessage')}
           </p>
           <div className="flex gap-2 mt-2 w-full max-w-xs">
             <button 
@@ -937,36 +937,36 @@ export const Account: React.FC = () => {
               onClick={() => { setValSuccess(false); setActiveAction('none'); }} 
               className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
             >
-              Kembali ke Menu
+              {t('account.backToMenuBtn')}
             </button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleValidationSubmit} className="space-y-3 relative z-10">
           <div className="space-y-1">
-            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Nama Lengkap *</label>
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">{t('account.fullNameLabel')}</label>
             <input 
               type="text" 
               value={valName} 
               onChange={e => setValName(e.target.value)} 
-              placeholder="Nama lengkap sesuai akun trading" 
+              placeholder={t('account.fullNamePlaceholder')} 
               required 
               className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-sm" 
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Email *</label>
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">{t('account.valEmailLabel')}</label>
             <input 
               type="email" 
               value={valEmail} 
               onChange={e => setValEmail(e.target.value)} 
-              placeholder="Email terdaftar di broker" 
+              placeholder={t('account.valEmailPlaceholder')} 
               required 
               className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-sm" 
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Nomor Akun MT5 *</label>
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">{t('account.valAccountLabel')}</label>
             <input 
               type="text" 
               value={valAccount} 
@@ -982,9 +982,9 @@ export const Account: React.FC = () => {
             className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 disabled:opacity-70 text-white text-xs font-black rounded-xl transition shadow-sm shadow-emerald-600/15 flex justify-center items-center gap-2 cursor-pointer mt-2"
           >
             {isSubmittingVal ? (
-              <><RefreshCw size={14} className="animate-spin" /> Mengirim Data...</>
+              <><RefreshCw size={14} className="animate-spin" /> {t('account.sendingData')}</>
             ) : (
-              <><BadgeCheck size={15} /> Kirim Validasi</>
+              <><BadgeCheck size={15} /> {t('account.submitValidationBtn')}</>
             )}
           </button>
         </form>
@@ -997,10 +997,10 @@ export const Account: React.FC = () => {
     if (activeAction === 'validate') return renderValidateForm();
 
     const getValidationBadgeText = () => {
-      if (validationStatus === 'approved') return 'Tervalidasi';
-      if (validationStatus === 'pending') return 'Diproses';
-      if (validationStatus === 'rejected') return 'Ditolak';
-      return 'Belum Validasi';
+      if (validationStatus === 'approved') return t('account.statusApproved');
+      if (validationStatus === 'pending') return t('account.statusPending');
+      if (validationStatus === 'rejected') return t('account.statusRejected');
+      return t('account.statusNone');
     };
 
     return (
@@ -1044,10 +1044,10 @@ export const Account: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight">
-                  Open Account
+                  {t('account.openAccount')}
                 </h3>
                 <p className="text-[9px] sm:text-[10px] text-indigo-100/90 font-medium mt-0.5 line-clamp-1">
-                  Buka akun broker Connect
+                  {t('account.openBrokerDesc')}
                 </p>
               </div>
             </a>
@@ -1065,12 +1065,12 @@ export const Account: React.FC = () => {
               <div className="flex items-center gap-1">
                 {validationStatus === 'approved' && (
                   <span className="px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded text-[8px] font-black uppercase text-emerald-100">
-                    Tervalidasi
+                    {t('account.statusApproved')}
                   </span>
                 )}
                 {validationStatus === 'pending' && (
                   <span className="px-1.5 py-0.5 bg-amber-400/30 backdrop-blur-md rounded text-[8px] font-black uppercase text-amber-100">
-                    Diproses
+                    {t('account.statusPending')}
                   </span>
                 )}
                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-white/10 flex items-center justify-center text-white group-hover:bg-white/20 group-hover:translate-x-0.5 transition-all">
@@ -1080,10 +1080,10 @@ export const Account: React.FC = () => {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight flex items-center gap-1.5">
-                <span>Validasi Account</span>
+                <span>{t('account.validateAccountTitle')}</span>
               </h3>
               <p className="text-[9px] sm:text-[10px] text-emerald-100/90 font-medium mt-0.5 line-clamp-1">
-                {validationStatus === 'approved' ? 'Akun Anda sudah tervalidasi' : (validationStatus === 'pending' ? 'Sedang diverifikasi admin' : 'Validasi akun MT5 Anda')}
+                {validationStatus === 'approved' ? t('account.accountAlreadyValidated') : (validationStatus === 'pending' ? t('account.verifyingAdmin') : t('account.validateYourAccount'))}
               </p>
             </div>
           </div>
@@ -1100,15 +1100,15 @@ export const Account: React.FC = () => {
             </div>
             <div className="min-w-0">
               <h3 className="text-xs sm:text-sm font-black tracking-tight truncate flex items-center gap-1">
-                Connect Account
+                {t('account.connectAccountCardTitle')}
               </h3>
               <p className="text-[9px] sm:text-[10px] text-blue-100/90 font-medium truncate mt-0.5">
-                Hubungkan akun MetaTrader ke platform
+                {t('account.connectMt5Desc')}
               </p>
             </div>
           </div>
           <div className="px-2.5 py-1 bg-white text-blue-700 font-black rounded-lg text-[10px] sm:text-xs flex items-center gap-1 shadow-sm group-hover:bg-blue-50 group-hover:scale-105 transition-all shrink-0 ml-2">
-            <span>Connect</span>
+            <span>{t('common.connect')}</span>
             <ArrowRight size={10} />
           </div>
         </div>
@@ -1126,7 +1126,7 @@ export const Account: React.FC = () => {
             onClick={() => setSelectedSubView('main')}
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs w-fit"
           >
-            <span>← Kembali ke Connect Account</span>
+            <span>← {t('account.backBtn')}</span>
           </button>
 
           <TaraptiPartners />
@@ -1143,10 +1143,10 @@ export const Account: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-base font-black text-slate-900 dark:text-white tracking-wider uppercase">
-                  Connect Account
+                  {t('account.connectAccountCardTitle')}
                 </h1>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                  Kelola koneksi MetaTrader 5 dan program komisi GOTRADING CONNECT Anda
+                  {t('account.manageDesc')}
                 </p>
               </div>
             </div>
