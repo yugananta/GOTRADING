@@ -25,6 +25,7 @@ const BROKERS: Record<string, string[]> = {
 type ValidationStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
 export const Account: React.FC = () => {
+
   const { t, i18n } = useTranslation();
   const { 
     currentUser, 
@@ -409,7 +410,7 @@ export const Account: React.FC = () => {
           </div>
           <div className="py-8 flex flex-col items-center justify-center text-center gap-3">
             <RefreshCw className="animate-spin text-indigo-600" size={24} />
-            <p className="text-xs font-semibold text-slate-600">Memeriksa status validasi akun...</p>
+            <p className="text-xs font-semibold text-slate-600">{t('account.checkingStatus')}</p>
           </div>
         </div>
       );
@@ -427,7 +428,7 @@ export const Account: React.FC = () => {
                 <ShieldAlert size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-black text-slate-900 tracking-tight">Validasi Akun Diperlukan</h2>
+                <h2 className="text-sm font-black text-slate-900 tracking-tight">{t('account.validationRequired')}</h2>
                 <p className="text-[10px] text-slate-500 font-medium">Under IB GoTrading</p>
               </div>
             </div>
@@ -451,7 +452,7 @@ export const Account: React.FC = () => {
               className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-black rounded-xl transition shadow-sm shadow-emerald-600/15 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
               <BadgeCheck size={16} />
-              <span>Lengkapi Validasi Akun</span>
+              <span>{t('account.completeValidation')}</span>
             </button>
           </div>
         </div>
@@ -470,7 +471,7 @@ export const Account: React.FC = () => {
                 <Clock size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-black text-slate-900 tracking-tight">Validasi Sedang Diproses</h2>
+                <h2 className="text-sm font-black text-slate-900 tracking-tight">{t('account.validationProcessingTitle')}</h2>
                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Menunggu Konfirmasi Admin</p>
               </div>
             </div>
@@ -496,7 +497,7 @@ export const Account: React.FC = () => {
                 className="flex-1 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw size={13} className={isValidatingStatusLoading ? "animate-spin text-blue-600" : "text-slate-500"} />
-                <span>Cek Status Validasi</span>
+                <span>{t('account.checkValidationStatus')}</span>
               </button>
             </div>
           </div>
@@ -516,7 +517,7 @@ export const Account: React.FC = () => {
                 <AlertTriangle size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-black text-rose-700 tracking-tight">Validasi Ditolak</h2>
+                <h2 className="text-sm font-black text-rose-700 tracking-tight">{t('account.validationRejectedTitle')}</h2>
                 <p className="text-[10px] text-slate-500 font-medium">Under IB GoTrading</p>
               </div>
             </div>
@@ -544,7 +545,7 @@ export const Account: React.FC = () => {
               className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl transition shadow-sm shadow-rose-600/15 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
               <BadgeCheck size={16} />
-              <span>Submit Ulang Validasi</span>
+              <span>{t('account.resubmitValidation')}</span>
             </button>
           </div>
         </div>
@@ -862,7 +863,7 @@ export const Account: React.FC = () => {
   const handleValidationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!valName.trim() || !valEmail.trim() || !valAccount.trim()) {
-      if (showToast) showToast('Mohon lengkapi semua data formulir validasi.');
+      if (showToast) showToast(t('account.fillAllFields'));
       return;
     }
 
@@ -884,16 +885,16 @@ export const Account: React.FC = () => {
       if (res.ok && data?.success !== false) {
         setValSuccess(true);
         setValidationStatus('pending');
-        if (showToast) showToast('Validasi akun berhasil dikirim! Menunggu konfirmasi admin.');
+        if (showToast) showToast(t('account.validationSent'));
         // Refresh validation status from server
         await fetchValidationStatus();
       } else {
-        const errMsg = data?.error?.message || data?.error || data?.message || 'Gagal mengirim validasi. Silakan coba lagi.';
+        const errMsg = data?.error?.message || data?.error || data?.message || t('account.validationFailed');
         if (showToast) showToast(errMsg);
       }
     } catch (err: any) {
       console.error('[Account.tsx] Error submitting validation:', err);
-      if (showToast) showToast(err?.message || 'Terjadi kesalahan jaringan saat mengirim validasi.');
+      if (showToast) showToast(err?.message || t('account.networkError'));
     } finally {
       setIsSubmittingVal(false);
     }
@@ -927,7 +928,7 @@ export const Account: React.FC = () => {
           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
             <CheckCircle2 size={24} />
           </div>
-          <h3 className="text-sm font-bold text-emerald-800">Validasi Berhasil Dikirim</h3>
+          <h3 className="text-sm font-bold text-emerald-800">{t('account.validationSuccessTitle')}</h3>
           <p className="text-xs text-emerald-700 max-w-sm leading-relaxed">
             Data validasi akun MT5 Anda telah kami terima dan sedang dalam antrean verifikasi admin.
           </p>
@@ -944,12 +945,12 @@ export const Account: React.FC = () => {
       ) : (
         <form onSubmit={handleValidationSubmit} className="space-y-3 relative z-10">
           <div className="space-y-1">
-            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Nama Lengkap *</label>
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">{t('account.fullName')}</label>
             <input 
               type="text" 
               value={valName} 
               onChange={e => setValName(e.target.value)} 
-              placeholder="Nama lengkap sesuai akun trading" 
+              placeholder={t('account.namePlaceholder')} 
               required 
               className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-sm" 
             />
@@ -960,13 +961,13 @@ export const Account: React.FC = () => {
               type="email" 
               value={valEmail} 
               onChange={e => setValEmail(e.target.value)} 
-              placeholder="Email terdaftar di broker" 
+              placeholder={t('account.emailPlaceholder')} 
               required 
               className="w-full bg-white/90 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-black font-semibold placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-sm" 
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Nomor Akun MT5 *</label>
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">{t('account.mt5Number')}</label>
             <input 
               type="text" 
               value={valAccount} 
@@ -997,10 +998,10 @@ export const Account: React.FC = () => {
     if (activeAction === 'validate') return renderValidateForm();
 
     const getValidationBadgeText = () => {
-      if (validationStatus === 'approved') return 'Tervalidasi';
-      if (validationStatus === 'pending') return 'Diproses';
-      if (validationStatus === 'rejected') return 'Ditolak';
-      return 'Belum Validasi';
+      if (validationStatus === 'approved') return t('account.validated');
+      if (validationStatus === 'pending') return t('account.processing');
+      if (validationStatus === 'rejected') return t('account.rejected');
+      return t('account.notValidated');
     };
 
     return (
@@ -1080,10 +1081,10 @@ export const Account: React.FC = () => {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight flex items-center gap-1.5">
-                <span>Validasi Account</span>
+                <span>{t('account.validateAccount')}</span>
               </h3>
               <p className="text-[9px] sm:text-[10px] text-emerald-100/90 font-medium mt-0.5 line-clamp-1">
-                {validationStatus === 'approved' ? 'Akun Anda sudah tervalidasi' : (validationStatus === 'pending' ? 'Sedang diverifikasi admin' : 'Validasi akun MT5 Anda')}
+                {validationStatus === 'approved' ? t('account.statusValidated') : (validationStatus === 'pending' ? t('account.statusProcessing') : t('account.statusDefault'))}
               </p>
             </div>
           </div>
@@ -1126,7 +1127,7 @@ export const Account: React.FC = () => {
             onClick={() => setSelectedSubView('main')}
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer shadow-2xs w-fit"
           >
-            <span>← Kembali ke Connect Account</span>
+            <span>{t('account.backToConnect')}</span>
           </button>
 
           <TaraptiPartners />
