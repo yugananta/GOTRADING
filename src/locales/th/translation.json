@@ -83,7 +83,15 @@
     "welcomeBack": "ยินดีต้อนรับกลับมา",
     "createAccount": "สร้างบัญชีของคุณ"
   },
-  "feed": {},
+  "feed": {
+    "title": "ฟีดการเทรด",
+    "sponsoredBy": "ได้รับการสนับสนุนโดย",
+    "yourStory": "เรื่องราวของคุณ",
+    "postButton": "โพสต์",
+    "postPlaceholder": "เขียนโพสต์หรือแชร์การวิเคราะห์ตลาดของคุณ...",
+    "bullish": "ขาขึ้น (Bullish)",
+    "bearish": "ขาลง (Bearish)"
+  },
   "connect": {},
   "network": {},
   "admin": {}

@@ -361,7 +361,15 @@
     "session_desc": "Securely log out of your trader profile on this device.",
     "log_out": "Log Out"
   },
-  "feed": {},
+  "feed": {
+    "title": "Trading Feed",
+    "sponsoredBy": "Sponsored by",
+    "yourStory": "Your Story",
+    "postButton": "Post",
+    "postPlaceholder": "Write a post or share your market analysis with members...",
+    "bullish": "Bullish",
+    "bearish": "Bearish"
+  },
   "connect": {},
   "network": {},
   "admin": {}

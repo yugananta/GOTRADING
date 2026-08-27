@@ -83,7 +83,15 @@
     "welcomeBack": "Chào mừng trở lại",
     "createAccount": "Tạo tài khoản của bạn"
   },
-  "feed": {},
+  "feed": {
+    "title": "Bảng tin Giao dịch",
+    "sponsoredBy": "Được tài trợ bởi",
+    "yourStory": "Tin của bạn",
+    "postButton": "Đăng bài",
+    "postPlaceholder": "Viết bài chia sẻ phân tích thị trường của bạn...",
+    "bullish": "Tăng giá (Bullish)",
+    "bearish": "Giảm giá (Bearish)"
+  },
   "connect": {},
   "network": {},
   "admin": {}

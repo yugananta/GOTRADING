@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { PostCard } from "./PostCard.tsx";
 import React, { useState, useEffect } from 'react';
 import { useApp } from './AppContext.tsx';
@@ -23,6 +24,7 @@ interface GroupViewProps {
 }
 
 export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) => {
+  const { t } = useTranslation();
   const { 
     currentUser, 
     setCurrentUser,

@@ -361,7 +361,15 @@
     "session_desc": "Keluar dari akun trading Anda di perangkat ini secara aman.",
     "log_out": "Keluar"
   },
-  "feed": {},
+  "feed": {
+    "title": "Umpan Trading",
+    "sponsoredBy": "Disponsori oleh",
+    "yourStory": "Cerita Anda",
+    "postButton": "Posting",
+    "postPlaceholder": "Bagikan analisa pasar atau prediksi Anda...",
+    "bullish": "Bullish",
+    "bearish": "Bearish"
+  },
   "connect": {},
   "network": {},
   "admin": {}

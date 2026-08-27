@@ -1,9 +1,23 @@
 const fs = require('fs');
-let code = fs.readFileSync('src/components/CreatePost.tsx', 'utf-8');
 
-code = code.replace(
-  /className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm mb-3"/g,
-  'className="bg-white rounded-2xl border border-slate-200 p-3 shadow-[0_2px_8px_rgba(0,0,0,0.08)] mb-3"'
-);
+function patch(filePath) {
+  let content = fs.readFileSync(filePath, 'utf8');
+  if (!content.includes('useTranslation')) {
+    content = "import { useTranslation } from 'react-i18next';\n" + content;
+  }
+  content = content.replace(/export const (CreatePost|GroupView)[^=]*=.*\n/, (match) => match + "  const { t } = useTranslation();\n");
+  
+  if (filePath.includes('CreatePost')) {
+    content = content.replace(/> Bullish</g, "> {t('feed.bullish')}<");
+    content = content.replace(/> Bearish</g, "> {t('feed.bearish')}<");
+    content = content.replace(/<span>Posting<\/span>/g, "<span>{t('feed.postButton')}</span>");
+    content = content.replace(/placeholder=\{\`Write a post or share your market analysis with members...\`\}/g, "placeholder={t('feed.postPlaceholder')}");
+  } else {
+    content = content.replace(/🐂 Bullish</g, "🐂 {t('feed.bullish')}<");
+    content = content.replace(/🐻 Bearish</g, "🐻 {t('feed.bearish')}<");
+  }
+  fs.writeFileSync(filePath, content);
+}
 
-fs.writeFileSync('src/components/CreatePost.tsx', code);
+patch('src/components/CreatePost.tsx');
+patch('src/components/GroupView.tsx');
