@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User, Post } from '../types.js';
 import { useApp } from './AppContext.tsx';
 import { PostCard } from './PostCard.tsx';
@@ -19,6 +20,7 @@ interface UserProfileProps {
 const userProfileCache: Record<string, User> = {};
 
 export const UserProfile: React.FC<UserProfileProps> = ({ userId, onBack }) => {
+  const { t } = useTranslation();
   const { 
     currentUser, 
     setCurrentUser,

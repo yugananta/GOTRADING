@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.tsx';
 import { X, ThumbsUp, MessageSquare, Send, Trash, Share2, Plus, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -22,6 +23,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   onPostUpdated,
 }) => {
   const { currentUser, setCurrentUser, showToast, viewUserProfile } = useApp();
+  const { t } = useTranslation();
   const [post, setPost] = useState<Post>(initialPost);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);

@@ -24,6 +24,7 @@ const TraderCard: React.FC<{
   isSelected?: boolean,
   onSelectToggle?: (id: string) => void
 }> = ({ trader, following, onFollowToggle, onViewProfile, isBulkMode, isSelected, onSelectToggle }) => {
+  const { t } = useTranslation();
   return (
     <div 
       onClick={() => {
