@@ -3,9 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tarapti Trading</title>
-    <script type="module" crossorigin src="/assets/index-CX14b_oh.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CJQL_KHd.css">
+    <title>My Google AI Studio App</title>
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error("GLOBAL ERROR:", e.message);
+        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">' + e.message + '</div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error("GLOBAL UNHANDLED REJECTION:", e.reason);
+        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">Unhandled Rejection: ' + e.reason + '</div>';
+      });
+    </script>
+    <script type="module" crossorigin src="/assets/index-BwizOyUa.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-base-CzgVap1G.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-Bzl0YHei.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-BJ6gc-fl.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-motion-UVqmSEc5.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-DeAXe287.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-xFSWJYOd.css">
   </head>
   <body>
     <div id="root"></div>

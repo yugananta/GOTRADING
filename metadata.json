@@ -1,0 +1,6 @@
+{
+  "name": "GoTrading Hub",
+  "description": "A professional social networking platform exclusively for traders.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

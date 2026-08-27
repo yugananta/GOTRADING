@@ -1,14 +1,27 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import {StrictMode} from 'react';
+import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
-import { I18nextProvider } from 'react-i18next';
-import i18n from './i18n';
+import './i18n';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <I18nextProvider i18n={i18n}>
+window.addEventListener('unhandledrejection', (event) => {
+  const reasonStr = String(event?.reason?.message || event?.reason || '');
+  if (reasonStr.includes('WebSocket') || reasonStr.includes('closed without opened') || reasonStr.includes('Failed to fetch')) {
+    console.warn('Network / WebSocket connection fluctuation captured gracefully:', reasonStr);
+    event.preventDefault();
+    return;
+  }
+  console.warn('Unhandled promise rejection captured globally:', event.reason);
+  event.preventDefault();
+});
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ErrorBoundary>
       <App />
-    </I18nextProvider>
-  </React.StrictMode>
+    </ErrorBoundary>
+  </StrictMode>,
 );
+
+
