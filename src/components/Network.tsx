@@ -15,7 +15,7 @@ const formatDistance = (distKm: number | undefined): string => {
 };
 
 // Extracted Trader Card component
-const { t } = useTranslation();
+
   const TraderCard: React.FC<{
   trader: any,
   following: boolean,
@@ -26,6 +26,7 @@ const { t } = useTranslation();
   onSelectToggle?: (id: string) => void
 }> = ({ trader, following, onFollowToggle, onViewProfile, isBulkMode, isSelected, onSelectToggle }) => {
   const { t } = useTranslation();
+  
   return (
     <div 
       onClick={() => {
@@ -109,7 +110,8 @@ const { t } = useTranslation();
 
 export const Network: React.FC = () => {
   const { t } = useTranslation();
-  const { t } = useTranslation();
+  
+  
   const { currentUser, setCurrentUser, viewUserProfile, showToast, setActiveView, pendingConnections, acceptConnectionRequest, declineConnectionRequest } = useApp();
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
@@ -128,9 +130,9 @@ export const Network: React.FC = () => {
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [radius, setRadius] = useState<number>(50); // default 50km
   
-  // {t("network.filtersButton", "Filters")}
-  const [show{t("network.filtersButton", "Filters")}, setShow{t("network.filtersButton", "Filters")}] = useState(false);
-  const [country, set{t("network.country", "Country")}] = useState('');
+  // Filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [country, setCountry] = useState('');
   const [experience, setExperience] = useState('');
   const [asset, setAsset] = useState('');
   const [onlineOnly, setOnlineOnly] = useState(false);
@@ -350,8 +352,8 @@ export const Network: React.FC = () => {
     );
   };
 
-  const clear{t("network.filtersButton", "Filters")} = () => {
-    set{t("network.country", "Country")}('');
+  const clearFilters = () => {
+    setCountry('');
     setExperience('');
     setAsset('');
     setOnlineOnly(false);
@@ -382,15 +384,15 @@ export const Network: React.FC = () => {
         </h2>
         
         <button
-          onClick={() => setShow{t("network.filtersButton", "Filters")}(!show{t("network.filtersButton", "Filters")})}
+          onClick={() => setShowFilters(!showFilters)}
           className={`px-4 py-2 rounded-xl border text-[11px] font-black transition flex items-center gap-2 ${
-            show{t("network.filtersButton", "Filters")} || country || experience || asset || onlineOnly
+            showFilters || country || experience || asset || onlineOnly
               ? 'bg-indigo-600/10 border-indigo-500 text-indigo-600'
               : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-gray-800 text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 shadow-sm'
           }`}
         >
           <Filter size={12} />
-          {t("network.filtersButton", "Filters")}
+          Filters
         </button>
       </div>
 
@@ -403,11 +405,11 @@ export const Network: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs font-black text-slate-800 flex items-center gap-2">
-                {t("network.nearbyTradersTitle", "{t("network.nearbyTradersTitle", "Discover Nearby Traders")}")}
+                {t("network.nearbyTradersTitle", "Discover Nearby Traders")}
                 <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] font-black">{t("common.new", "New")}</span>
               </h4>
               <p className="text-[10px] text-slate-500 leading-relaxed mt-1">
-                {t("network.nearbyTradersDesc", "{t("network.nearbyTradersDesc", "Find and network with real professional traders in your local vicinity. Requires device GPS permissions.")}")}
+                {t("network.nearbyTradersDesc", "Find and network with real professional traders in your local vicinity. Requires device GPS permissions.")}
               </p>
               
               {/* Radius slider if location is active */}
@@ -433,11 +435,11 @@ export const Network: React.FC = () => {
               onClick={requestGeolocation}
               className="w-full md:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs transition duration-150 flex items-center justify-center gap-1 shrink-0 cursor-pointer"
             >
-              {t("network.activateGps", "{t("network.activateGps", "Activate GPS Scan")}")}
+              {t("network.activateGps", "Activate GPS Scan")}
             </button>
           ) : (
             <span className="text-[10px] bg-emerald-50 text-emerald-600 font-black border border-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1 shrink-0">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" /> {t("network.scanningActive", "{t("network.scanningActive", "Scanning Active")}")}
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" /> {t("network.scanningActive", "Scanning Active")}
             </span>
           )}
         </div>
@@ -457,11 +459,11 @@ export const Network: React.FC = () => {
             {isLoading && users.filter(u => (u as any).distance !== undefined).length === 0 ? (
               <div className="flex items-center justify-center py-6 gap-2">
                 <RefreshCw className="text-indigo-500 animate-spin" size={16} />
-                <span className="text-[11px] text-slate-500 font-bold">{t("network.scanningLocal", "{t("network.scanningLocal", "Scanning for local traders...")}")}</span>
+                <span className="text-[11px] text-slate-500 font-bold">{t("network.scanningLocal", "Scanning for local traders...")}</span>
               </div>
             ) : users.filter(u => (u as any).distance !== undefined).length === 0 ? (
               <p className="text-[11px] text-slate-400 italic text-center py-4">
-                {t("network.noNearbyTraders", "{t("network.noNearbyTraders", "No traders found within your scanned area. Try increasing the scan radius.")}")}
+                {t("network.noNearbyTraders", "No traders found within your scanned area. Try increasing the scan radius.")}
               </p>
             ) : (
               <div className="flex gap-4 overflow-x-auto pb-2 snap-x scrollbar-none overscroll-x-contain">
@@ -491,16 +493,16 @@ export const Network: React.FC = () => {
         )}
       </div>
 
-      {/* {t("network.filtersButton", "Filters")} Overlay Drawer */}
-      {show{t("network.filtersButton", "Filters")} && (
+      {/* Filters Overlay Drawer */}
+      {showFilters && (
         <div className="bg-white/80 dark:bg-[#121620] backdrop-blur-xl border border-slate-200 dark:border-gray-800 rounded-3xl p-5 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] space-y-4 animate-in fade-in duration-150">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-xs font-black text-slate-800">{t("network.refineSuggestions", "{t("network.refineSuggestions", "Refine Network Suggestions")}")}</span>
+            <span className="text-xs font-black text-slate-800">{t("network.refineSuggestions", "Refine Network Suggestions")}</span>
             <button
-              onClick={clear{t("network.filtersButton", "Filters")}}
+              onClick={clearFilters}
               className="text-[10px] text-slate-400 hover:text-slate-800 flex items-center gap-1"
             >
-              <RefreshCw size={10} /> {t("network.resetAll", "{t("network.resetAll", "Reset All")}")}
+              <RefreshCw size={10} /> {t("network.resetAll", "Reset All")}
             </button>
           </div>
 
@@ -509,7 +511,7 @@ export const Network: React.FC = () => {
               <label className="block text-[10px] font-black text-slate-400 mb-1">{t("network.country", "Country")}</label>
               <select
                 value={country}
-                onChange={(e) => set{t("network.country", "Country")}(e.target.value)}
+                onChange={(e) => setCountry(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2.5 text-black font-bold outline-none"
               >
                 <option value="">{t("network.allCountries", "All Countries")}</option>
@@ -559,14 +561,14 @@ export const Network: React.FC = () => {
                 className="accent-indigo-600 rounded border-slate-200 bg-white"
               />
               <label htmlFor="online-only" className="text-[11px] font-black text-slate-700">
-                {t("network.onlineOnly", "{t("network.onlineOnly", "Online Status Only")}")}
+                {t("network.onlineOnly", "Online Status Only")}
               </label>
             </div>
           </div>
         </div>
       )}
 
-      {/* {t("network.followBackSuggestions", "{t("network.followBackSuggestions", "Saran Follow Back")}")} & Pengikut Baru Card */}
+      {/* {t("network.followBackSuggestions", "Saran Follow Back")} & Pengikut Baru Card */}
       <div className="bg-white/70 dark:bg-[#151c2c]/70 backdrop-blur-xl border border-slate-200 dark:border-gray-800 rounded-3xl p-5 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -575,7 +577,7 @@ export const Network: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-2">
-                {t("network.followBackSuggestions", "{t("network.followBackSuggestions", "Saran Follow Back")}")}
+                {t("network.followBackSuggestions", "Saran Follow Back")}
                 {followers.filter(f => !followingIds.includes(f.id)).length > 0 && (
                   <span className="bg-indigo-600 text-white px-1.5 py-0.5 rounded-full text-[8px] font-black animate-pulse">
                     {followers.filter(f => !followingIds.includes(f.id)).length}
@@ -583,7 +585,7 @@ export const Network: React.FC = () => {
                 )}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-gray-400 leading-relaxed mt-0.5">
-                {t("network.followBackDesc", "{t("network.followBackDesc", "Pengikut Anda yang belum Anda ikuti balik. Ikuti mereka untuk tetap terhubung!")}")}
+                {t("network.followBackDesc", "Pengikut Anda yang belum Anda ikuti balik. Ikuti mereka untuk tetap terhubung!")}
               </p>
             </div>
           </div>
@@ -623,7 +625,7 @@ export const Network: React.FC = () => {
                     onClick={() => handleFollowToggle(reqUser.id)}
                     className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-bold transition cursor-pointer shadow-xs active:scale-95"
                   >
-                    {t("network.followBackBtn", "{t("network.followBackBtn", "Ikuti Balik")}")}
+                    {t("network.followBackBtn", "Ikuti Balik")}
                   </button>
                 </div>
               </div>
@@ -632,7 +634,7 @@ export const Network: React.FC = () => {
         ) : (
           <div className="border-t border-slate-100 dark:border-gray-800 pt-4 flex flex-col items-center justify-center py-4 text-center">
             <p className="text-[11px] text-slate-400 dark:text-gray-500 italic">
-              {t("network.noFollowBack", "{t("network.noFollowBack", "Tidak ada saran follow balik saat ini. Semua pengikut telah Anda ikuti balik!")}")}
+              {t("network.noFollowBack", "Tidak ada saran follow balik saat ini. Semua pengikut telah Anda ikuti balik!")}
             </p>
           </div>
         )}
@@ -745,10 +747,10 @@ export const Network: React.FC = () => {
 
             <div className="max-w-md mx-auto space-y-1.5">
               <h4 className="text-base font-black text-slate-800 dark:text-white">
-                {t("network.noTradersFound", "{t("network.noTradersFound", "No Traders Found in Network")}")}
+                {t("network.noTradersFound", "No Traders Found in Network")}
               </h4>
               <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed">
-                {t("network.noTradersDesc", "{t("network.noTradersDesc", "We couldn't find any traders matching your search query or filter parameters. Follow the steps below to connect with traders or expand your discovery!")}")}
+                {t("network.noTradersDesc", "We could not find any traders matching your search query or filter parameters. Follow the steps below to connect with traders or expand your discovery!")}
               </p>
             </div>
 
@@ -759,26 +761,26 @@ export const Network: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[10px] font-black flex items-center justify-center transition-colors">1</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t("network.step1Title", "{t("network.step1Title", "Expand GPS Scan")}")}</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t("network.step1Title", "Expand GPS Scan")}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal">
-                  {t("network.step1Desc", "{t("network.step1Desc", "Activate location scan or increase radius up to 500km to find traders in your region.")}")}
+                  {t("network.step1Desc", "Activate location scan or increase radius up to 500km to find traders in your region.")}
                 </p>
               </div>
 
               <div 
                 onClick={() => {
                   setSearch('');
-                  clear{t("network.filtersButton", "Filters")}();
+                  clearFilters();
                 }}
                 className="p-3.5 bg-slate-50 dark:bg-slate-900/50 hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40 border border-slate-200/80 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 rounded-2xl space-y-1.5 transition-all duration-200 cursor-pointer active:scale-[0.98] group"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[10px] font-black flex items-center justify-center transition-colors">2</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Reset Search {t("network.filtersButton", "Filters")}</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Reset Search Filters</span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal">
-                  {t("network.step2Desc", "{t("network.step2Desc", "Clear specific asset, experience, or online-only filters to explore the global community.")}")}
+                  {t("network.step2Desc", "Clear specific asset, experience, or online-only filters to explore the global community.")}
                 </p>
               </div>
 
@@ -788,10 +790,10 @@ export const Network: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[10px] font-black flex items-center justify-center transition-colors">3</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t("network.step3Title", "{t("network.step3Title", "Set Up Profile")}")}</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t("network.step3Title", "Set Up Profile")}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal">
-                  {t("network.step3Desc", "{t("network.step3Desc", "Add your city, trading style & assets in Account settings so other traders can find you.")}")}
+                  {t("network.step3Desc", "Add your city, trading style & assets in Account settings so other traders can find you.")}
                 </p>
               </div>
             </div>
@@ -800,12 +802,12 @@ export const Network: React.FC = () => {
               <button
                 onClick={() => {
                   setSearch('');
-                  clear{t("network.filtersButton", "Filters")}();
+                  clearFilters();
                 }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <RefreshCw size={13} />
-                <span>{t("network.resetAll", "{t("network.resetAll", "Reset All")}")} {t("network.filtersButton", "Filters")}</span>
+                <span>{t("network.resetAll", "Reset All")} Filters</span>
               </button>
             </div>
           </div>
@@ -857,17 +859,17 @@ export const Network: React.FC = () => {
               className="relative bg-white dark:bg-[#151c2c] w-full max-w-[340px] rounded-3xl p-6 border border-slate-100 dark:border-gray-800 shadow-2xl z-10 text-left space-y-4"
             >
               <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                {t("network.unfollowConfirmTitle", "Setop ikuti {{name}}?", { 'name': unfollowConfirmUser.firstName + ' ' + (unfollowConfirmUser.lastName || '') })}
+                {t("network.unfollowConfirmTitle", "Setop ikuti {{name}}?", { name: unfollowConfirmUser.firstName + ' ' + (unfollowConfirmUser.lastName || '') })}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                {t("network.unfollowConfirmDesc", "{t("network.unfollowConfirmDesc", "Postingannya tidak akan muncul lagi di timeline beranda Anda. Anda tetap dapat melihat profilnya, kecuali jika postingannya dilindungi.")}")}
+                {t("network.unfollowConfirmDesc", "Postingannya tidak akan muncul lagi di timeline beranda Anda. Anda tetap dapat melihat profilnya, kecuali jika postingannya dilindungi.")}
               </p>
               <div className="flex items-center justify-end gap-6 pt-2">
                 <button
                   onClick={() => setUnfollowConfirmUser(null)}
                   className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
                 >
-                  {t("network.cancel", "{t("network.cancel", "Batalkan")}")}
+                  {t("network.cancel", "Batalkan")}
                 </button>
                 <button
                   onClick={async () => {
@@ -877,7 +879,7 @@ export const Network: React.FC = () => {
                   }}
                   className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer"
                 >
-                  {t("network.unfollow", "{t("network.unfollow", "Setop Ikuti")}")}
+                  {t("network.unfollow", "Setop Ikuti")}
                 </button>
               </div>
             </motion.div>
