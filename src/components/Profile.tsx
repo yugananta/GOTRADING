@@ -464,7 +464,7 @@ export const Profile: React.FC = () => {
                 <BadgeCheck size={20} className="text-blue-500 fill-blue-500 shrink-0 text-white" />
               )}
               <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider">
-                {currentUser.tradingExperience}
+                {t(`profile.experience.${currentUser.tradingExperience?.toLowerCase().replace(/\s+/g, '')}`, currentUser.tradingExperience)}
               </span>
             </div>
 
@@ -497,18 +497,24 @@ export const Profile: React.FC = () => {
                 }
               }}
               className="flex items-center gap-1.5 hover:text-indigo-600 transition cursor-pointer active:scale-95"
-              title="Buka Halaman Grup Komunitas Kota"
+              title={t('profile.open_city_group')}
             >
               <MapPin size={14} className="text-red-500 fill-red-500/20 shrink-0" />
               <span className="underline decoration-indigo-500/35 underline-offset-2">{currentUser.city}, {currentUser.country}</span>
             </button>
             <div className="flex items-center gap-1.5">
               <Briefcase size={14} className="text-slate-400" />
-              <span>Trading {currentUser.tradingAsset}</span>
+              <span>
+                {t('profile.tradingAssetLabel', {
+                  asset: t(`profile.asset.${currentUser.tradingAsset?.toLowerCase()}`, currentUser.tradingAsset)
+                })}
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <Award size={14} className="text-amber-500" />
-              <span className="text-amber-600 dark:text-amber-500 font-bold">{formatToK(currentUser.reputationPoints)} Points</span>
+              <span className="text-amber-600 dark:text-amber-500 font-bold">
+                {t('profile.points', { count: formatToK(currentUser.reputationPoints) })}
+              </span>
             </div>
           </div>
 
@@ -529,14 +535,14 @@ export const Profile: React.FC = () => {
               className="hover:underline decoration-indigo-500 underline-offset-4 cursor-pointer text-left"
             >
               <span className="text-slate-900 dark:text-white font-bold">{formatToK(currentUser.followersCount)}</span>{' '}
-              <span className="text-slate-500 dark:text-gray-500">followers</span>
+              <span className="text-slate-500 dark:text-gray-500">{t('profile.followers')}</span>
             </button>
             <button 
               onClick={() => openFollowsModal('following')}
               className="hover:underline decoration-indigo-500 underline-offset-4 cursor-pointer text-left"
             >
               <span className="text-slate-900 dark:text-white font-bold">{formatToK(currentUser.followingCount)}</span>{' '}
-              <span className="text-slate-500 dark:text-gray-500">following</span>
+              <span className="text-slate-500 dark:text-gray-500">{t('profile.following')}</span>
             </button>
           </div>
 
@@ -620,13 +626,13 @@ export const Profile: React.FC = () => {
                     <Clock size={18} className="text-indigo-600" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-slate-900 leading-tight">Format Jam System</h4>
-                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Format 24-Jam (Tanpa AM / PM)</p>
+                    <h4 className="text-xs font-black text-slate-900 leading-tight">{t('profile.system_time_format')}</h4>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">{t('profile.system_time_format_desc')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold text-[11px]">
                   <Check size={14} className="text-emerald-600" />
-                  <span>24-Jam (Aktif)</span>
+                  <span>{t('profile.system_time_active')}</span>
                 </div>
               </div>
             </div>
@@ -643,14 +649,14 @@ export const Profile: React.FC = () => {
             <form onSubmit={handleSaveProfile} className="space-y-6">
               <div className="flex flex-col sm:flex-row gap-6 mb-2">
                 <div className="flex-1 border border-slate-200 p-4 rounded-[20px] bg-white">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Avatar Image</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{t('profile.avatar_image')}</label>
                   <div className="flex items-center gap-4">
                     <div 
                       className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-tr from-indigo-500 to-indigo-300 flex items-center justify-center font-bold text-white text-lg shrink-0 border border-slate-200 relative cursor-pointer group"
                       onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
                     >
                       {(isUploadingAvatar || avatarImgLoading) && (
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-10 animate-pulse">
+                        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-10 animate-pulse">
                           <Loader2 size={20} className="animate-spin text-white" />
                         </div>
                       )}
@@ -689,10 +695,10 @@ export const Profile: React.FC = () => {
                         {isUploadingAvatar ? (
                           <>
                             <Loader2 size={14} className="animate-spin text-indigo-600" />
-                            <span>Processing Photo...</span>
+                            <span>{t('profile.processing_photo')}</span>
                           </>
                         ) : (
-                          <span>{avatarUrl ? 'Change Image' : 'Upload Image'}</span>
+                          <span>{avatarUrl ? t('profile.change_image') : t('profile.upload_image')}</span>
                         )}
                       </button>
                     </div>
@@ -700,14 +706,14 @@ export const Profile: React.FC = () => {
                 </div>
 
                 <div className="flex-1 border border-slate-200 p-4 rounded-[20px] bg-white">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Cover Banner</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{t('profile.cover_banner')}</label>
                   <div className="flex items-center gap-4">
                     <div 
                       className="w-24 h-16 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 relative cursor-pointer group"
                       onClick={() => !isUploadingCover && coverFileInputRef.current?.click()}
                     >
                       {(isUploadingCover || coverImgLoading) && (
-                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-10 animate-pulse">
+                        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-10 animate-pulse">
                           <Loader2 size={20} className="animate-spin text-white" />
                         </div>
                       )}
@@ -746,10 +752,10 @@ export const Profile: React.FC = () => {
                         {isUploadingCover ? (
                           <>
                             <Loader2 size={14} className="animate-spin text-indigo-600" />
-                            <span>Processing Banner...</span>
+                            <span>{t('profile.processing_banner')}</span>
                           </>
                         ) : (
-                          <span>{coverPhotoUrl ? 'Change Banner' : 'Upload Banner'}</span>
+                          <span>{coverPhotoUrl ? t('profile.change_banner') : t('profile.upload_banner')}</span>
                         )}
                       </button>
                     </div>
@@ -760,13 +766,13 @@ export const Profile: React.FC = () => {
             {saveSuccess && (
               <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-2xl text-xs mb-6 text-center flex items-center justify-center gap-2 font-bold shadow-sm animate-in fade-in zoom-in-95">
                 <CheckCircle size={16} className="text-emerald-500" /> 
-                Profile parameters synchronized successfully.
+                {t('profile.profile_saved')}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-5 text-xs">
               <div className="col-span-2 space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Username</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.username', 'USERNAME')}</label>
                 <div className="relative group">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 text-xs font-black">@</span>
                   <input
@@ -780,7 +786,7 @@ export const Profile: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.first_name', 'FIRST NAME')}</label>
                 <input
                   type="text"
                   required
@@ -791,7 +797,7 @@ export const Profile: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.last_name', 'LAST NAME')}</label>
                 <input
                   type="text"
                   required
@@ -802,10 +808,10 @@ export const Profile: React.FC = () => {
               </div>
 
               <div className="col-span-2 space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Headline</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.professional_headline', 'PROFESSIONAL HEADLINE')}</label>
                 <input
                   type="text"
-                  placeholder="e.g. Senior Equities Trader"
+                  placeholder={t('profile.headline_placeholder', 'e.g. Senior Equities Trader')}
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
@@ -813,17 +819,17 @@ export const Profile: React.FC = () => {
               </div>
 
               <div className="col-span-2 space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Biography</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.professional_biography', 'PROFESSIONAL BACKGROUND')}</label>
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Describe your trading philosophy..."
+                  placeholder={t('profile.bio_placeholder', 'Describe your trading philosophy...')}
                   className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 h-28 resize-none transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City / Region</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.city_region', 'CITY / REGION')}</label>
                 <input
                   type="text"
                   required
@@ -834,31 +840,31 @@ export const Profile: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Trading Experience</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.trading_experience', 'TRADING EXPERIENCE')}</label>
                 <select
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
                 >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                  <option value="Pro Trader">Pro Trader</option>
+                  <option value="Beginner">{t('profile.experience.beginner', 'Beginner')}</option>
+                  <option value="Intermediate">{t('profile.experience.intermediate', 'Intermediate')}</option>
+                  <option value="Advanced">{t('profile.experience.advanced', 'Advanced')}</option>
+                  <option value="Pro Trader">{t('profile.experience.protrader', 'Pro Trader')}</option>
                 </select>
               </div>
 
               <div className="col-span-2 space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Primary Asset Focus</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('profile.primary_asset_focus', 'PRIMARY ASSET FOCUS')}</label>
                 <select
                   value={asset}
                   onChange={(e) => setAsset(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
                 >
-                  <option value="Forex">Forex Markets</option>
-                  <option value="Crypto">Cryptocurrencies</option>
-                  <option value="Stocks">Equities & Stocks</option>
-                  <option value="Indices">Global Indices</option>
-                  <option value="Commodities">Commodities & Futures</option>
+                  <option value="Forex">{t('profile.assetOption.forex', 'Forex Markets')}</option>
+                  <option value="Crypto">{t('profile.assetOption.crypto', 'Cryptocurrencies')}</option>
+                  <option value="Stocks">{t('profile.assetOption.stocks', 'Equities & Stocks')}</option>
+                  <option value="Indices">{t('profile.assetOption.indices', 'Global Indices')}</option>
+                  <option value="Commodities">{t('profile.assetOption.commodities', 'Commodities & Futures')}</option>
                 </select>
               </div>
 
@@ -871,10 +877,10 @@ export const Profile: React.FC = () => {
                         <div className="w-6 h-6 rounded-full bg-rose-500/10 flex items-center justify-center">
                           <Activity size={14} className="text-rose-500" />
                         </div>
-                        Market Pulse Alerts
+                        {t('profile.market_pulse_alerts')}
                       </label>
                       <p className="text-[11px] text-slate-500 leading-relaxed max-w-xs font-medium">
-                        Real-time volatility intelligence for your monitored portfolios.
+                        {t('profile.market_pulse_desc')}
                       </p>
                     </div>
                     
@@ -898,7 +904,7 @@ export const Profile: React.FC = () => {
                     <div className="space-y-5 pt-5 border-t border-slate-200/50 animate-in slide-in-from-top-2 duration-300">
                       <div>
                         <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">
-                          Monitored Asset Classes
+                          {t('profile.monitored_assets')}
                         </span>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {["Forex", "Crypto", "Stocks", "Indices", "Commodities"].map((assetItem) => {
@@ -918,9 +924,9 @@ export const Profile: React.FC = () => {
                                   isChecked
                                     ? 'bg-slate-900 border-slate-900 text-white shadow-lg scale-[1.02]'
                                     : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                                }`}
+                                  }`}
                               >
-                                {assetItem}
+                                {t(`profile.asset.${assetItem.toLowerCase()}`, assetItem)}
                               </button>
                             );
                           })}
@@ -930,8 +936,8 @@ export const Profile: React.FC = () => {
                       {/* Simulation Trigger */}
                       <div className="bg-white border border-slate-200 rounded-2xl p-5 flex items-center justify-between gap-4">
                         <div className="space-y-0.5">
-                          <span className="text-[10px] font-black text-slate-900 uppercase">Alert Sandbox</span>
-                          <p className="text-[10px] text-slate-400 font-medium">Trigger test volatility event.</p>
+                          <span className="text-[10px] font-black text-slate-900 uppercase">{t('profile.alert_sandbox')}</span>
+                          <p className="text-[10px] text-slate-400 font-medium">{t('profile.trigger_test_volatility')}</p>
                         </div>
                         <button
                           type="button"
@@ -940,7 +946,7 @@ export const Profile: React.FC = () => {
                           className="px-5 py-2.5 bg-slate-50 hover:bg-slate-100 disabled:opacity-50 border border-slate-200 text-slate-900 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"
                         >
                           <Activity size={12} className={isSimulating ? "animate-spin text-rose-500" : ""} />
-                          {isSimulating ? "Spiking..." : "Test Pulse"}
+                          {isSimulating ? t('profile.spiking') : t('profile.test_pulse')}
                         </button>
                       </div>
 
@@ -964,11 +970,11 @@ export const Profile: React.FC = () => {
                 {isSavingProfile ? (
                   <>
                     <Loader2 size={16} className="animate-spin text-white" />
-                    <span>Menyimpan Profil...</span>
+                    <span>{t('profile.saving_profile')}</span>
                   </>
                 ) : (
                   <>
-                    <Save size={16} /> Save Profile
+                    <Save size={16} /> {t('profile.save_profile')}
                   </>
                 )}
               </button>
@@ -982,16 +988,16 @@ export const Profile: React.FC = () => {
                 <div className="space-y-1">
                   <h4 className="text-sm font-black text-slate-950 flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
-                    Uji Notifikasi Pop-up Tarapti
+                    {t('profile.notif_test_title')}
                   </h4>
                   <p className="text-[11px] text-slate-500 font-medium max-w-md leading-relaxed">
-                    Aktifkan notifikasi pop-up sistem untuk menerima peringatan langsung di layar HP atau desktop Anda, lengkap dengan Logo Tarapti resmi.
+                    {t('profile.notif_test_desc')}
                   </p>
                 </div>
                 
                 {/* Status Badge */}
                 <div className="flex items-center gap-2 self-start sm:self-center">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">Status:</span>
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">{t('profile.status_label')}:</span>
                   <div className={`px-3 py-1 rounded-full border text-[10px] font-black flex items-center gap-1.5 ${
                     notifPermission === 'granted' 
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
@@ -1002,7 +1008,7 @@ export const Profile: React.FC = () => {
                     <span className={`w-1.5 h-1.5 rounded-full ${
                       notifPermission === 'granted' ? 'bg-emerald-500' : notifPermission === 'denied' ? 'bg-rose-500' : 'bg-amber-500'
                     }`} />
-                    {notifPermission === 'granted' ? 'Izin Aktif' : notifPermission === 'denied' ? 'Izin Diblokir' : 'Menunggu Izin'}
+                    {notifPermission === 'granted' ? t('profile.notif_granted') : notifPermission === 'denied' ? t('profile.notif_denied') : t('profile.notif_default')}
                   </div>
                 </div>
               </div>
@@ -1021,10 +1027,10 @@ export const Profile: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[9px] font-black uppercase text-indigo-600 tracking-wider">Ikon Notifikasi Resmi</span>
-                    <h5 className="text-xs font-black text-slate-800">Logo GoTrading Hub</h5>
+                    <span className="text-[9px] font-black uppercase text-indigo-600 tracking-wider">{t('profile.official_notif_icon')}</span>
+                    <h5 className="text-xs font-black text-slate-800">{t('profile.gotrading_hub_logo')}</h5>
                     <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-                      Logo ini akan tampil sebagai ikon pop-up pada layar notifikasi perangkat Anda.
+                      {t('profile.official_notif_icon_desc')}
                     </p>
                   </div>
                 </div>
@@ -1037,7 +1043,7 @@ export const Profile: React.FC = () => {
                       onClick={handleRequestPermission}
                       className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <Activity size={12} /> Aktifkan Izin Sistem
+                      <Activity size={12} /> {t('profile.enable_system_permission')}
                     </button>
                   )}
                   
@@ -1048,7 +1054,7 @@ export const Profile: React.FC = () => {
                     className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-md shadow-indigo-100 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
                   >
                     <Activity size={12} className={isTestingNotif ? "animate-pulse" : ""} />
-                    {isTestingNotif ? 'Mengirim...' : 'Kirim Notifikasi Uji Coba'}
+                    {isTestingNotif ? t('profile.sending_test') : t('profile.send_test_notif')}
                   </button>
                 </div>
 
@@ -1062,10 +1068,10 @@ export const Profile: React.FC = () => {
               <div className="space-y-1">
                 <h4 className="text-sm font-black text-slate-950 dark:text-white flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                  Galeri Logo GoTrading & Emblem "G"
+                  {t('profile.gallery_logo_title')}
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                  Logo resmi GoTrading dan lokal emblem "G" yang pernah diunggah serta digunakan di seluruh modul aplikasi dan notifikasi sistem.
+                  {t('profile.gallery_logo_desc')}
                 </p>
               </div>
 
@@ -1084,9 +1090,9 @@ export const Profile: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1 min-w-0">
-                    <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">Logo Utama GoTrading</span>
-                    <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">GoTrading Hub Branding</h5>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Aktif untuk Header & Navigasi Utama</p>
+                    <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">{t('profile.gallery_logo_main_badge')}</span>
+                    <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">{t('profile.gallery_logo_main_title')}</h5>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{t('profile.gallery_logo_main_desc')}</p>
                   </div>
                 </div>
 
@@ -1104,9 +1110,9 @@ export const Profile: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1 min-w-0">
-                    <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">Emblem "G" & PWA Icon</span>
-                    <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">Ikon "G" GoTrading</h5>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Aktif untuk Pop-up, Mobile & Desktop</p>
+                    <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">{t('profile.gallery_logo_emblem_badge')}</span>
+                    <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">{t('profile.gallery_logo_emblem_title')}</h5>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{t('profile.gallery_logo_emblem_desc')}</p>
                   </div>
                 </div>
               </div>
@@ -1120,10 +1126,10 @@ export const Profile: React.FC = () => {
                 <div className="space-y-1">
                   <h4 className="text-sm font-black text-slate-950 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                    Account Session (Session Security)
+                    {t('profile.account_session_title')}
                   </h4>
                   <p className="text-[10px] text-slate-500 font-medium">
-                    Securely log out of your trader profile on this device.
+                    {t('profile.account_session_desc')}
                   </p>
                 </div>
                 <button
@@ -1131,7 +1137,7 @@ export const Profile: React.FC = () => {
                   onClick={handleLogout}
                   className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-md shadow-rose-200 flex items-center gap-1.5 shrink-0 cursor-pointer"
                 >
-                  <LogOut size={13} /> Log Out
+                  <LogOut size={13} /> {t('profile.logout_button')}
                 </button>
               </div>
             </div>
@@ -1200,12 +1206,12 @@ export const Profile: React.FC = () => {
               <div className="p-5 border-b border-slate-100 dark:border-gray-800 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white capitalize">
-                    {showFollowsModal === 'followers' ? 'Followers' : 'Following'}
+                    {showFollowsModal === 'followers' ? t('profile.followers') : t('profile.following')}
                   </h3>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                     {showFollowsModal === 'followers' 
-                      ? `${filteredFollowsList.length} orang mengikuti` 
-                      : `mengikuti ${filteredFollowsList.length} orang`}
+                      ? t('profile.followers_count_modal', { count: filteredFollowsList.length }) 
+                      : t('profile.following_count_modal', { count: filteredFollowsList.length })}
                   </p>
                 </div>
                 <button

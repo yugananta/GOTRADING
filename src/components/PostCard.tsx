@@ -578,7 +578,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
                     {rc.authorName}
                   </span>
                   <span className="text-[9px] text-slate-500 font-medium block">
-                    {rc.authorCity || (rc.userId === currentUser?.id ? currentUser.city : 'Tasikmalaya')}, {rc.authorCountry || (rc.userId === currentUser?.id ? currentUser.country : 'Indonesia')} • <span className={cIsVerified ? "text-emerald-600 font-bold" : "text-slate-400"}>{cIsVerified ? "Verified Member" : "Unverified Member"}</span>
+                    {rc.authorCity || (rc.userId === currentUser?.id ? currentUser.city : 'Tasikmalaya')}, {rc.authorCountry || (rc.userId === currentUser?.id ? currentUser.country : 'Indonesia')} • <span className={cIsVerified ? "text-emerald-600 font-bold" : "text-slate-400"}>{cIsVerified ? t('account.verifiedMember', 'Verified Member') : t('account.unverifiedMember', 'Unverified Member')}</span>
                   </span>
                 </div>
                 <span className="text-[9px] text-slate-400 shrink-0">{relativeTime(rc.timestamp)}</span>
@@ -642,7 +642,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
                             {reply.authorName}
                           </span>
                           <span className="text-[8px] text-slate-400 font-medium block">
-                            {reply.authorCity || (reply.userId === currentUser?.id ? currentUser.city : 'Tasikmalaya')} • <span className={rIsVerified ? "text-emerald-600 font-bold" : "text-slate-400"}>{rIsVerified ? "Verified" : "Member"}</span>
+                            {reply.authorCity || (reply.userId === currentUser?.id ? currentUser.city : 'Tasikmalaya')} • <span className={rIsVerified ? "text-emerald-600 font-bold" : "text-slate-400"}>{rIsVerified ? t('account.verified', 'Verified') : t('account.member', 'Member')}</span>
                           </span>
                         </div>
                         <span className="text-[8px] text-slate-400 shrink-0">{relativeTime(reply.timestamp)}</span>

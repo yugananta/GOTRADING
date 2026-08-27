@@ -10,7 +10,7 @@ const languages = [
 ];
 
 export const LanguageSelector: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -20,7 +20,7 @@ export const LanguageSelector: React.FC = () => {
   return (
     <div className="space-y-2">
       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-        Language
+        {t('profile.language')}
       </label>
       <div className="grid grid-cols-1 gap-2">
         {languages.map((lng) => (
