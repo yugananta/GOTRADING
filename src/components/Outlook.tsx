@@ -453,7 +453,7 @@ const MarketSentimentCard = ({ symbol }: { symbol: string }) => {
 };
 
 const MarketClock = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   useEffect(() => {
     const timer = setInterval(() => {
@@ -488,19 +488,19 @@ const MarketClock = () => {
   return (
     <div className="grid grid-cols-2 gap-2 mb-3">
       <div className="bg-slate-900/10 dark:bg-slate-900/50 backdrop-blur-md border border-slate-300/80 dark:border-slate-700/60 rounded-lg p-2 shadow-2xs">
-        <span className="text-[9px] font-black text-slate-600 dark:text-gray-300 block mb-0.5 uppercase tracking-wider">New York (EST/EDT)</span>
+        <span className="text-[9px] font-black text-slate-600 dark:text-gray-300 block mb-0.5 uppercase tracking-wider">{t('common.outlook.clockNewYork')}</span>
         <span className="text-base font-black text-slate-900 dark:text-white font-mono tracking-wider">{formatTime(currentTime, 'America/New_York')}</span>
       </div>
       <div className="bg-slate-900/10 dark:bg-slate-900/50 backdrop-blur-md border border-slate-300/80 dark:border-slate-700/60 rounded-lg p-2 shadow-2xs">
-        <span className="text-[9px] font-black text-slate-600 dark:text-gray-300 block mb-0.5 uppercase tracking-wider">London (GMT/BST)</span>
+        <span className="text-[9px] font-black text-slate-600 dark:text-gray-300 block mb-0.5 uppercase tracking-wider">{t('common.outlook.clockLondon')}</span>
         <span className="text-base font-black text-slate-900 dark:text-white font-mono tracking-wider">{formatTime(currentTime, 'Europe/London')}</span>
       </div>
       <div className="bg-slate-900/10 dark:bg-slate-900/50 backdrop-blur-md border border-slate-300/80 dark:border-slate-700/60 rounded-lg p-2 shadow-2xs">
-        <span className="text-[9px] font-black text-slate-600 dark:text-gray-300 block mb-0.5 uppercase tracking-wider">Tokyo (JST)</span>
+        <span className="text-[9px] font-black text-slate-600 dark:text-gray-300 block mb-0.5 uppercase tracking-wider">{t('common.outlook.clockTokyo')}</span>
         <span className="text-base font-black text-slate-900 dark:text-white font-mono tracking-wider">{formatTime(currentTime, 'Asia/Tokyo')}</span>
       </div>
       <div className="bg-indigo-600/15 dark:bg-indigo-950/50 backdrop-blur-md border border-indigo-400/60 dark:border-indigo-500/60 rounded-lg p-2 shadow-2xs">
-        <span className="text-[9px] font-black text-indigo-800 dark:text-indigo-200 block mb-0.5 uppercase tracking-wider">Local ({tzAbbreviation})</span>
+        <span className="text-[9px] font-black text-indigo-800 dark:text-indigo-200 block mb-0.5 uppercase tracking-wider">{t('common.outlook.clockLocal', { tz: tzAbbreviation })}</span>
         <span className="text-base font-black text-indigo-950 dark:text-indigo-100 font-mono tracking-wider">{formatTime(currentTime, userTimeZone)}</span>
       </div>
     </div>
@@ -510,6 +510,43 @@ const MarketClock = () => {
 export const Outlook: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { showToast } = useApp();
+
+  const getInsightTitle = (news: any) => {
+    if (news && news.insight && news.insight.title) {
+      if (news.insight.title.startsWith('Analysis of ')) {
+        const eventName = news.insight.title.replace('Analysis of ', '');
+        return t('common.outlook.analysisOf', { event: eventName });
+      }
+      return news.insight.title;
+    }
+    return t('common.outlook.marketImpactAnalysis');
+  };
+
+  const getInsightDesc = (news: any) => {
+    if (!news || !news.insight || !news.insight.desc) {
+      return t('common.outlook.noAnalysisAvailable');
+    }
+    const desc = news.insight.desc;
+    const pivot = 'measures the economic health of';
+    if (desc.includes(pivot)) {
+      const parts = desc.split(pivot);
+      const eventName = parts[0].trim();
+      const remaining = parts[1].trim();
+      const dotIndex = remaining.indexOf('.');
+      if (dotIndex !== -1) {
+        const countryName = remaining.substring(0, dotIndex).trim();
+        const secondSentence = remaining.substring(dotIndex + 1).trim();
+        
+        const isGoldVol = secondSentence.includes('Gold') || secondSentence.includes('gold');
+        if (isGoldVol) {
+          return t('common.outlook.insightDescGold', { event: eventName, country: countryName });
+        } else {
+          return t('common.outlook.insightDescVolatility', { event: eventName, country: countryName });
+        }
+      }
+    }
+    return desc;
+  };
   
   const [newsFilter, setNewsFilter] = useState<'ALL' | 'High' | 'Medium' | 'Low'>('High');
   
@@ -747,7 +784,7 @@ export const Outlook: React.FC = () => {
       if (hrs >= 24) {
         const days = Math.floor(hrs / 24);
         const remHrs = hrs % 24;
-        setCountdown(`${days}d ${String(remHrs).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m`);
+        setCountdown(t('common.outlook.countdownFormat', { days, hours: String(remHrs).padStart(2, '0'), minutes: String(mins).padStart(2, '0') }));
       } else {
         setCountdown(`${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
       }
@@ -985,21 +1022,21 @@ export const Outlook: React.FC = () => {
         <div>
           <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
             <Globe size={16} className="text-indigo-500 dark:text-indigo-400" />
-            Live Market Intelligence
+            {t('common.outlook.liveMarketIntelligence')}
           </h2>
-          <p className="text-[10px] text-slate-400 dark:text-gray-500">News adjusts dynamically to selected {selectedNews.currency} event</p>
+          <p className="text-[10px] text-slate-400 dark:text-gray-500">{t('common.outlook.newsAdjustsDesc', { currency: selectedNews.currency })}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-            Sync in {nextSyncSeconds}s
+            {t('common.outlook.syncInSeconds', { seconds: nextSyncSeconds })}
           </span>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
             realtimeConnected 
               ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' 
               : 'text-amber-600 dark:text-amber-400 bg-amber-500/10 animate-pulse'
           }`}>
-            {realtimeConnected ? 'Live Feed' : 'Connecting...'}
+            {realtimeConnected ? t('common.outlook.liveFeed') : t('common.outlook.connecting')}
           </span>
         </div>
       </div>
@@ -1007,7 +1044,7 @@ export const Outlook: React.FC = () => {
       {isLoading && finalNewsFeed.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 space-y-2">
           <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs text-slate-400">Loading live Finnhub news...</span>
+          <span className="text-xs text-slate-400">{t('common.outlook.loadingFinnhubNews')}</span>
         </div>
       ) : finalNewsFeed.length === 0 ? (
         null
@@ -1048,7 +1085,7 @@ export const Outlook: React.FC = () => {
                         ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'
                         : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
                     }`}>
-                      🔥 {item.relatedLabel || `Relasi: Sektor ${selectedNews.currency}`}
+                      🔥 {item.relatedLabel || t('common.outlook.relationSectorShort', { curr: selectedNews.currency })}
                     </span>
                   )}
                 </div>
@@ -1065,7 +1102,7 @@ export const Outlook: React.FC = () => {
               
               {item.sentiment && (
                 <div className="flex items-center gap-1.5 mt-2">
-                  <span className="text-[9px] font-medium text-slate-400">Sentimen:</span>
+                  <span className="text-[9px] font-medium text-slate-400">{t('common.outlook.sentimentColon')}</span>
                   <span className={`text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
                     item.sentiment.type === 'bullish' 
                       ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' 
@@ -1091,7 +1128,7 @@ export const Outlook: React.FC = () => {
         <Globe className="absolute -right-3 -bottom-3 text-slate-800/10 dark:text-gray-800/20 w-24 h-24 pointer-events-none" />
         <div className="relative z-10">
           <h2 className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-            <Clock size={11} /> Global Market Clocks
+            <Clock size={11} /> {t('common.outlook.globalMarketClocks')}
           </h2>
           
           <MarketClock />
@@ -1120,13 +1157,13 @@ export const Outlook: React.FC = () => {
               </span>
               {selectedNews.simulated && (
                 <span className="text-[9px] text-slate-500 dark:text-gray-400 mt-0.5 block font-medium">
-                  Actual: <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{selectedNews.actual}</span> (Forecast: {selectedNews.forecast})
+                  {t('common.outlook.actualLabel', { actual: '' })}<span className="font-extrabold text-emerald-600 dark:text-emerald-400">{selectedNews.actual}</span> ({t('common.outlook.forecastLabel', { forecast: selectedNews.forecast })})
                 </span>
               )}
             </div>
             <div className="text-right shrink-0 flex flex-col items-end gap-0.5">
               {selectedNews.simulated ? (
-                <span className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 font-mono tracking-wider animate-pulse bg-emerald-500/10 px-1.5 py-0.5 rounded">RELEASED</span>
+                <span className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 font-mono tracking-wider animate-pulse bg-emerald-500/10 px-1.5 py-0.5 rounded">{t('common.outlook.released')}</span>
               ) : (
                 <div className="flex items-center gap-2 bg-rose-600 text-white px-3 py-1 rounded-xl border border-rose-700 shadow-md">
                   <span className="relative flex h-2.5 w-2.5">
@@ -1212,9 +1249,9 @@ export const Outlook: React.FC = () => {
           <div>
             <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>📅</span>
-              Economic Calendar
+              {t('common.outlook.economicCalendar')}
             </h2>
-            <p className="text-[10px] text-slate-400 dark:text-gray-500">Global high volatility economic indicators</p>
+            <p className="text-[10px] text-slate-400 dark:text-gray-500">{t('common.outlook.economicCalendarDesc')}</p>
           </div>
           
           <div className="flex flex-wrap items-center gap-2">
@@ -1228,7 +1265,7 @@ export const Outlook: React.FC = () => {
               title="Force manual real-time update"
             >
               <RefreshCw size={11} className={isRefreshingCalendar ? 'animate-spin text-indigo-500' : 'text-slate-400'} />
-              <span>{isRefreshingCalendar ? 'Syncing...' : 'Sync Live Feed'}</span>
+              <span>{isRefreshingCalendar ? t('common.outlook.syncing') : t('common.outlook.syncLiveFeed')}</span>
             </button>
 
             {/* High Impact Toggle Filter */}
@@ -1241,7 +1278,7 @@ export const Outlook: React.FC = () => {
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                All ({activeCalendarData.length})
+                {t('common.outlook.allFilter', { count: activeCalendarData.length })}
               </button>
               <button
                 onClick={() => setCalendarImpactFilter('high')}
@@ -1252,7 +1289,7 @@ export const Outlook: React.FC = () => {
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${calendarImpactFilter === 'high' ? 'bg-white animate-pulse' : 'bg-rose-500'}`}></span>
-                High Only ({activeCalendarData.filter(e => e.impact?.toLowerCase() === 'high').length})
+                {t('common.outlook.highOnlyFilter', { count: activeCalendarData.filter(e => e.impact?.toLowerCase() === 'high').length })}
               </button>
             </div>
 
@@ -1263,16 +1300,17 @@ export const Outlook: React.FC = () => {
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Medium Impact"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Low Impact"></div>
               </div>
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Legend</span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('common.outlook.legend')}</span>
               <Info size={11} className="text-slate-400 group-hover:text-indigo-500 transition" />
 
               {/* Tooltip Popup */}
               <div className="absolute right-0 top-full mt-2 w-64 p-3.5 bg-slate-900/95 dark:bg-slate-900/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-slate-800 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50 text-[10px] space-y-2.5">
                 <div className="font-black text-[11px] text-white border-b border-slate-800 pb-1.5 flex items-center justify-between">
-                  <span>Economic Impact Levels</span>
-                  <span className="text-[9px] text-indigo-400 font-semibold uppercase tracking-wider">Guide</span>
+                  <span>{t('common.outlook.impactLevels')}</span>
+                  <span className="text-[9px] text-indigo-400 font-semibold uppercase tracking-wider">{t('common.outlook.guide')}</span>
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-3">
                   <div className="flex items-start gap-2">
                     <div className="flex items-center gap-0.5 mt-0.5 shrink-0">
                       <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
@@ -1280,8 +1318,8 @@ export const Outlook: React.FC = () => {
                       <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
                     </div>
                     <div>
-                      <span className="font-extrabold text-rose-400 block leading-tight">High Impact (Red)</span>
-                      <span className="text-slate-300 text-[9px] leading-tight block">Major price volatility expected (e.g. CPI, NFP, Interest Rates).</span>
+                      <span className="font-extrabold text-rose-400 block leading-tight">{t('common.outlook.highImpactTitle')}</span>
+                      <span className="text-slate-300 text-[9px] leading-tight block">{t('common.outlook.highImpactDesc')}</span>
                     </div>
                   </div>
 
@@ -1291,8 +1329,8 @@ export const Outlook: React.FC = () => {
                       <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                     </div>
                     <div>
-                      <span className="font-extrabold text-amber-400 block leading-tight">Medium Impact (Amber)</span>
-                      <span className="text-slate-300 text-[9px] leading-tight block">Moderate potential price swings on affected currencies.</span>
+                      <span className="font-extrabold text-amber-400 block leading-tight">{t('common.outlook.mediumImpactTitle')}</span>
+                      <span className="text-slate-300 text-[9px] leading-tight block">{t('common.outlook.mediumImpactDesc')}</span>
                     </div>
                   </div>
 
@@ -1301,8 +1339,8 @@ export const Outlook: React.FC = () => {
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                     </div>
                     <div>
-                      <span className="font-extrabold text-emerald-400 block leading-tight">Low Impact (Green)</span>
-                      <span className="text-slate-300 text-[9px] leading-tight block">Minor or routine macroeconomic release.</span>
+                      <span className="font-extrabold text-emerald-400 block leading-tight">{t('common.outlook.lowImpactTitle')}</span>
+                      <span className="text-slate-300 text-[9px] leading-tight block">{t('common.outlook.lowImpactDesc')}</span>
                     </div>
                   </div>
                 </div>
@@ -1319,10 +1357,10 @@ export const Outlook: React.FC = () => {
             <div className="p-5 text-center bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-gray-800 rounded-2xl space-y-2">
               <Calendar size={22} className="mx-auto text-indigo-500" />
               <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {calendarImpactFilter === 'high' ? 'No High Impact Events Found' : 'No Economic Events Found'}
+                {calendarImpactFilter === 'high' ? t('common.outlook.noHighImpactEvents') : t('common.outlook.noEconomicEvents')}
               </p>
               <p className="text-[11px] text-slate-500 dark:text-gray-400 max-w-xs mx-auto leading-relaxed">
-                {calendarImpactFilter === 'high' ? 'Switch filter to "All" to view medium & low impact releases.' : 'Broaden your weekly filter to view scheduled macro releases.'}
+                {calendarImpactFilter === 'high' ? t('common.outlook.switchFilterToAll') : t('common.outlook.broadenWeeklyFilter')}
               </p>
             </div>
           ) : (
@@ -1372,7 +1410,7 @@ export const Outlook: React.FC = () => {
                       )}
 
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                        {item.impact || 'Medium'} Impact
+                        {t('common.outlook.impactLabel', { impact: item.impact || 'Medium' })}
                       </span>
                     </div>
                   </div>
@@ -1381,12 +1419,12 @@ export const Outlook: React.FC = () => {
                 <div className="text-right shrink-0">
                   {item.forecast && item.forecast !== '-' && (
                     <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Est: <span className="font-bold text-slate-800 dark:text-slate-200">{item.forecast}</span>
+                      {t('common.outlook.estLabel', { forecast: item.forecast })}
                     </div>
                   )}
                   {item.previous && item.previous !== '-' && (
                     <div className="text-[9px] text-slate-400 dark:text-slate-500">
-                      Prev: {item.previous}
+                      {t('common.outlook.prevLabel', { previous: item.previous })}
                     </div>
                   )}
                 </div>
@@ -1419,7 +1457,7 @@ export const Outlook: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                {selectedNews.simulated ? `Live Impact: ${selectedNews.event}` : selectedNews.insight.title}
+                {selectedNews.simulated ? `Live Impact: ${selectedNews.event}` : getInsightTitle(selectedNews)}
               </h3>
               <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                 <span className="text-[9px] text-slate-400 dark:text-gray-500 font-medium uppercase tracking-wider">{t('common.outlook.dynamicImpactAnalysis')}</span>
@@ -1449,7 +1487,7 @@ export const Outlook: React.FC = () => {
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${selectedNews.simulated ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
               <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${selectedNews.simulated ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
             </span>
-            {isSimulatingRelease ? 'Analyzing...' : selectedNews.simulated ? 'Re-simulate' : 'Simulate Release'}
+            {isSimulatingRelease ? t('common.outlook.analyzing') : selectedNews.simulated ? t('common.outlook.reSimulate') : t('common.outlook.simulateRelease')}
           </button>
         </div>
 
@@ -1460,7 +1498,7 @@ export const Outlook: React.FC = () => {
               <div className="bg-indigo-500 h-full rounded-full animate-[loading_2s_ease-in-out_infinite]" style={{ width: '60%' }}></div>
             </div>
             <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 font-mono animate-pulse uppercase tracking-wider">
-              ⚡ Receiving Live Data Feed & Calculating Volatility...
+              ⚡ {t('common.outlook.simulatingRelease', { event: selectedNews.event })}
             </span>
           </div>
         )}
@@ -1475,14 +1513,14 @@ export const Outlook: React.FC = () => {
                 : 'bg-rose-50 border-rose-100 dark:bg-rose-500/5 dark:border-rose-500/10'
             }`}>
               <div>
-                <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider block mb-0.5">Actual Outcome & Deviation</span>
+                <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider block mb-0.5">{t('common.outlook.actualOutcome')}</span>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-xl font-black ${
                     selectedNews.simulated.impactType === 'bullish' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                   }`}>
                     {selectedNews.simulated.actual}
                   </span>
-                  <span className="text-xs text-slate-400">vs Forecast {selectedNews.forecast}</span>
+                  <span className="text-xs text-slate-400">{t('common.outlook.vsForecast', { forecast: selectedNews.forecast })}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1492,14 +1530,14 @@ export const Outlook: React.FC = () => {
                     : 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-400'
                 }`}>
                   {selectedNews.simulated.impactType === 'bullish' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {selectedNews.simulated.deviation} Deviation ({selectedNews.simulated.impactType})
+                  {t('common.outlook.deviationLabel', { deviation: selectedNews.simulated.deviation, type: selectedNews.simulated.impactType })}
                 </span>
               </div>
             </div>
 
             {/* Reaction Summary */}
             <div className="space-y-1">
-              <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider block">Real-Time Market Reaction Analysis</span>
+              <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider block">{t('common.outlook.marketReactionAnalysis')}</span>
               <p className="text-xs text-slate-700 dark:text-gray-300 leading-relaxed bg-white/50 dark:bg-[#121620]/60 p-3.5 rounded-xl border border-slate-100 dark:border-gray-800">
                 {selectedNews.simulated.reactionSummary}
               </p>
@@ -1507,11 +1545,11 @@ export const Outlook: React.FC = () => {
 
             {/* Trading action board */}
             <div className="space-y-1">
-              <span className="text-[9px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider block">SMC Strategy Recommendation (Real-Time)</span>
+              <span className="text-[9px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider block">{t('common.outlook.smcStrategyRecommendation')}</span>
               <div className="bg-gradient-to-r from-indigo-50 to-indigo-100/50 dark:from-indigo-950/20 dark:to-indigo-900/10 rounded-xl p-3.5 border border-indigo-100/80 dark:border-indigo-500/10 space-y-1.5">
                 <p className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
-                  Trading Action Plan:
+                  {t('common.outlook.tradingActionPlan')}
                 </p>
                 <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
                   {selectedNews.simulated.actionPlan}
@@ -1525,26 +1563,26 @@ export const Outlook: React.FC = () => {
         {!selectedNews.simulated && !isSimulatingRelease && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <p className="text-xs text-slate-700 dark:text-gray-300 leading-relaxed bg-white/50 dark:bg-[#121620]/60 p-3 rounded-xl border border-slate-100 dark:border-gray-800">
-              {selectedNews.insight.desc}
+              {getInsightDesc(selectedNews)}
             </p>
             
             <div className="space-y-2">
-               <h4 className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Prediction Scenarios ({selectedNews.currency}):</h4>
+               <h4 className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">{t('common.outlook.predictionScenarios', { currency: selectedNews.currency })}</h4>
                <div className="bg-white dark:bg-[#121620] rounded-xl p-3 border border-slate-200 dark:border-gray-800/60 space-y-2">
                  <div className="flex items-start gap-2">
                    <TrendingUp size={14} className="text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
-                   <p className="text-[10px] text-slate-700 dark:text-gray-300"><span className="text-emerald-500 dark:text-emerald-400 font-bold">Upward Scenario (Actual &gt; Forecast):</span> {selectedNews.insight.conditionUp}</p>
+                   <p className="text-[10px] text-slate-700 dark:text-gray-300"><span className="text-emerald-500 dark:text-emerald-400 font-bold">{t('common.outlook.upwardScenario')}</span> {selectedNews.insight.conditionUp}</p>
                  </div>
                  <div className="h-px bg-slate-200 dark:bg-gray-800"></div>
                  <div className="flex items-start gap-2">
                    <TrendingDown size={14} className="text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
-                   <p className="text-[10px] text-slate-700 dark:text-gray-300"><span className="text-rose-500 dark:text-rose-400 font-bold">Downward Scenario (Actual &lt; Forecast):</span> {selectedNews.insight.conditionDown}</p>
+                   <p className="text-[10px] text-slate-700 dark:text-gray-300"><span className="text-rose-500 dark:text-rose-400 font-bold">{t('common.outlook.downwardScenario')}</span> {selectedNews.insight.conditionDown}</p>
                  </div>
                </div>
             </div>
             
             <div className="text-[10px] text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 font-bold">
-              <span>💡 Tip: Click the &quot;Simulate Release&quot; button above to view the actual live release.</span>
+              <span>{t('common.outlook.simulateTip')}</span>
             </div>
           </div>
         )}
