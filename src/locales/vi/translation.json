@@ -93,6 +93,27 @@
     "bearish": "Giảm giá (Bearish)"
   },
   "connect": {},
-  "network": {},
+  "network": {
+    "title": "Mạng lưới kết nối nhà giao dịch",
+    "filters": "Bộ lọc",
+    "discoverNearby": "Khám phá Nhà giao dịch lân cận",
+    "suggestedFollowBackTitle": "Đề xuất theo dõi lại",
+    "suggestedConnections": "Cơ hội kết nối được đề xuất",
+    "bulkFollow": "Theo dõi hàng loạt",
+    "beginner": "Người mới",
+    "proTrader": "Giao dịch viên chuyên nghiệp",
+    "searchPlaceholder": "Tìm kiếm theo tên, tên người dùng hoặc tiêu đề...",
+    "follow": "+ Theo dõi",
+    "following": "Đang theo dõi",
+    "noFollowBack": "Không có đề xuất theo dõi lại vào lúc này. Bạn đã theo dõi lại tất cả những người theo dõi bạn!",
+    "resetSearchFilters": "Đặt lại bộ lọc tìm kiếm",
+    "resetSearchDesc": "Xóa các bộ lọc cụ thể để khám phá cộng đồng toàn cầu.",
+    "resetAllFilters": "Đặt lại tất cả bộ lọc",
+    "noTradersFound": "Chúng tôi không thể tìm thấy bất kỳ nhà giao dịch nào phù hợp với truy vấn tìm kiếm hoặc tham số bộ lọc của bạn.",
+    "gpsDesc": "Tìm và kết nối với các nhà giao dịch chuyên nghiệp thực sự ở vùng lân cận của bạn. Yêu cầu quyền GPS.",
+    "activateGps": "Kích hoạt Quét GPS",
+    "expandGps": "Mở rộng Quét GPS",
+    "expandGpsDesc": "Kích hoạt quét vị trí hoặc tăng bán kính để tìm kiếm trong khu vực của bạn."
+  },
   "admin": {}
 }

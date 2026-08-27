@@ -371,6 +371,27 @@
     "bearish": "Bearish"
   },
   "connect": {},
-  "network": {},
+  "network": {
+    "title": "Jaringan Koneksi Trader",
+    "filters": "Filter",
+    "discoverNearby": "Temukan Trader Terdekat",
+    "suggestedFollowBackTitle": "Saran Follow Back",
+    "suggestedConnections": "Rekomendasi Koneksi",
+    "bulkFollow": "Ikuti Sekaligus",
+    "beginner": "Pemula",
+    "proTrader": "Pro Trader",
+    "searchPlaceholder": "Cari nama, username atau headline...",
+    "follow": "+ Ikuti",
+    "following": "Mengikuti",
+    "noFollowBack": "Tidak ada saran follow balik saat ini. Semua pengikut telah Anda ikuti balik!",
+    "resetSearchFilters": "Reset Filter Pencarian",
+    "resetSearchDesc": "Hapus filter untuk menjelajahi komunitas global.",
+    "resetAllFilters": "Reset Semua Filter",
+    "noTradersFound": "Kami tidak dapat menemukan trader yang sesuai dengan pencarian Anda.",
+    "gpsDesc": "Temukan dan bangun jaringan dengan trader profesional di sekitar Anda. Membutuhkan izin GPS.",
+    "activateGps": "Aktifkan Pemindaian GPS",
+    "expandGps": "Perluas Pemindaian GPS",
+    "expandGpsDesc": "Aktifkan pemindaian lokasi atau perluas radius untuk menemukan trader di wilayah Anda."
+  },
   "admin": {}
 }

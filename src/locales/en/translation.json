@@ -371,6 +371,28 @@
     "bearish": "Bearish"
   },
   "connect": {},
-  "network": {},
+  "network": {
+    "title": "Traders Connection Network",
+    "filters": "Filters",
+    "discoverNearby": "Discover Nearby Traders",
+    "suggestedFollowBack": "Saran Follow Back",
+    "suggestedFollowBackTitle": "Suggested Follow Back",
+    "suggestedConnections": "Suggested Connection Opportunities",
+    "bulkFollow": "Bulk Follow",
+    "beginner": "Beginner",
+    "proTrader": "Pro Trader",
+    "searchPlaceholder": "Search by first name, last name, username or headline...",
+    "follow": "+ Follow",
+    "following": "Following",
+    "noFollowBack": "No follow-back suggestions at the moment. You have followed back all your followers!",
+    "resetSearchFilters": "Reset Search Filters",
+    "resetSearchDesc": "Clear specific asset, experience, or online-only filters to explore the global community.",
+    "resetAllFilters": "Reset All Filters",
+    "noTradersFound": "We couldn't find any traders matching your search query or filter parameters. Follow the steps below to connect with traders or expand your discovery!",
+    "gpsDesc": "Find and network with real professional traders in your local vicinity. Requires device GPS permissions.",
+    "activateGps": "Activate GPS Scan",
+    "expandGps": "Expand GPS Scan",
+    "expandGpsDesc": "Activate location scan or increase radius up to 500km to find traders in your region."
+  },
   "admin": {}
 }
