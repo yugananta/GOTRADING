@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { User, Post } from '../types.js';
 import { useApp } from './AppContext.tsx';
 import { PostCard } from './PostCard.tsx';
@@ -20,7 +19,6 @@ interface UserProfileProps {
 const userProfileCache: Record<string, User> = {};
 
 export const UserProfile: React.FC<UserProfileProps> = ({ userId, onBack }) => {
-  const { t } = useTranslation();
   const { 
     currentUser, 
     setCurrentUser,
@@ -200,7 +198,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onBack }) => {
           setUser({ ...user, followersCount: oldFollowersCount });
         }
         setCurrentUser({ ...currentUser, followingCount: oldCurrentUserFollowingCount });
-        showToast(t("common.toast.followError") || "Gagal mengubah status mengikuti.");
+        showToast("Gagal mengubah status mengikuti.");
       }
     } catch (e) {
       console.error(e);
@@ -210,7 +208,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onBack }) => {
         setUser({ ...user, followersCount: oldFollowersCount });
       }
       setCurrentUser({ ...currentUser, followingCount: oldCurrentUserFollowingCount });
-      showToast(t("common.toast.networkError") || "Koneksi bermasalah. Batal mengubah status mengikuti.");
+      showToast("Koneksi bermasalah. Batal mengubah status mengikuti.");
     }
   };
 
@@ -265,7 +263,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, onBack }) => {
   if (!user) {
     return (
       <div className="text-center py-20">
-        <p className="text-slate-500">{t('profile.userNotFound') || 'User not found.'}</p>
+        <p className="text-slate-500">User not found.</p>
         <button onClick={onBack} className="mt-4 text-indigo-600 font-bold">Go Back</button>
       </div>
     );

@@ -1296,7 +1296,7 @@ export const Journal: React.FC = () => {
               onClick={() => setIsAccountDropdownOpen(prev => !prev)}
               className="px-3 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition duration-200 cursor-pointer"
             >
-              <span>{t('account.changeAccount') || 'Change Account'}</span>
+              <span>Ubah Akun</span>
               <ChevronDown size={14} className={`transform transition-transform duration-200 ${isAccountDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
@@ -1497,7 +1497,7 @@ export const Journal: React.FC = () => {
             <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[10px] text-rose-600 dark:text-rose-400 flex items-start gap-2 mt-2">
               <AlertCircle size={14} className="shrink-0 mt-0.5 text-rose-500" />
               <div>
-                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-rose-500">{t('journal.syncFailed') || 'Sync Failed'}</p>
+                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-rose-500">Sinkronisasi Gagal</p>
                 <p className="text-[11px] leading-relaxed font-medium text-rose-600 dark:text-rose-400">{activeAccountInfo.error_message}</p>
                 <button 
                   onClick={() => setActiveView('account')} 
@@ -1547,7 +1547,7 @@ export const Journal: React.FC = () => {
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 min-w-0">
                 <Trophy size={13} className='text-indigo-200 shrink-0' />
-                <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>{t('journal.portfolio') || 'Portfolio'}</span>
+                <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>Portofolio</span>
               </div>
               {activeTab === 'goals' && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
@@ -2260,7 +2260,7 @@ export const Journal: React.FC = () => {
                   }`}
                 >
                   <Activity size={14} className={openTrades.length > 0 ? "animate-pulse text-amber-300" : ""} />
-                  <span>{t('journal.floating') || 'Floating Positions'}</span>
+                  <span>Posisi Floating</span>
                   <span className={`px-1.5 py-0.2 text-[10px] font-mono rounded-full ${
                     historyTab === 'floating' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 dark:bg-gray-800 text-slate-700 dark:text-gray-300'
                   }`}>
@@ -2552,7 +2552,7 @@ export const Journal: React.FC = () => {
             
             <div className="space-y-1 relative z-10">
               <div className="flex justify-between text-xs font-bold">
-                <span className="text-slate-300">{t('journal.weekly') || 'Weekly Achievement'}</span>
+                <span className="text-slate-300">Pencapaian Mingguan</span>
                 <span className="text-emerald-400 font-mono">${weeklyAchievedPL.toFixed(2)} / ${weeklyTargetAmount}</span>
               </div>
               <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700/50">
@@ -2854,7 +2854,7 @@ export const Journal: React.FC = () => {
                       <Loader2 size={24} className="animate-spin text-indigo-400 absolute -top-2 -right-2" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-sm font-black text-white uppercase tracking-wide">{t('journal.analyzing') || 'Analyzing MT5 Data...'}</h4>
+                      <h4 className="text-sm font-black text-white uppercase tracking-wide">Menganalisis Data MT5 Riil</h4>
                       <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
                         AI GoTrading sedang memindai {closedTrades.length} tiket order, mendeteksi korelasi waktu, dan mengukur risk leakage...
                       </p>

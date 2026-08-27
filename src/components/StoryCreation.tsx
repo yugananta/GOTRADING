@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Camera, X, Image as ImageIcon, Send } from 'lucide-react';
 import { useApp } from './AppContext.tsx';
@@ -9,7 +8,6 @@ interface StoryCreationProps {
 }
 
 export const StoryCreation: React.FC<StoryCreationProps> = ({ onClose, onPost }) => {
-  const { t } = useTranslation();
   const [storyImage, setStoryImage] = useState<string | null>(null);
   const { currentUser } = useApp();
 
@@ -102,7 +100,7 @@ export const StoryCreation: React.FC<StoryCreationProps> = ({ onClose, onPost })
                   </div>
                 )}
             </div>
-            <span className="text-white font-bold text-sm shadow-sm">{t('feed.yourStory')}</span>
+            <span className="text-white font-bold text-sm shadow-sm">Cerita Anda</span>
           </div>
 
           <button 
