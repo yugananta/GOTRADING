@@ -789,7 +789,7 @@ function MainAppLayout() {
                               className="absolute left-1/2 top-full mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 py-2 overflow-hidden text-left"
                             >
                               <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 text-left">
-                                Pilih Menu Feed
+                                {t('nav.selectFeedMenu')}
                               </div>
                               <button
                                 onClick={() => {
@@ -800,7 +800,7 @@ function MainAppLayout() {
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                               >
                                 <div className="w-2 h-2 rounded-full bg-blue-600" />
-                                <span>Feed Utama</span>
+                                <span>{t('nav.mainFeed')}</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -810,7 +810,7 @@ function MainAppLayout() {
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                               >
                                 <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                                <span>Connect MetaTrader</span>
+                                <span>{t('nav.connectMetatrader')}</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -831,7 +831,7 @@ function MainAppLayout() {
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                               >
                                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                <span>Portofolio</span>
+                                <span>{t('nav.portfolio')}</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -842,7 +842,7 @@ function MainAppLayout() {
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                               >
                                 <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                <span>Trading Journal</span>
+                                <span>{t('nav.tradingJournal')}</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -853,7 +853,7 @@ function MainAppLayout() {
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                               >
                                 <div className="w-2 h-2 rounded-full bg-purple-500" />
-                                <span>AI Analysis</span>
+                                <span>{t('nav.aiAnalysis')}</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -864,7 +864,7 @@ function MainAppLayout() {
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                               >
                                 <div className="w-2 h-2 rounded-full bg-amber-500" />
-                                <span>News & Calendar</span>
+                                <span>{t('nav.newsCalendar')}</span>
                               </button>
                             </motion.div>
                           </>
@@ -970,7 +970,7 @@ function MainAppLayout() {
                           className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden py-1"
                         >
                           <div className="px-3 py-1.5 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            Pilih Bahasa
+                            {t('nav.selectLanguage')}
                           </div>
                           {languages.map((lang) => {
                             const isSelected = i18n.language === lang.lng;
@@ -1039,7 +1039,7 @@ function MainAppLayout() {
                               className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition cursor-pointer"
                             >
                               <UserIcon size={14} />
-                              Edit Profile
+                              {t('nav.editProfile')}
                             </button>
                             
                             <button
@@ -1047,7 +1047,7 @@ function MainAppLayout() {
                               className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
                             >
                               <LogOut size={14} />
-                              Logout
+                              {t('nav.logout')}
                             </button>
                           </div>
                         </motion.div>
@@ -1134,7 +1134,7 @@ function MainAppLayout() {
                   className="absolute left-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 py-2 text-left"
                 >
                   <div className="px-3.5 py-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
-                    <span>Pilih Menu Feed</span>
+                    <span>{t('nav.selectFeedMenu')}</span>
                     <span className="text-[9px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md font-bold">Sub-Menu</span>
                   </div>
                   <button
@@ -1145,7 +1145,7 @@ function MainAppLayout() {
                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
-                    <span>Feed Utama</span>
+                    <span>{t('nav.mainFeed')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -1155,7 +1155,7 @@ function MainAppLayout() {
                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
-                    <span>Connect MetaTrader</span>
+                    <span>{t('nav.connectMetatrader')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -1176,7 +1176,7 @@ function MainAppLayout() {
                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span>Portofolio</span>
+                    <span>{t('nav.portfolio')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -1187,7 +1187,7 @@ function MainAppLayout() {
                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
-                    <span>Trading Journal</span>
+                    <span>{t('nav.tradingJournal')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -1198,7 +1198,7 @@ function MainAppLayout() {
                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
-                    <span>AI Analysis</span>
+                    <span>{t('nav.aiAnalysis')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -1209,7 +1209,7 @@ function MainAppLayout() {
                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                    <span>News & Calendar</span>
+                    <span>{t('nav.newsCalendar')}</span>
                   </button>
                 </motion.div>
               </>

@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "feed": "Beranda",
+    "network": "Jaringan",
+    "connect": "Hubungkan",
+    "journal": "Jurnal",
+    "outlook": "Pandangan",
+    "profile": "Profil",
+    "community": "Komunitas",
+    "leaderboard": "Papan Peringkat",
+    "messages": "Pesan",
+    "notifications": "Notifikasi",
+    "search": "Cari",
+    "selectFeedMenu": "Pilih Menu Feed",
+    "mainFeed": "Feed Utama",
+    "connectMetatrader": "Hubungkan MetaTrader",
+    "portfolio": "Portofolio",
+    "tradingJournal": "Jurnal Trading",
+    "aiAnalysis": "Analisis AI",
+    "newsCalendar": "Berita & Kalender",
+    "editProfile": "Edit Profil",
+    "logout": "Keluar",
+    "selectLanguage": "Pilih Bahasa"
+  }
+}

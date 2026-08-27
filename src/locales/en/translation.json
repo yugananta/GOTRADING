@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "feed": "Home",
+    "network": "Network",
+    "connect": "Connect",
+    "journal": "Journal",
+    "outlook": "Outlook",
+    "profile": "Profile",
+    "community": "Community",
+    "leaderboard": "Leaderboard",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "search": "Search",
+    "selectFeedMenu": "Select Feed Menu",
+    "mainFeed": "Main Feed",
+    "connectMetatrader": "Connect MetaTrader",
+    "portfolio": "Portfolio",
+    "tradingJournal": "Trading Journal",
+    "aiAnalysis": "AI Analysis",
+    "newsCalendar": "News & Calendar",
+    "editProfile": "Edit Profile",
+    "logout": "Logout",
+    "selectLanguage": "Select Language"
+  }
+}

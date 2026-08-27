@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "feed": "Trang chủ",
+    "network": "Mạng lưới",
+    "connect": "Kết nối",
+    "journal": "Nhật ký",
+    "outlook": "Triển vọng",
+    "profile": "Hồ sơ",
+    "community": "Cộng đồng",
+    "leaderboard": "Bảng xếp hạng",
+    "messages": "Tin nhắn",
+    "notifications": "Thông báo",
+    "search": "Tìm kiếm",
+    "selectFeedMenu": "Chọn bảng tin",
+    "mainFeed": "Bảng tin chính",
+    "connectMetatrader": "Kết nối MetaTrader",
+    "portfolio": "Danh mục đầu tư",
+    "tradingJournal": "Nhật ký giao dịch",
+    "aiAnalysis": "Phân tích AI",
+    "newsCalendar": "Tin tức & Lịch",
+    "editProfile": "Chỉnh sửa hồ sơ",
+    "logout": "Đăng xuất",
+    "selectLanguage": "Chọn ngôn ngữ"
+  }
+}

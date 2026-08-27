@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "feed": "หน้าแรก",
+    "network": "เครือข่าย",
+    "connect": "เชื่อมต่อ",
+    "journal": "บันทึก",
+    "outlook": "แนวโน้ม",
+    "profile": "โปรไฟล์",
+    "community": "ชุมชน",
+    "leaderboard": "ตารางผู้นำ",
+    "messages": "ข้อความ",
+    "notifications": "การแจ้งเตือน",
+    "search": "ค้นหา",
+    "selectFeedMenu": "เลือกเมนูฟีด",
+    "mainFeed": "ฟีดหลัก",
+    "connectMetatrader": "เชื่อมต่อ MetaTrader",
+    "portfolio": "พอร์ตการลงทุน",
+    "tradingJournal": "บันทึกการเทรด",
+    "aiAnalysis": "การวิเคราะห์ด้วย AI",
+    "newsCalendar": "ข่าวและปฏิทิน",
+    "editProfile": "แก้ไขโปรไฟล์",
+    "logout": "ออกจากระบบ",
+    "selectLanguage": "เลือกภาษา"
+  }
+}
