@@ -261,7 +261,7 @@
     "connectAndSync": "Hubungkan & Sinkronisasi",
     "connecting": "Menghubungkan...",
     "mt5Success": "Akun MetaTrader berhasil terhubung! Status profil Anda sekarang Verified Member.",
-    "mt5DisconnectSuccess": "Akun terputus. Status berubah menjadi Unverified Member.",
+    "mt5DisconnectSuccess": "Akun terputus. Status berubah menjadi Anggota Belum Tervalidasi.",
     "validated": "Tervalidasi",
     "processing": "Diproses",
     "rejected": "Ditolak",
