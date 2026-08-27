@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User } from '../types.js';
 import { useApp } from './AppContext.tsx';
 import { Search, MapPin, Compass, Sparkles, Filter, Check, UserPlus, UserCheck, RefreshCw, ChevronLeft, ChevronRight, Users, CheckSquare, Square } from 'lucide-react';
@@ -23,6 +24,7 @@ const TraderCard: React.FC<{
   isSelected?: boolean,
   onSelectToggle?: (id: string) => void
 }> = ({ trader, following, onFollowToggle, onViewProfile, isBulkMode, isSelected, onSelectToggle }) => {
+  const { t } = useTranslation();
   return (
     <div 
       onClick={() => {
@@ -98,13 +100,14 @@ const TraderCard: React.FC<{
             : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-xs'
         }`}
       >
-        {following ? 'Mengikuti' : '+ Ikuti'}
+        {following ? t('network.following') : t('network.follow')}
       </motion.button>
     </div>
   );
 };
 
 export const Network: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser, setCurrentUser, viewUserProfile, showToast, setActiveView, pendingConnections, acceptConnectionRequest, declineConnectionRequest } = useApp();
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
@@ -236,13 +239,13 @@ export const Network: React.FC = () => {
       } else {
         // Rollback on server error
         setFollowingIds(previousFollowingIds);
-        showToast("Gagal mengubah status mengikuti.");
+        showToast(t('network.followFailed'));
       }
     } catch (e) {
       console.error(e);
       // Rollback on network exception
       setFollowingIds(previousFollowingIds);
-      showToast("Koneksi bermasalah. Batal mengubah status mengikuti.");
+      showToast(t('network.connectionProblem'));
     }
   };
 
@@ -285,7 +288,7 @@ export const Network: React.FC = () => {
       });
     }
 
-    showToast(`Berhasil mengikuti ${newFollowIds.length} trader sekaligus!`);
+    showToast(t('network.bulkFollowSuccess', { count: newFollowIds.length }));
     setSelectedTraderIds([]);
     setIsBulkMode(false);
 
@@ -308,7 +311,7 @@ export const Network: React.FC = () => {
     if (!navigator.geolocation) {
       setCoords({ latitude: -6.2088, longitude: 106.8456 });
       setLocationPermission('granted');
-      showToast('GPS activated with regional coordinates.');
+      showToast(t('network.gpsRegional'));
       return;
     }
 
@@ -332,14 +335,14 @@ export const Network: React.FC = () => {
             })
           }).catch(console.error);
         }
-        showToast('GPS scan active. Nearby traders updated.');
+        showToast(t('network.gpsActive'));
       },
       (err) => {
         console.warn(err);
         // Fallback gracefully so nearby traders display successfully
         setCoords({ latitude: -6.2088, longitude: 106.8456 });
         setLocationPermission('granted');
-        showToast('GPS location retrieved. Nearby traders displayed.');
+        showToast(t('network.gpsRetrieved'));
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
@@ -362,7 +365,7 @@ export const Network: React.FC = () => {
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={15} />
         <input
           type="text"
-          placeholder="Search by first name, last name, username or headline..."
+          placeholder={t('network.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full bg-white dark:bg-slate-900/40 border-2 border-slate-300 dark:border-slate-750 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-900 dark:text-white font-bold placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm transition-all"
@@ -373,7 +376,7 @@ export const Network: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
           <Compass className="text-indigo-500" size={20} />
-          Traders Connection Network
+          {t('network.title')}
         </h2>
         
         <button
@@ -385,7 +388,7 @@ export const Network: React.FC = () => {
           }`}
         >
           <Filter size={12} />
-          Filters
+          {t('network.filters')}
         </button>
       </div>
 
@@ -398,17 +401,17 @@ export const Network: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs font-black text-slate-800 flex items-center gap-2">
-                Discover Nearby Traders
-                <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] font-black">New</span>
+                {t('network.discoverNearby')}
+                <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] font-black">{t('network.newBadge')}</span>
               </h4>
               <p className="text-[10px] text-slate-500 leading-relaxed mt-1">
-                Find and network with real professional traders in your local vicinity. Requires device GPS permissions.
+                {t('network.discoverNearbyDesc')}
               </p>
               
               {/* Radius slider if location is active */}
               {locationPermission === 'granted' && coords && (
                 <div className="mt-3 flex items-center gap-3 bg-white border border-slate-100 px-3 py-1.5 rounded-xl">
-                  <span className="text-[10px] font-mono text-indigo-600 font-black">Radius: {radius}km</span>
+                  <span className="text-[10px] font-mono text-indigo-600 font-black">{t('network.radius')}: {radius}km</span>
                   <input
                     type="range"
                     min="5"
@@ -428,11 +431,11 @@ export const Network: React.FC = () => {
               onClick={requestGeolocation}
               className="w-full md:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs transition duration-150 flex items-center justify-center gap-1 shrink-0 cursor-pointer"
             >
-              Activate GPS Scan
+              {t('network.activateGps')}
             </button>
           ) : (
             <span className="text-[10px] bg-emerald-50 text-emerald-600 font-black border border-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1 shrink-0">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" /> Scanning Active
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" /> {t('network.scanningActive')}
             </span>
           )}
         </div>
@@ -442,21 +445,21 @@ export const Network: React.FC = () => {
           <div className="border-t border-slate-100 dark:border-gray-800 pt-4 mt-1 space-y-3">
             <div className="flex items-center justify-between">
               <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                Nearby Traders found within {radius}km
+                {t('network.nearbyFound', { radius })}
               </h5>
               <span className="text-[10px] bg-indigo-50 text-indigo-600 font-bold px-2 py-0.5 rounded-full">
-                {users.filter(u => (u as any).distance !== undefined).length} Traders
+                {t('network.tradersCount', { count: users.filter(u => (u as any).distance !== undefined).length })}
               </span>
             </div>
 
             {isLoading && users.filter(u => (u as any).distance !== undefined).length === 0 ? (
               <div className="flex items-center justify-center py-6 gap-2">
                 <RefreshCw className="text-indigo-500 animate-spin" size={16} />
-                <span className="text-[11px] text-slate-500 font-bold">Scanning for local traders...</span>
+                <span className="text-[11px] text-slate-500 font-bold">{t('network.scanningLocal')}</span>
               </div>
             ) : users.filter(u => (u as any).distance !== undefined).length === 0 ? (
               <p className="text-[11px] text-slate-400 italic text-center py-4">
-                No traders found within your scanned area. Try increasing the scan radius.
+                {t('network.noNearbyFound')}
               </p>
             ) : (
               <div className="flex gap-4 overflow-x-auto pb-2 snap-x scrollbar-none overscroll-x-contain">
@@ -490,24 +493,24 @@ export const Network: React.FC = () => {
       {showFilters && (
         <div className="bg-white/80 dark:bg-[#121620] backdrop-blur-xl border border-slate-200 dark:border-gray-800 rounded-3xl p-5 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.05)] space-y-4 animate-in fade-in duration-150">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-xs font-black text-slate-800">Refine Network Suggestions</span>
+            <span className="text-xs font-black text-slate-800">{t('network.refineSuggestions')}</span>
             <button
               onClick={clearFilters}
               className="text-[10px] text-slate-400 hover:text-slate-800 flex items-center gap-1"
             >
-              <RefreshCw size={10} /> Reset All
+              <RefreshCw size={10} /> {t('network.resetAll')}
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 mb-1">Country</label>
+              <label className="block text-[10px] font-black text-slate-400 mb-1">{t('network.country')}</label>
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2.5 text-black font-bold outline-none"
               >
-                <option value="">All Countries</option>
+                <option value="">{t('network.allCountries')}</option>
                 <option value="Singapore">Singapore</option>
                 <option value="United Kingdom">United Kingdom</option>
                 <option value="Canada">Canada</option>
@@ -516,13 +519,13 @@ export const Network: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-400 mb-1">Experience Level</label>
+              <label className="block text-[10px] font-black text-slate-400 mb-1">{t('network.experienceLevel')}</label>
               <select
                 value={experience}
                 onChange={(e) => setExperience(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-2 py-2.5 text-slate-900 font-bold outline-none"
               >
-                <option value="">All Experience</option>
+                <option value="">{t('network.allExperience')}</option>
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
                 <option value="Advanced">Advanced</option>
@@ -531,13 +534,13 @@ export const Network: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-400 mb-1">Trading Asset</label>
+              <label className="block text-[10px] font-black text-slate-400 mb-1">{t('network.tradingAsset')}</label>
               <select
                 value={asset}
                 onChange={(e) => setAsset(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-2 py-2.5 text-slate-900 font-bold outline-none"
               >
-                <option value="">All Assets</option>
+                <option value="">{t('network.allAssets')}</option>
                 <option value="Forex">Forex (Gold, Major Pairs)</option>
                 <option value="Crypto">Crypto (BTC, Altcoins)</option>
                 <option value="Stocks">Stocks</option>
@@ -554,7 +557,7 @@ export const Network: React.FC = () => {
                 className="accent-indigo-600 rounded border-slate-200 bg-white"
               />
               <label htmlFor="online-only" className="text-[11px] font-black text-slate-700">
-                Online Status Only
+                {t('network.onlineStatusOnly')}
               </label>
             </div>
           </div>
@@ -570,7 +573,7 @@ export const Network: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-2">
-                Saran Follow Back
+                {t('network.suggestedFollowBack')}
                 {followers.filter(f => !followingIds.includes(f.id)).length > 0 && (
                   <span className="bg-indigo-600 text-white px-1.5 py-0.5 rounded-full text-[8px] font-black animate-pulse">
                     {followers.filter(f => !followingIds.includes(f.id)).length}
@@ -578,7 +581,7 @@ export const Network: React.FC = () => {
                 )}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-gray-400 leading-relaxed mt-0.5">
-                Pengikut Anda yang belum Anda ikuti balik. Ikuti mereka untuk tetap terhubung!
+                {t('network.suggestedFollowBackDesc')}
               </p>
             </div>
           </div>
@@ -618,7 +621,7 @@ export const Network: React.FC = () => {
                     onClick={() => handleFollowToggle(reqUser.id)}
                     className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-bold transition cursor-pointer shadow-xs active:scale-95"
                   >
-                    Ikuti Balik
+                    {t('network.followBack')}
                   </button>
                 </div>
               </div>
@@ -627,7 +630,7 @@ export const Network: React.FC = () => {
         ) : (
           <div className="border-t border-slate-100 dark:border-gray-800 pt-4 flex flex-col items-center justify-center py-4 text-center">
             <p className="text-[11px] text-slate-400 dark:text-gray-500 italic">
-              Tidak ada saran follow balik saat ini. Semua pengikut telah Anda ikuti balik!
+              {t('network.noSuggestedFollowBack')}
             </p>
           </div>
         )}
@@ -638,7 +641,7 @@ export const Network: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
             <Sparkles size={13} className="text-indigo-400" />
-            Suggested Connection Opportunities ({users.length})
+            {t('network.suggestedOpportunities', { count: users.length })}
           </h3>
 
           {unfollowedSuggested.length > 0 && (
@@ -647,10 +650,10 @@ export const Network: React.FC = () => {
                 type="button"
                 onClick={() => handleBulkFollowAction(unfollowedSuggested.map(u => u.id))}
                 className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
-                title="Ikuti semua trader yang disarankan dengan 1 sentuhan"
+                title={t('network.bulkFollow', { count: unfollowedSuggested.length })}
               >
                 <UserPlus size={13} />
-                <span>Bulk Follow ({unfollowedSuggested.length})</span>
+                <span>{t('network.bulkFollow', { count: unfollowedSuggested.length })}</span>
               </button>
 
               <button
@@ -671,7 +674,7 @@ export const Network: React.FC = () => {
                 }`}
               >
                 <CheckSquare size={13} />
-                <span>{isBulkMode ? 'Tutup Pilihan' : 'Pilih Multiple'}</span>
+                <span>{isBulkMode ? t('network.closeSelection') : t('network.selectMultiple')}</span>
               </button>
             </div>
           )}
@@ -697,11 +700,11 @@ export const Network: React.FC = () => {
                   ) : (
                     <Square size={15} className="text-slate-400" />
                   )}
-                  <span>Pilih Semua ({unfollowedSuggested.length})</span>
+                  <span>{t('network.selectAll', { count: unfollowedSuggested.length })}</span>
                 </button>
                 <span className="text-xs text-indigo-400">•</span>
                 <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                  {selectedTraderIds.length} trader dipilih
+                  {t('network.tradersSelected', { count: selectedTraderIds.length })}
                 </span>
               </div>
 
@@ -717,7 +720,7 @@ export const Network: React.FC = () => {
                   }`}
                 >
                   <UserPlus size={14} />
-                  <span>Ikuti {selectedTraderIds.length} Trader Dipilih</span>
+                  <span>{t('network.followSelected', { count: selectedTraderIds.length })}</span>
                 </button>
               </div>
             </motion.div>
@@ -727,7 +730,7 @@ export const Network: React.FC = () => {
         {isLoading && users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <RefreshCw className="text-indigo-500 animate-spin" size={32} />
-            <p className="text-xs text-slate-500 font-bold">Scanning the network for traders...</p>
+            <p className="text-xs text-slate-500 font-bold">{t('network.scanningLocal')}</p>
           </div>
         ) : users.length === 0 ? (
           <div className="bg-white dark:bg-[#121620] border border-slate-200 dark:border-gray-800 rounded-3xl p-6 md:p-8 text-center shadow-xs space-y-6">
@@ -740,10 +743,10 @@ export const Network: React.FC = () => {
 
             <div className="max-w-md mx-auto space-y-1.5">
               <h4 className="text-base font-black text-slate-800 dark:text-white">
-                No Traders Found in Network
+                {t('network.noTradersFound')}
               </h4>
               <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed">
-                We couldn't find any traders matching your search query or filter parameters. Follow the steps below to connect with traders or expand your discovery!
+                {t('network.noTradersFoundDesc')}
               </p>
             </div>
 
@@ -754,10 +757,10 @@ export const Network: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[10px] font-black flex items-center justify-center transition-colors">1</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Expand GPS Scan</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t('network.expandGpsScan')}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal">
-                  Activate location scan or increase radius up to 500km to find traders in your region.
+                  {t('network.expandGpsScanDesc')}
                 </p>
               </div>
 
@@ -770,10 +773,10 @@ export const Network: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[10px] font-black flex items-center justify-center transition-colors">2</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Reset Search Filters</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t('network.resetSearchFilters')}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal">
-                  Clear specific asset, experience, or online-only filters to explore the global community.
+                  {t('network.resetSearchFiltersDesc')}
                 </p>
               </div>
 
@@ -783,10 +786,10 @@ export const Network: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[10px] font-black flex items-center justify-center transition-colors">3</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Set Up Profile</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t('network.setUpProfile')}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-normal">
-                  Add your city, trading style & assets in Account settings so other traders can find you.
+                  {t('network.setUpProfileDesc')}
                 </p>
               </div>
             </div>
@@ -800,7 +803,7 @@ export const Network: React.FC = () => {
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <RefreshCw size={13} />
-                <span>Reset All Filters</span>
+                <span>{t('network.resetAll')}</span>
               </button>
             </div>
           </div>
@@ -852,17 +855,17 @@ export const Network: React.FC = () => {
               className="relative bg-white dark:bg-[#151c2c] w-full max-w-[340px] rounded-3xl p-6 border border-slate-100 dark:border-gray-800 shadow-2xl z-10 text-left space-y-4"
             >
               <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                Setop ikuti {unfollowConfirmUser.firstName} {unfollowConfirmUser.lastName || ''}?
+                {t('network.unfollowTitle', { firstName: unfollowConfirmUser.firstName, lastName: unfollowConfirmUser.lastName || '' })}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Postingannya tidak akan muncul lagi di timeline beranda Anda. Anda tetap dapat melihat profilnya, kecuali jika postingannya dilindungi.
+                {t('network.unfollowDesc')}
               </p>
               <div className="flex items-center justify-end gap-6 pt-2">
                 <button
                   onClick={() => setUnfollowConfirmUser(null)}
                   className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
                 >
-                  Batalkan
+                  {t('network.cancel')}
                 </button>
                 <button
                   onClick={async () => {
@@ -872,7 +875,7 @@ export const Network: React.FC = () => {
                   }}
                   className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition cursor-pointer"
                 >
-                  Setop Ikuti
+                  {t('network.unfollow')}
                 </button>
               </div>
             </motion.div>

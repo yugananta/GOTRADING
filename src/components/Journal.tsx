@@ -1114,21 +1114,21 @@ export const Journal: React.FC = () => {
       {/* Aggregated indicators bar */}
       <div className="bg-white dark:bg-[#1B2132]/60 border border-slate-200 dark:border-gray-800/80 rounded-xl py-2 px-3 flex items-center justify-between text-center divide-x divide-slate-200 dark:divide-gray-800">
         <div className="flex-1 text-center">
-          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">Trades</p>
+          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">{t('journal.trades')}</p>
           <p className="text-[12px] font-black text-slate-900 dark:text-white font-roboto">{totalMonthlyTrades}</p>
         </div>
         <div className="flex-1 text-center">
-          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">Wins</p>
+          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">{t('journal.wins')}</p>
           <p className="text-[12px] font-black text-emerald-500 dark:text-emerald-400 font-roboto">{totalMonthlyWins}</p>
         </div>
         <div className="flex-1 text-center">
-          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">Profits</p>
+          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">{t('journal.profits')}</p>
           <p className={`text-[12px] font-black font-roboto ${totalMonthlyPL >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
             ${totalMonthlyPL.toFixed(2)}
           </p>
         </div>
         <div className="flex-1 text-center">
-          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">Percent</p>
+          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold font-roboto">{t('journal.percent')}</p>
           <p className={`text-[12px] font-black font-roboto ${totalMonthlyPL >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
             {totalMonthlyPL >= 0 ? '+' : ''}{monthlyPLPercent.toFixed(2)}%
           </p>
@@ -1206,12 +1206,12 @@ export const Journal: React.FC = () => {
           <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
             <Database size={12} className="text-indigo-500 shrink-0" />
             <h3 className="text-[10px] font-black uppercase tracking-wider font-roboto">
-              Akun Terhubung
+              {t('journal.connectedAccounts')}
             </h3>
           </div>
           {connectedAccounts && connectedAccounts.length > 0 && (
             <span className="text-[8px] bg-indigo-50/80 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/60 dark:border-indigo-900/40 px-1 rounded font-extrabold font-roboto uppercase">
-              {connectedAccounts.length} Akun
+              {connectedAccounts.length} {connectedAccounts.length === 1 ? t('journal.accountSuffix') : t('journal.accountsSuffix')}
             </span>
           )}
         </div>
@@ -1257,12 +1257,12 @@ export const Journal: React.FC = () => {
           </div>
         ) : (
           <div className="py-4 px-2 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50/50 dark:bg-slate-800/5">
-            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500">Belum ada akun terhubung</p>
+            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500">{t('journal.noConnectedAccount')}</p>
             <button
               onClick={() => setActiveView('account')}
               className="mt-1.5 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-[8.5px] font-black uppercase tracking-wider transition-all shadow-xs mx-auto cursor-pointer"
             >
-              Hubungkan
+              {t('journal.connectAccountButton')}
             </button>
           </div>
         )}
@@ -1284,10 +1284,10 @@ export const Journal: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] text-slate-400 dark:text-gray-500 uppercase font-black tracking-wider block font-roboto leading-none mb-1">
-                  PILIH AKUN AKTIF
+                  {t('journal.selectActiveAccount')}
                 </span>
                 <span className="text-xs font-black text-slate-800 dark:text-slate-200 truncate block font-roboto">
-                  {activeAccountInfo ? `${activeAccountInfo.broker || 'MetaTrader 5'} (${activeAccountInfo.login})` : (activeAccount ? `${activeAccount.broker} (${activeAccount.login})` : 'Pilih Akun')}
+                  {activeAccountInfo ? `${activeAccountInfo.broker || 'MetaTrader 5'} (${activeAccountInfo.login})` : (activeAccount ? `${activeAccount.broker} (${activeAccount.login})` : t('journal.selectAccount'))}
                 </span>
               </div>
             </div>
@@ -1296,7 +1296,7 @@ export const Journal: React.FC = () => {
               onClick={() => setIsAccountDropdownOpen(prev => !prev)}
               className="px-3 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition duration-200 cursor-pointer"
             >
-              <span>Ubah Akun</span>
+              <span>{t('journal.changeAccount')}</span>
               <ChevronDown size={14} className={`transform transition-transform duration-200 ${isAccountDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
@@ -1366,7 +1366,7 @@ export const Journal: React.FC = () => {
             <div className="flex items-center gap-1.5">
               <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${activeTab === 'goals' ? (totalPnLAllTimePercent >= 0 ? 'bg-emerald-400' : 'bg-rose-400') : activeTab === 'ledger' ? 'bg-amber-400' : 'bg-indigo-400'}`} />
               <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 font-roboto">
-                {activeTab === 'goals' ? 'Portofolio Performance (All Time)' : activeTab === 'ledger' ? t('common.journal.ledgerReport') : 'MetaTrader Executed History'}
+                {activeTab === 'goals' ? t('journal.portfolioPerformance') : activeTab === 'ledger' ? t('common.journal.ledgerReport') : t('journal.executionHistoryTitle')}
               </span>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -1417,11 +1417,11 @@ export const Journal: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">
-              <span>Deposit: ${totalDepositsAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>{t("journal.deposit")}: ${totalDepositsAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-              <span>Withdrawal: ${totalWithdrawalsAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>{t("journal.withdrawal")}: ${totalWithdrawalsAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-              <span>{totalTradesCount} Closed Trades</span>
+              <span>{totalTradesCount} {t("journal.closedTrades")}</span>
             </div>
           </div>
 
@@ -1432,7 +1432,7 @@ export const Journal: React.FC = () => {
             {/* 1. Balance */}
             <div className="space-y-0.5 bg-white/70 dark:bg-slate-800/50 p-2.5 rounded-2xl border border-slate-200/70 dark:border-slate-800">
               <span className="text-[8.5px] uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 font-bold block font-roboto truncate">
-                Balance
+                {t("journal.balance")}
               </span>
               <span className={`text-base sm:text-lg font-black block leading-none font-roboto ${
                 currentEffectiveBalance < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'
@@ -1440,14 +1440,14 @@ export const Journal: React.FC = () => {
                 {currentEffectiveBalance < 0 ? '-' : ''}${Math.abs(currentEffectiveBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block truncate font-medium">
-                Effective Balance
+                {t("journal.effectiveBalance")}
               </span>
             </div>
 
             {/* 2. Equity */}
             <div className="space-y-0.5 bg-white/70 dark:bg-slate-800/50 p-2.5 rounded-2xl border border-slate-200/70 dark:border-slate-800">
               <span className="text-[8.5px] uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 font-bold block font-roboto truncate">
-                Equity
+                {t("journal.equity")}
               </span>
               {(() => {
                 const currentEquity = activeAccountInfo?.equity ?? (currentEffectiveBalance + floatingProfitUSD);
@@ -1460,14 +1460,14 @@ export const Journal: React.FC = () => {
                 );
               })()}
               <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block truncate font-medium">
-                Floating-adjusted Equity
+                {t("journal.floatingAdjustedEquity")}
               </span>
             </div>
 
             {/* 3. Floating Profits in amount $ */}
             <div className="space-y-0.5 bg-white/70 dark:bg-slate-800/50 p-2.5 rounded-2xl border border-slate-200/70 dark:border-slate-800">
               <span className="text-[8.5px] uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 font-bold block font-roboto truncate">
-                Floating Profit
+                {t("journal.floatingProfit")}
               </span>
               <span className={`text-base sm:text-lg font-black block leading-none font-roboto ${
                 floatingProfitUSD < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
@@ -1475,20 +1475,20 @@ export const Journal: React.FC = () => {
                 {floatingProfitUSD < 0 ? '-' : '+'}${Math.abs(floatingProfitUSD).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block truncate font-medium">
-                {openTrades.length} open position{openTrades.length !== 1 ? 's' : ''}
+                {openTrades.length} {openTrades.length !== 1 ? t("journal.openPositions") : t("journal.openPosition")}
               </span>
             </div>
 
             {/* 4. Drawdown All the time in % */}
             <div className="space-y-0.5 bg-white/70 dark:bg-slate-800/50 p-2.5 rounded-2xl border border-slate-200/70 dark:border-slate-800">
               <span className="text-[8.5px] uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 font-bold block font-roboto truncate">
-                Drawdown
+                {t("journal.drawdown")}
               </span>
               <span className="text-base sm:text-lg font-black block leading-none font-roboto text-rose-500 dark:text-rose-400">
                 {maxDrawdownAllTimePercent.toFixed(1)}%
               </span>
               <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block truncate font-medium">
-                Peak-to-Valley
+                {t("journal.peakToValley")}
               </span>
             </div>
           </div>
@@ -1497,13 +1497,13 @@ export const Journal: React.FC = () => {
             <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[10px] text-rose-600 dark:text-rose-400 flex items-start gap-2 mt-2">
               <AlertCircle size={14} className="shrink-0 mt-0.5 text-rose-500" />
               <div>
-                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-rose-500">Sinkronisasi Gagal</p>
+                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-rose-500">{t("journal.syncFailed")}</p>
                 <p className="text-[11px] leading-relaxed font-medium text-rose-600 dark:text-rose-400">{activeAccountInfo.error_message}</p>
                 <button 
                   onClick={() => setActiveView('account')} 
                   className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wide transition mt-1.5 cursor-pointer"
                 >
-                  Hubungkan Ulang Akun
+                  {t("journal.reconnectAccount")}
                 </button>
               </div>
             </div>
@@ -1513,7 +1513,7 @@ export const Journal: React.FC = () => {
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-2 mt-2">
               <AlertCircle size={14} className="shrink-0 mt-0.5 text-amber-500" />
               <div>
-                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-amber-500">Data Stale (Tertunda)</p>
+                <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-amber-500">{t("journal.dataStaleTitle")}</p>
                 <p className="text-[11px] leading-relaxed font-medium text-amber-600 dark:text-amber-400">
                   Sinkronisasi terakhir terjadi {activeAccountInfo.fetched_at ? `${Math.round((Date.now() - new Date(activeAccountInfo.fetched_at).getTime()) / 60000)} menit yang lalu` : 'beberapa waktu lalu'}. Silakan klik tombol "Sync MetaTrader" di bawah untuk memperbarui balance dan posisi active trades.
                 </p>
@@ -1526,7 +1526,7 @@ export const Journal: React.FC = () => {
             className="w-full mt-2 py-2 px-3 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 transition-all active:scale-[0.98] group cursor-pointer"
           >
             <Share2 size={13} className="group-hover:rotate-12 transition-transform" />
-            Generate Shareable Summary Card
+            {t("journal.generateShareCard")}
           </button>
         </div>
       </div>
@@ -1547,7 +1547,7 @@ export const Journal: React.FC = () => {
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 min-w-0">
                 <Trophy size={13} className='text-indigo-200 shrink-0' />
-                <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>Portofolio</span>
+                <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>{t("journal.portfolio")}</span>
               </div>
               {activeTab === 'goals' && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
@@ -1555,12 +1555,12 @@ export const Journal: React.FC = () => {
             </div>
 
             <p className='text-[9px] sm:text-[10px] leading-tight font-medium line-clamp-2 text-indigo-100'>
-              Target profit & risk rules.
+              {t("journal.portfolioDesc")}
             </p>
           </div>
 
           <div className='pt-1.5 flex items-center justify-between text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-indigo-200'>
-            <span>Goal</span>
+            <span>{t("journal.goal")}</span>
             <span className="font-black">→</span>
           </div>
         </div>
@@ -1586,7 +1586,7 @@ export const Journal: React.FC = () => {
             </div>
 
             <p className='text-[9px] sm:text-[10px] leading-tight font-medium line-clamp-2 text-violet-100'>
-              Kalender bulanan & tahunan.
+              {t("journal.ledgerDesc")}
             </p>
           </div>
 
@@ -1609,7 +1609,7 @@ export const Journal: React.FC = () => {
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 min-w-0">
                 <BrainCircuit size={13} className='text-purple-200 shrink-0' />
-                <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>AI Analysis</span>
+                <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>{t("journal.aiAnalysis")}</span>
               </div>
               {activeTab === 'history' && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
@@ -1617,12 +1617,12 @@ export const Journal: React.FC = () => {
             </div>
 
             <p className='text-[9px] sm:text-[10px] leading-tight font-medium line-clamp-2 text-purple-100'>
-              Diagnosa & investigasi AI.
+              {t("journal.aiAnalysisDesc")}
             </p>
           </div>
 
           <div className='pt-1.5 flex items-center justify-between text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-purple-200'>
-            <span>AI Analysis</span>
+            <span>{t("journal.aiAnalysis")}</span>
             <span className="font-black">→</span>
           </div>
         </div>
@@ -1709,10 +1709,10 @@ export const Journal: React.FC = () => {
 
         const radarData = [
           { axis: 'top', label: `Algo trading: ${algoTrading.toFixed(0)}%`, val: algoTrading },
-          { axis: 'topRight', label: `Profit Trades:\n${winRate.toFixed(1)}%`, val: winRate },
+          { axis: 'topRight', label: `{t("journal.profitTrades")}:\n${winRate.toFixed(1)}%`, val: winRate },
           { axis: 'bottomRight', label: `Loss Trades: ${lossRate.toFixed(1)}%`, val: lossRate },
           { axis: 'bottom', label: `Trading activity: ${tradingActivity.toFixed(1)}%`, val: tradingActivity },
-          { axis: 'bottomLeft', label: `Max deposit load:\n${depositLoad.toFixed(0)}%`, val: depositLoad },
+          { axis: 'bottomLeft', label: `{t("journal.maxDepositLoad")}:\n${depositLoad.toFixed(0)}%`, val: depositLoad },
           { axis: 'topLeft', label: `Maximum\ndrawdown: ${maxDrawdown.toFixed(1)}%`, val: maxDrawdown },
         ];
 
@@ -1807,7 +1807,7 @@ export const Journal: React.FC = () => {
                 !
               </div>
               <span className="text-[13px] sm:text-[13.5px] text-slate-800 dark:text-slate-200 font-normal">
-                A large drawdown may occur on the account again
+                {t("journal.largeDrawdownWarning")}
               </span>
             </div>
           )}
@@ -1921,7 +1921,7 @@ export const Journal: React.FC = () => {
                 {/* Axis Labels (Clearly visible, completely inside bounds) */}
                 {/* 1. Algo trading: X% (Top) */}
                 <text x={0} y={-82} textAnchor="middle" className="fill-slate-900 dark:fill-white text-[11px] font-sans font-normal">
-                  Algo trading: {algoTrading.toFixed(0)}%
+                  {t("journal.algoTrading")}: {algoTrading.toFixed(0)}%
                 </text>
 
                 {/* 2. Profit Trades: X% (Top-Right) */}
@@ -1932,12 +1932,12 @@ export const Journal: React.FC = () => {
 
                 {/* 3. Loss Trades: X% (Bottom-Right) */}
                 <text x={72} y={42} textAnchor="start" className="fill-slate-900 dark:fill-white text-[11px] font-sans font-normal">
-                  Loss Trades: {lossRate.toFixed(1)}%
+                  {t("journal.lossTrades")}: {lossRate.toFixed(1)}%
                 </text>
 
                 {/* 4. Trading activity: X% (Bottom) */}
                 <text x={0} y={88} textAnchor="middle" className="fill-slate-900 dark:fill-white text-[11px] font-sans font-normal">
-                  Trading activity: {tradingActivity.toFixed(1)}%
+                  {t("journal.tradingActivity")}: {tradingActivity.toFixed(1)}%
                 </text>
 
                 {/* 5. Max deposit load: X% (Bottom-Left) */}
@@ -1961,7 +1961,7 @@ export const Journal: React.FC = () => {
             {/* 1. Equity */}
             <div className="flex items-center text-[13.5px] sm:text-[14.5px]">
               <span className="w-24 sm:w-28 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4">
-                Equity
+                {t("journal.equity")}
               </span>
               <span className={`w-28 sm:w-32 text-right shrink-0 pr-3 sm:pr-4 font-mono ${
                 displayEquity < 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'font-normal text-slate-800 dark:text-slate-200'
@@ -1981,7 +1981,7 @@ export const Journal: React.FC = () => {
               <span className={`w-24 sm:w-28 text-right shrink-0 pr-3 sm:pr-4 ${
                 displayProfit < 0 ? 'text-rose-600 dark:text-rose-400 font-medium' : 'font-normal text-slate-800 dark:text-slate-200'
               }`}>
-                {displayProfit < 0 ? 'Loss' : 'Profit'}
+                {displayProfit < 0 ? t("journal.loss") : t("journal.profit")}
               </span>
               <span className={`w-28 sm:w-32 text-right shrink-0 pr-3 sm:pr-4 font-mono ${
                 displayProfit < 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'font-normal text-slate-800 dark:text-slate-200'
@@ -1999,7 +1999,7 @@ export const Journal: React.FC = () => {
             {/* 3. Initial Deposit */}
             <div className="flex items-center text-[13.5px] sm:text-[14.5px]">
               <span className="w-24 sm:w-28 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4">
-                Initial Deposit
+                {t("journal.initialDeposit")}
               </span>
               <span className="w-28 sm:w-32 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4 font-mono">
                 {formatUSD(displayInitialDeposit)}
@@ -2015,7 +2015,7 @@ export const Journal: React.FC = () => {
             {/* 4. Withdrawals */}
             <div className="flex items-center text-[13.5px] sm:text-[14.5px]">
               <span className="w-24 sm:w-28 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4">
-                Withdrawals
+                {t("journal.withdrawals")}
               </span>
               <span className="w-28 sm:w-32 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4 font-mono">
                 {formatUSD(displayWithdrawals)}
@@ -2031,7 +2031,7 @@ export const Journal: React.FC = () => {
             {/* 5. Deposits */}
             <div className="flex items-center text-[13.5px] sm:text-[14.5px]">
               <span className="w-24 sm:w-28 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4">
-                Deposits
+                {t("journal.deposits")}
               </span>
               <span className="w-28 sm:w-32 text-right font-normal text-slate-800 dark:text-slate-200 shrink-0 pr-3 sm:pr-4 font-mono">
                 {formatUSD(displayDeposits)}
@@ -2050,7 +2050,7 @@ export const Journal: React.FC = () => {
           <div className="mt-4 px-4 sm:px-6 mb-4">
             <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 relative shadow-xs flex flex-col">
               <span className="text-[10px] font-black tracking-widest text-indigo-600 uppercase mb-3">
-                GoTrading Verdict
+                {t("journal.verdictTitle")}
               </span>
               
               <div className="flex items-center gap-2 mb-2">
@@ -2077,7 +2077,7 @@ export const Journal: React.FC = () => {
                   onClick={() => setActiveTab('history')}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-all active:scale-95 shadow-sm uppercase tracking-wider"
                 >
-                  More Detail <ChevronRight size={14} />
+                  {t("journal.moreDetail")} <ChevronRight size={14} />
                 </button>
               </div>
             </div>
@@ -2099,7 +2099,7 @@ export const Journal: React.FC = () => {
                   {new Date(activeYear, activeMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
                 </span>
                 <span className="text-[9px] text-indigo-500 dark:text-indigo-400 font-bold bg-indigo-50 border border-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/10 px-2 py-0.5 rounded">
-                  Calender Bulanan
+                  {t("journal.monthlyCalendar")}
                 </span>
               </div>
 
@@ -2123,7 +2123,7 @@ export const Journal: React.FC = () => {
             {renderCalendar()}
 
             <div className="text-center text-[7.5px] text-slate-400 dark:text-gray-500 font-bold tracking-wider uppercase">
-              💡 Tap any active transaction day to examine detailed broker tickets
+              💡 {t("journal.tapDayHint")}
             </div>
           </div>
 
@@ -2131,7 +2131,7 @@ export const Journal: React.FC = () => {
           <div className="bg-indigo-50 border border-indigo-100 dark:bg-indigo-600/10 dark:border-indigo-500/20 rounded-2xl p-4 space-y-3.5 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Yearly Performance</span>
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">{t("journal.yearlyPerformance")}</span>
                 <span className="text-[9px] text-violet-500 dark:text-violet-400 font-bold bg-violet-50 border border-violet-100 dark:bg-violet-500/10 dark:border-violet-500/10 px-2 py-0.5 rounded">
                   {activeYear} {t('common.journal.ledger')}
                 </span>
@@ -2156,7 +2156,7 @@ export const Journal: React.FC = () => {
 
             {/* Year aggregate YTD ribbon */}
             <div className="bg-rose-50 border border-rose-100 dark:bg-[#DE3C4B]/5 dark:border-rose-500/10 p-2 rounded-xl flex items-center justify-between">
-              <span className="text-[9px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-wider">YTD Total Returns</span>
+              <span className="text-[9px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-wider">{t("journal.ytdTotalReturns")}</span>
               <span className={`text-xs font-black font-mono ${activeYearYTD >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
                 {activeYearYTD >= 0 ? '+' : ''}${activeYearYTD.toFixed(2)}
               </span>
@@ -2243,7 +2243,7 @@ export const Journal: React.FC = () => {
                   }`}
                 >
                   <History size={14} />
-                  <span>Historis (Sudah Close)</span>
+                  <span>{t("journal.closedHistory")}</span>
                   <span className={`px-1.5 py-0.2 text-[10px] font-mono rounded-full ${
                     historyTab === 'closed' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 dark:bg-gray-800 text-slate-700 dark:text-gray-300'
                   }`}>
@@ -2260,7 +2260,7 @@ export const Journal: React.FC = () => {
                   }`}
                 >
                   <Activity size={14} className={openTrades.length > 0 ? "animate-pulse text-amber-300" : ""} />
-                  <span>Posisi Floating</span>
+                  <span>{t("journal.floatingPositions")}</span>
                   <span className={`px-1.5 py-0.2 text-[10px] font-mono rounded-full ${
                     historyTab === 'floating' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 dark:bg-gray-800 text-slate-700 dark:text-gray-300'
                   }`}>
@@ -2280,7 +2280,7 @@ export const Journal: React.FC = () => {
                 }`}
               >
                 <RefreshCw size={13} className={loadingTrades ? "animate-spin text-indigo-600 dark:text-indigo-400" : (isDataStale ? "text-amber-500" : "text-indigo-600 dark:text-indigo-400")} />
-                <span>{loadingTrades ? "Syncing..." : "Sync MetaTrader"}</span>
+                <span>{loadingTrades ? t("journal.syncing") : t("journal.syncMetaTrader")}</span>
               </button>
             </div>
 
@@ -2327,15 +2327,15 @@ export const Journal: React.FC = () => {
                 <div className="max-w-md mx-auto space-y-1">
                   <h4 className="text-sm font-black text-slate-800 dark:text-white">
                     {activeTabTrades.length === 0 
-                      ? (historyTab === 'closed' ? "No MetaTrader Execution Logs Found" : "Tidak Ada Posisi Floating Aktif") 
-                      : "No Trades Match Your Search"}
+                      ? (historyTab === 'closed' ? t("journal.noExecutionLogs") : t("journal.noFloatingActive")) 
+                      : t("journal.noTradesMatchSearch")}
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed">
                     {activeTabTrades.length === 0 
                       ? (historyTab === 'closed' 
-                          ? "Your execution log is empty. Sync your MetaTrader account or execute trades to view real-time ticket logs." 
-                          : "Saat ini tidak ada posisi trading yang sedang berjalan (floating) di akun MetaTrader Anda.")
-                      : "No transactions match your current search term or filter parameters."}
+                          ? t("journal.executionLogEmpty") 
+                          : t("journal.noFloatingDesc"))
+                      : t("journal.noTransactionsMatchFilter")}
                   </p>
                 </div>
 
@@ -2347,10 +2347,10 @@ export const Journal: React.FC = () => {
                     >
                       <div className="flex items-center gap-1.5">
                         <span className="w-4 h-4 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[9px] font-black flex items-center justify-center transition-colors">1</span>
-                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Link Broker Terminal</span>
+                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t("journal.linkBrokerTerminal")}</span>
                       </div>
                       <p className="text-[10px] text-slate-500 dark:text-gray-400 leading-normal">
-                        Sync MetaTrader credentials to stream order tickets automatically.
+                        {t("journal.linkBrokerDesc")}
                       </p>
                     </div>
 
@@ -2360,10 +2360,10 @@ export const Journal: React.FC = () => {
                     >
                       <div className="flex items-center gap-1.5">
                         <span className="w-4 h-4 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[9px] font-black flex items-center justify-center transition-colors">2</span>
-                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Log Entry/Exit Data</span>
+                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t("journal.logEntryExit")}</span>
                       </div>
                       <p className="text-[10px] text-slate-500 dark:text-gray-400 leading-normal">
-                        Captures open/close prices, lot sizing, and net P&L with precise timestamps.
+                        {t("journal.logEntryExitDesc")}
                       </p>
                     </div>
 
@@ -2373,10 +2373,10 @@ export const Journal: React.FC = () => {
                     >
                       <div className="flex items-center gap-1.5">
                         <span className="w-4 h-4 rounded-full bg-indigo-100 dark:bg-indigo-950/60 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 dark:text-indigo-400 text-[9px] font-black flex items-center justify-center transition-colors">3</span>
-                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Export & Audit</span>
+                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t("journal.exportAudit")}</span>
                       </div>
                       <p className="text-[10px] text-slate-500 dark:text-gray-400 leading-normal">
-                        Filter by Buy/Sell, asset symbol, or date ranges for detailed trade audits.
+                        {t("journal.exportAuditDesc")}
                       </p>
                     </div>
                   </div>
@@ -2388,7 +2388,7 @@ export const Journal: React.FC = () => {
                     }}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition cursor-pointer"
                   >
-                    Clear History Filters
+                    {t("journal.clearHistoryFilters")}
                   </button>
                 )}
               </div>
@@ -2396,7 +2396,7 @@ export const Journal: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold px-1">
                   <span>Showing {filteredHistoryTrades.length} of {activeTabTrades.length} {historyTab === 'closed' ? 'closed trades' : 'floating positions'}</span>
-                  <span className="text-indigo-600 dark:text-indigo-400 font-mono">Real-time MetaTrader Sync</span>
+                  <span className="text-indigo-600 dark:text-indigo-400 font-mono">{t("journal.realtimeSync")}</span>
                 </div>
 
                 <div className="space-y-2.5">
@@ -2495,9 +2495,9 @@ export const Journal: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    Kalender P&L Bulanan
+                    {t("journal.monthlyCalendarPnL")}
                   </h3>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Laporan Harian Trading</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{t("journal.dailyTradingReport")}</p>
                 </div>
               </div>
               
@@ -2512,7 +2512,7 @@ export const Journal: React.FC = () => {
                     }
                   }}
                   className="p-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
-                  title="Bulan Sebelumnya"
+                  title={t("journal.previousMonth")}
                 >
                   <ChevronLeft size={14} />
                 </button>
@@ -2529,7 +2529,7 @@ export const Journal: React.FC = () => {
                     }
                   }}
                   className="p-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
-                  title="Bulan Selanjutnya"
+                  title={t("journal.nextMonth")}
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -2544,15 +2544,15 @@ export const Journal: React.FC = () => {
           <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 shadow-sm space-y-3 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
             <div className="flex items-center justify-between relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-300">Target Protocol</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-300">{t("journal.targetProtocol")}</span>
               <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
-                {weeklyAchievedPL >= weeklyTargetAmount ? 'Target Met 🎉' : 'In Progress'}
+                {weeklyAchievedPL >= weeklyTargetAmount ? t("journal.targetMet") : t("journal.inProgress")}
               </span>
             </div>
             
             <div className="space-y-1 relative z-10">
               <div className="flex justify-between text-xs font-bold">
-                <span className="text-slate-300">Pencapaian Mingguan</span>
+                <span className="text-slate-300">{t("journal.weeklyAchievement")}</span>
                 <span className="text-emerald-400 font-mono">${weeklyAchievedPL.toFixed(2)} / ${weeklyTargetAmount}</span>
               </div>
               <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700/50">
@@ -2567,7 +2567,7 @@ export const Journal: React.FC = () => {
               onClick={() => { setActiveTab('goals'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               className="w-full mt-2 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-white/10 cursor-pointer active:scale-95"
             >
-              <span>Atur Ulang Target & Batas Risiko</span>
+              <span>{t("journal.resetTargetsRisk")}</span>
               <ArrowRight size={14} />
             </button>
           </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -17,6 +18,7 @@ interface PortfolioReportProps {
 }
 
 export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBack, onRefresh }: PortfolioReportProps) {
+  const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'ytd' | 'all'>('30d');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [aiDiagnosis, setAiDiagnosis] = useState<any>(null);
@@ -709,11 +711,11 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
             onChange={(e) => setSelectedPeriod(e.target.value as any)}
             className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold shadow-xs outline-hidden focus:border-indigo-500"
           >
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="90d">Last 90 Days</option>
-            <option value="ytd">This Year</option>
-            <option value="all">All Time</option>
+            <option value="7d">{t("journal.last7Days")}</option>
+            <option value="30d">{t("journal.last30Days")}</option>
+            <option value="90d">{t("journal.last90Days")}</option>
+            <option value="ytd">{t("journal.thisYear")}</option>
+            <option value="all">{t("journal.allTime")}</option>
           </select>
           <button 
             onClick={handleRefreshClick}
@@ -767,7 +769,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
               <ArrowLeft size={16} />
             </button>
             <div className="space-y-0.5">
-              <h1 className="text-base font-black text-slate-900 dark:text-white tracking-tight font-roboto">Portfolio Report</h1>
+              <h1 className="text-base font-black text-slate-900 dark:text-white tracking-tight font-roboto">{t("journal.portfolioReport")}</h1>
               <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 font-medium">
                 <span className="font-semibold text-slate-800 dark:text-slate-200">{activeAccountInfo.broker || 'Broker Account'}</span>
                 <span>•</span>
@@ -809,7 +811,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
           <div className="space-y-4 flex-1">
             <div className="space-y-1">
               <div className="flex items-center gap-1 text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider font-roboto">
-                <span>Account Health</span>
+                <span>{t("journal.accountHealth")}</span>
                 <Info size={11} className="text-slate-400 dark:text-slate-400" />
               </div>
               <div className="flex items-baseline gap-1.5">
@@ -850,7 +852,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
         {/* 3. GOTRADING VERDICT CARD */}
         <div className="bg-gradient-to-b from-amber-50/60 to-white dark:from-amber-950/30 dark:to-[#181d28] rounded-3xl p-5 border border-amber-200/80 dark:border-amber-900/50 shadow-xs space-y-4">
           <div className="space-y-1.5">
-            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">GoTrading Verdict</span>
+            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">{t("journal.verdictTitle")}</span>
             <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs sm:text-sm font-roboto">
               <AlertTriangle size={15} className="shrink-0" />
               <span>{verdictTitle}</span>
@@ -864,21 +866,21 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
             <div className="flex items-center justify-between text-xs pt-1.5">
               <span className="text-slate-600 dark:text-slate-300 font-semibold font-roboto flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                STRENGTH
+                {t("journal.strength")}
               </span>
               <span className="font-extrabold text-slate-900 dark:text-white">{strengthItem}</span>
             </div>
             <div className="flex items-center justify-between text-xs pt-3">
               <span className="text-slate-600 dark:text-slate-300 font-semibold font-roboto flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                WEAKNESS
+                {t("journal.weakness")}
               </span>
               <span className="font-extrabold text-slate-900 dark:text-white">{weaknessItem}</span>
             </div>
             <div className="flex items-center justify-between text-xs pt-3">
               <span className="text-slate-600 dark:text-slate-300 font-semibold font-roboto flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                MAIN RISK
+                {t("journal.mainRisk")}
               </span>
               <span className="font-extrabold text-slate-900 dark:text-white">{mainRiskItem}</span>
             </div>
@@ -887,7 +889,7 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
 
         {/* 4. KEY PERFORMANCE GRID */}
         <div className="space-y-1.5">
-          <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">Key Performance</span>
+          <span className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider block font-roboto">{t("journal.keyPerformance")}</span>
           <div className="grid grid-cols-2 gap-2">
             
             <div className="bg-white dark:bg-[#181d28] rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-1">

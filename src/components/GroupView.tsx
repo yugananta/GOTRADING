@@ -1,5 +1,6 @@
 import { PostCard } from "./PostCard.tsx";
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.tsx';
 import { SponsoredBadge } from './SponsoredBadge.tsx';
 import { Post, Comment } from '../types.js';
@@ -23,6 +24,7 @@ interface GroupViewProps {
 }
 
 export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) => {
+  const { t } = useTranslation();
   const { 
     currentUser, 
     setCurrentUser,
@@ -772,7 +774,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
       {/* COMPACT STATIC GROUP BADGE & HEADER CARD */}
       <div className="bg-indigo-50/50 rounded-2xl border border-indigo-100 p-3 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between border-b border-indigo-100/70 pb-2 mb-1">
-          <span className="text-xs font-black uppercase text-indigo-950 tracking-wider">Trader Community</span>
+          <span className="text-xs font-black uppercase text-indigo-950 tracking-wider">{t('community.traderCommunity')}</span>
           <SponsoredBadge />
         </div>
         {/* BADGES KOTA & PROVINSI & ATURAN KOMUNITAS INSIDE CARD */}
@@ -786,7 +788,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                   : 'bg-white text-indigo-950 border-indigo-100 hover:bg-indigo-50/50'
               }`}
             >
-              <span className={`text-[9px] font-black tracking-wider uppercase text-center ${activeTab === 'city' ? 'text-indigo-200' : 'text-indigo-500'}`}>City Group</span>
+              <span className={`text-[9px] font-black tracking-wider uppercase text-center ${activeTab === 'city' ? 'text-indigo-200' : 'text-indigo-500'}`}>{t('community.cityGroup')}</span>
               <span className="text-xs font-black text-center">{selectedCity}</span>
               <div 
                 onClick={(e) => {
@@ -797,9 +799,9 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                 className={`flex items-center gap-1 text-[9px] font-medium hover:underline cursor-pointer ${activeTab === 'city' ? 'text-indigo-100' : 'text-indigo-500/80'}`}
               >
                 <Users size={10} />
-                <span>{groupStats.city.members.toLocaleString('en-US')} Members</span>
+                <span>{t('community.membersCount', { count: groupStats.city.members.toLocaleString() })}</span>
                 <span className="opacity-50">•</span>
-                <span>{groupStats.city.messages.toLocaleString('en-US')} Messages</span>
+                <span>{t('community.messagesCount', { count: groupStats.city.messages.toLocaleString() })}</span>
               </div>
             </button>
 
@@ -811,7 +813,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                   : 'bg-white text-indigo-950 border-indigo-100 hover:bg-indigo-50/50'
               }`}
             >
-              <span className={`text-[9px] font-black tracking-wider uppercase text-center ${activeTab === 'province' ? 'text-indigo-200' : 'text-indigo-500'}`}>Province Group</span>
+              <span className={`text-[9px] font-black tracking-wider uppercase text-center ${activeTab === 'province' ? 'text-indigo-200' : 'text-indigo-500'}`}>{t('community.provinceGroup')}</span>
               <span className="text-xs font-black text-center">{selectedProvince}</span>
               <div 
                 onClick={(e) => {
@@ -822,9 +824,9 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                 className={`flex items-center gap-1 text-[9px] font-medium hover:underline cursor-pointer ${activeTab === 'province' ? 'text-indigo-100' : 'text-indigo-500/80'}`}
               >
                 <Users size={10} />
-                <span>{groupStats.province.members.toLocaleString('en-US')} Members</span>
+                <span>{t('community.membersCount', { count: groupStats.province.members.toLocaleString() })}</span>
                 <span className="opacity-50">•</span>
-                <span>{groupStats.province.messages.toLocaleString('en-US')} Messages</span>
+                <span>{t('community.messagesCount', { count: groupStats.province.messages.toLocaleString() })}</span>
               </div>
             </button>
           </div>
@@ -837,7 +839,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
               title="View Group Member List"
             >
               <Users size={14} className="text-emerald-600" />
-              <span>Group Members</span>
+              <span>{t('community.groupMembers')}</span>
             </button>
 
             {/* Aturan Dropdown Badge Button */}
@@ -846,7 +848,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
               className="flex-1 sm:flex-none px-3.5 py-2.5 sm:py-2 bg-indigo-50/60 hover:bg-indigo-100/70 text-indigo-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-indigo-100 cursor-pointer shrink-0"
             >
               <AlertCircle size={14} className="text-indigo-600" />
-              <span>Rules</span>
+              <span>{t('community.rules')}</span>
               {showRulesDropdown ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           </div>
@@ -876,10 +878,10 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                   </span>
                 </div>
                 <h4 className="font-black text-white text-xs pt-0.5">
-                  Welcome to the Trader Community of {activeTab === 'city' ? selectedCity : selectedProvince}! 🚀
+                  {t('community.welcomeTitle', { groupName: activeTab === 'city' ? selectedCity : selectedProvince })}
                 </h4>
                 <p className="text-[11px] text-indigo-100 leading-normal font-medium">
-                  This group is the official space for gathering, discussing technical analysis, sharing knowledge, and getting financial market updates for traders in the <strong className="text-yellow-300 font-extrabold">{activeTab === 'city' ? selectedCity : selectedProvince}</strong> region.
+                  {t('community.welcomeDesc', { groupName: activeTab === 'city' ? selectedCity : selectedProvince })}
                 </p>
               </div>
 
@@ -888,22 +890,22 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                 <div className="flex items-center justify-between pb-1.5 border-b border-indigo-100/80 mb-2">
                   <span className="font-extrabold text-indigo-950 flex items-center gap-1.5 text-xs">
                     <ShieldCheck size={14} className="text-indigo-600" />
-                    Rules & Guidelines of {currentGroupName}
+                    {t('community.rulesHeader', { groupName: currentGroupName })}
                   </span>
-                  <span className="text-[10px] text-indigo-400 font-medium">Hub Policy</span>
+                  <span className="text-[10px] text-indigo-400 font-medium">{t('community.hubPolicy')}</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="p-2.5 bg-white rounded-xl border border-indigo-100/60 shadow-3xs">
-                    <strong className="text-indigo-600 block mb-0.5 text-[11px]">1. Mutual Respect</strong>
-                    <span className="text-[11px] text-slate-600 leading-normal">Respect differences in member analysis & trading style. No bigotry or provocation.</span>
+                    <strong className="text-indigo-600 block mb-0.5 text-[11px]">{t('community.rule1Title')}</strong>
+                    <span className="text-[11px] text-slate-600 leading-normal">{t('community.rule1Desc')}</span>
                   </div>
                   <div className="p-2.5 bg-white rounded-xl border border-indigo-100/60 shadow-3xs">
-                    <strong className="text-indigo-600 block mb-0.5 text-[11px]">2. Risk Management</strong>
-                    <span className="text-[11px] text-slate-600 leading-normal">Always include SL & TP levels or technical considerations when sharing signals.</span>
+                    <strong className="text-indigo-600 block mb-0.5 text-[11px]">{t('community.rule2Title')}</strong>
+                    <span className="text-[11px] text-slate-600 leading-normal">{t('community.rule2Desc')}</span>
                   </div>
                   <div className="p-2.5 bg-white rounded-xl border border-indigo-100/60 shadow-3xs">
-                    <strong className="text-indigo-600 block mb-0.5 text-[11px]">3. Fraud & Spam Free</strong>
-                    <span className="text-[11px] text-slate-600 leading-normal">Strictly forbidden to offer fund deposits, fraudulent investments, or external group promotions.</span>
+                    <strong className="text-indigo-600 block mb-0.5 text-[11px]">{t('community.rule3Title')}</strong>
+                    <span className="text-[11px] text-slate-600 leading-normal">{t('community.rule3Desc')}</span>
                   </div>
                 </div>
               </div>
@@ -921,7 +923,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
               <Pin size={13} className="fill-white" />
             </div>
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span>GoTrading Hub Official Posts (Pinned)</span>
+              <span>{t('community.officialPostsPinned')}</span>
               {isPinnedSectionExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             </h3>
           </div>
@@ -932,7 +934,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
               className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-extrabold transition shadow-2xs flex items-center gap-1 cursor-pointer"
             >
               <Plus size={13} />
-              <span>{isCreatingOfficialPost ? 'Cancel' : 'Create New Official Post'}</span>
+              <span>{isCreatingOfficialPost ? t('community.cancelCreatePost') : t('community.createNewOfficialPost')}</span>
             </button>
           )}
         </div>
@@ -943,10 +945,10 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
             <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
               <span className="text-xs font-black text-indigo-900 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-indigo-600" />
-                Create New Daily Official Post
+                {t('community.createNewDailyPostTitle')}
               </span>
               <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-md">
-                Automatically Becomes the Newest Post (Top Pinned)
+                {t('community.autoPinnedNote')}
               </span>
             </div>
 
@@ -1217,7 +1219,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                                             <div>
                                               <span className="text-xs font-extrabold text-slate-900 block leading-tight">{comment.authorName}</span>
                                               <span className="text-[9px] text-slate-500 font-medium block">
-                                                {comment.authorCity || selectedCity}, {comment.authorCountry || 'Indonesia'} • <span className={(comment.authorVerified || (comment.userId === currentUser?.id && (currentUser.mt5Connected || currentUser.isVerified))) ? "text-emerald-600 font-bold" : "text-slate-400"}>{(comment.authorVerified || (comment.userId === currentUser?.id && (currentUser.mt5Connected || currentUser.isVerified))) ? "Verified Member" : "Unverified Member"}</span>
+                                                {comment.authorCity || selectedCity}, {comment.authorCountry || 'Indonesia'} • <span className={(comment.authorVerified || (comment.userId === currentUser?.id && (currentUser.mt5Connected || currentUser.isVerified))) ? "text-emerald-600 font-bold" : "text-slate-400"}>{(comment.authorVerified || (comment.userId === currentUser?.id && (currentUser.mt5Connected || currentUser.isVerified))) ? t('account.verifiedMember') : t('account.unverifiedMember')}</span>
                                               </span>
                                             </div>
                                             <span className="text-[9px] text-slate-400 font-medium shrink-0">{formatRelativeTime(comment.timestamp)}</span>
@@ -1305,7 +1307,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
             <textarea
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
-              placeholder={`Write a post or share an analysis for ${currentGroupName} members...`}
+              placeholder={t('community.writePostPlaceholder', { groupName: currentGroupName })}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none min-h-[70px]"
             />
 
@@ -1327,7 +1329,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
               <div className="flex items-center gap-2">
                 <label className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition flex items-center gap-1.5 text-xs font-semibold">
                   <ImageIcon size={16} className="text-emerald-500" />
-                  <span className="hidden sm:inline">Photo/Image</span>
+                  <span className="hidden sm:inline">{t('community.photoImage')}</span>
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -1350,14 +1352,14 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                     onClick={() => setNewPostSentiment(newPostSentiment === 'Bullish' ? null : 'Bullish')}
                     className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${newPostSentiment === 'Bullish' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
                   >
-                    🐂 Bullish
+                    🐂 {t('feed.bullish')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewPostSentiment(newPostSentiment === 'Bearish' ? null : 'Bearish')}
                     className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${newPostSentiment === 'Bearish' ? 'bg-rose-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
                   >
-                    🐻 Bearish
+                    🐻 {t('feed.bearish')}
                   </button>
                 </div>
               </div>
@@ -1368,7 +1370,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100 cursor-pointer"
               >
                 <Send size={14} />
-                <span>Post</span>
+                <span>{t('feed.postButton')}</span>
               </button>
             </div>
           </form>
@@ -1382,19 +1384,19 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
             onClick={() => setFeedFilter('latest')}
             className={`flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${feedFilter === 'latest' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
           >
-            <Clock size={12} className="mr-1.5" />Latest Posts
+            <Clock size={12} className="mr-1.5" />{t('feed.latestPosts')}
           </button>
           <button 
             onClick={() => setFeedFilter('top')}
             className={`flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${feedFilter === 'top' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
           >
-            <TrendingUp size={12} className="mr-1.5" />Top Discussions
+            <TrendingUp size={12} className="mr-1.5" />{t('feed.topDiscussions')}
           </button>
           <button 
             onClick={() => setFeedFilter('milestones')}
             className={`flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${feedFilter === 'milestones' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
           >
-            <Sparkles size={12} className="mr-1.5" />Member Milestones
+            <Sparkles size={12} className="mr-1.5" />{t('feed.memberMilestones')}
           </button>
         </div>
       </div>
@@ -1494,10 +1496,10 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                     <Users size={18} className="text-indigo-600 dark:text-indigo-400" />
                     <div>
                       <h3 className="text-sm font-black text-slate-950 dark:text-white leading-none">
-                        {activeTab === 'city' ? selectedCity : selectedProvince} Members
+                        {currentGroupName} {t('community.groupMembers')}
                       </h3>
                       <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                        {totalMembersCount > 0 ? `${totalMembersCount} member terdaftar` : 'Connect & network dengan trader lokal'}
+                        {totalMembersCount > 0 ? t('community.registeredMembers', { count: totalMembersCount }) : t('community.connectLocalTraders')}
                       </p>
                     </div>
                   </div>
@@ -1516,7 +1518,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                     type="text"
                     value={memberSearchQuery}
                     onChange={(e) => handleSearchMembers(e.target.value)}
-                    placeholder="Cari nama trader atau instrumen..."
+                    placeholder={t('community.searchMemberPlaceholder')}
                     className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-indigo-500 transition"
                   />
                   {memberSearchQuery && (
@@ -1616,7 +1618,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                               }`}
                             >
                               {isFollowing ? <Check size={12} className="text-emerald-500" /> : <UserPlus size={12} />}
-                              {isFollowing ? 'Following' : 'Follow'}
+                              {isFollowing ? t('network.following') : t('network.follow')}
                             </motion.button>
                           </div>
                         </div>
@@ -1634,12 +1636,12 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
                           {loadingMoreMembers ? (
                             <>
                               <div className="w-3.5 h-3.5 border-2 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                              <span>Memuat lebih banyak...</span>
+                              <span>{t('common.loading', 'Memuat...')}</span>
                             </>
                           ) : (
                             <>
                               <ChevronDown size={14} />
-                              <span>Muat Lebih Banyak ({groupMembers.length} dari {totalMembersCount || groupMembers.length})</span>
+                              <span>{t('community.loadMoreMembers', { current: groupMembers.length, total: totalMembersCount || groupMembers.length })}</span>
                             </>
                           )}
                         </button>
