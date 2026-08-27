@@ -1515,7 +1515,9 @@ export const Journal: React.FC = () => {
               <div>
                 <p className="font-black uppercase tracking-wide text-[9px] block mb-0.5 text-amber-500">{t("journal.dataStaleTitle")}</p>
                 <p className="text-[11px] leading-relaxed font-medium text-amber-600 dark:text-amber-400">
-                  Sinkronisasi terakhir terjadi {activeAccountInfo.fetched_at ? `${Math.round((Date.now() - new Date(activeAccountInfo.fetched_at).getTime()) / 60000)} menit yang lalu` : 'beberapa waktu lalu'}. Silakan klik tombol "Sync MetaTrader" di bawah untuk memperbarui balance dan posisi active trades.
+                  {activeAccountInfo.fetched_at 
+                    ? t("journal.dataStaleDesc", { minutes: Math.round((Date.now() - new Date(activeAccountInfo.fetched_at).getTime()) / 60000) })
+                    : t("journal.dataStaleDescSomeTimeAgo")}
                 </p>
               </div>
             </div>

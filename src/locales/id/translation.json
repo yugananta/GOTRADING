@@ -620,7 +620,7 @@
     "syncFailed": "Sinkronisasi Gagal",
     "reconnectAccount": "Hubungkan Ulang Akun",
     "dataStale": "Data Terlambat",
-    "dataStaleDesc": "Sinkronisasi terakhir terjadi {{minutes}} menit yang lalu. Silakan klik \"Sync MetaTrader\" di bawah untuk memperbarui balance dan posisi active trades.",
+    "dataStaleDesc": "Sinkronisasi terakhir terjadi {{minutes}} menit yang lalu. Silakan klik tombol \"Sync MetaTrader\" di bawah untuk memperbarui balance dan posisi active trades.",
     "showingTradesCount": "Menampilkan {{filtered}} dari {{total}} {{type}}",
     "accountHealth": "Kesehatan Akun",
     "aiAnalysis": "Analisis AI",
@@ -694,6 +694,7 @@
     "syncVerified": "Sinkron Terverifikasi",
     "analyzingRealData": "Menganalisis Data MT5 Riil",
     "auditConfidence": "Kepercayaan Audit",
-    "riskExposureBias": "Bias Paparan Risiko"
+    "riskExposureBias": "Bias Paparan Risiko",
+    "dataStaleDescSomeTimeAgo": "Sinkronisasi terakhir terjadi beberapa waktu lalu. Silakan klik tombol \"Sync MetaTrader\" di bawah untuk memperbarui balance dan posisi active trades."
   }
 }

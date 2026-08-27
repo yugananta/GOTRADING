@@ -348,7 +348,7 @@
     "syncFailed": "การซิงค์ล้มเหลว",
     "reconnectAccount": "เชื่อมต่อบัญชีอีกครั้ง",
     "dataStale": "ข้อมูลล่าช้า",
-    "dataStaleDesc": "การซิงค์ล่าสุดคือ {{minutes}} นาทีที่แล้ว กรุณาคลิก \"ซิงค์ MetaTrader\" ด้านล่าง",
+    "dataStaleDesc": "การซิงค์ล่าสุดเกิดขึ้นเมื่อ {{minutes}} นาทีที่แล้ว โปรดคลิกปุ่ม \"Sync MetaTrader\" ด้านล่างเพื่ออัปเดตยอดคงเหลือและตำแหน่งการซื้อขายที่ใช้งานอยู่",
     "showingTradesCount": "แสดง {{filtered}} จาก {{total}} {{type}}",
     "accountHealth": "สุขภาพบัญชี",
     "aiAnalysis": "การวิเคราะห์ AI",
@@ -422,6 +422,7 @@
     "syncVerified": "ยืนยันการซิงค์",
     "analyzingRealData": "กำลังวิเคราะห์ข้อมูล MT5 จริง",
     "auditConfidence": "ความเชื่อมั่นในการตรวจสอบ",
-    "riskExposureBias": "อคติความเสี่ยง"
+    "riskExposureBias": "อคติความเสี่ยง",
+    "dataStaleDescSomeTimeAgo": "การซิงค์ล่าสุดเกิดขึ้นเมื่อไม่นานมานี้ โปรดคลิกปุ่ม \"Sync MetaTrader\" ด้านล่างเพื่ออัปเดตยอดคงเหลือและตำแหน่งการซื้อขายที่ใช้งานอยู่"
   }
 }

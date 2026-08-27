@@ -620,7 +620,7 @@
     "syncFailed": "Sync Failed",
     "reconnectAccount": "Reconnect Account",
     "dataStale": "Data Stale",
-    "dataStaleDesc": "Last sync was {{minutes}} minutes ago. Please click \"Sync MetaTrader\" below to update your balance and active trades.",
+    "dataStaleDesc": "Last sync occurred {{minutes}} minutes ago. Please click the \"Sync MetaTrader\" button below to update balance and active trade positions.",
     "showingTradesCount": "Showing {{filtered}} of {{total}} {{type}}",
     "accountHealth": "Account Health",
     "aiAnalysis": "AI Analysis",
@@ -694,6 +694,7 @@
     "syncVerified": "Sync Verified",
     "analyzingRealData": "Analyzing Real MT5 Data",
     "auditConfidence": "Audit Confidence",
-    "riskExposureBias": "Risk Exposure Bias"
+    "riskExposureBias": "Risk Exposure Bias",
+    "dataStaleDescSomeTimeAgo": "Last sync occurred some time ago. Please click the \"Sync MetaTrader\" button below to update balance and active trade positions."
   }
 }

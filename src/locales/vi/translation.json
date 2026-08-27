@@ -348,7 +348,7 @@
     "syncFailed": "Đồng bộ thất bại",
     "reconnectAccount": "Kết nối lại tài khoản",
     "dataStale": "Dữ liệu cũ",
-    "dataStaleDesc": "Lần đồng bộ cuối là {{minutes}} phút trước. Vui lòng nhấn \"Đồng bộ MetaTrader\" bên dưới.",
+    "dataStaleDesc": "Đồng bộ lần cuối xảy ra {{minutes}} phút trước. Vui lòng nhấp vào nút \"Sync MetaTrader\" bên dưới để cập nhật số dư và vị thế giao dịch đang hoạt động.",
     "showingTradesCount": "Hiển thị {{filtered}} trên {{total}} {{type}}",
     "accountHealth": "Sức khỏe tài khoản",
     "aiAnalysis": "Phân tích AI",
@@ -422,6 +422,7 @@
     "syncVerified": "Đồng bộ xác minh",
     "analyzingRealData": "Phân tích dữ liệu MT5 thực tế",
     "auditConfidence": "Độ tin cậy kiểm toán",
-    "riskExposureBias": "Độ lệch rủi ro"
+    "riskExposureBias": "Độ lệch rủi ro",
+    "dataStaleDescSomeTimeAgo": "Đồng bộ lần cuối xảy ra một thời gian trước. Vui lòng nhấp vào nút \"Sync MetaTrader\" bên dưới để cập nhật số dư và vị thế giao dịch đang hoạt động."
   }
 }
