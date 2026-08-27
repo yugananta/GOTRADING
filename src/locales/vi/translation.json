@@ -10,14 +10,14 @@
     "search": "Tìm kiếm",
     "settings": "Cài đặt",
     "account": "Kết nối",
-    "admin": "Quản trị viên",
+    "admin": "Cổng quản trị ↗",
     "home": "Trang chủ",
     "network": "Mạng lưới",
     "connect": "Kết nối",
     "feed": "Bảng tin Giao dịch",
-    "leaderboard": "Leaderboard",
-    "community": "Community",
-    "marketNews": "Market News"
+    "leaderboard": "Bảng xếp hạng",
+    "community": "Cộng đồng",
+    "marketNews": "Tin tức thị trường"
   },
   "common": {
     "back": "Quay lại",
@@ -352,7 +352,7 @@
     "title": "Mạng lưới kết nối nhà giao dịch",
     "filters": "Bộ lọc",
     "discoverNearby": "Khám phá Nhà giao dịch lân cận",
-    "suggestedFollowBackTitle": "Đề xuất theo dõi lại",
+    "suggestedFollowBackTitle": "Gợi ý theo dõi lại",
     "suggestedConnections": "Cơ hội kết nối được đề xuất",
     "bulkFollow": "Theo dõi hàng loạt",
     "beginner": "Người mới",
@@ -369,7 +369,7 @@
     "activateGps": "Kích hoạt Quét GPS",
     "expandGps": "Mở rộng Quét GPS",
     "expandGpsDesc": "Kích hoạt quét vị trí hoặc tăng bán kính để tìm kiếm trong khu vực của bạn.",
-    "suggestedFollowBack": "Saran Follow Back"
+    "suggestedFollowBack": "Gợi ý theo dõi lại"
   },
   "admin": {},
   "profile": {

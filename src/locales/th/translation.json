@@ -10,14 +10,14 @@
     "search": "ค้นหา",
     "settings": "การตั้งค่า",
     "account": "เชื่อมต่อ",
-    "admin": "ผู้ดูแลระบบ",
+    "admin": "พอร์ทัลผู้ดูแลระบบ ↗",
     "home": "หน้าแรก",
     "network": "เครือข่าย",
     "connect": "เชื่อมต่อ",
     "feed": "ฟีดการเทรด",
-    "leaderboard": "Leaderboard",
-    "community": "Community",
-    "marketNews": "Market News"
+    "leaderboard": "ตารางผู้นำ",
+    "community": "ชุมชน",
+    "marketNews": "ข่าวสารตลาด"
   },
   "common": {
     "back": "กลับ",
@@ -369,7 +369,7 @@
     "activateGps": "เปิดใช้งานสแกน GPS",
     "expandGps": "ขยายสแกน GPS",
     "expandGpsDesc": "เปิดใช้งานสแกนตำแหน่งหรือขยายรัศมีเพื่อค้นหาเทรดเดอร์ในพื้นที่ของคุณ",
-    "suggestedFollowBack": "Saran Follow Back"
+    "suggestedFollowBack": "ข้อเสนอแนะให้ติดตามกลับ"
   },
   "admin": {},
   "profile": {
