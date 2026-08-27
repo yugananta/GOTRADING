@@ -17,8 +17,7 @@ export const provinces = [
 ];
 
 export const cities = [
-  { "id": 1, "province_id": 1, "name": "Jakarta Selatan" },
-  { "id": 2, "province_id": 1, "name": "Jakarta Pusat" },
+  { "id": 1, "province_id": 1, "name": "DKI Jakarta" },
   { "id": 3, "province_id": 2, "name": "Bandung" },
   { "id": 4, "province_id": 2, "name": "Bekasi" },
   { "id": 5, "province_id": 3, "name": "Johor Bahru" },

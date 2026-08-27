@@ -126,19 +126,87 @@ export class LocationRepository implements ILocationRepository {
         }
       }
 
+      let rawCities: City[] = [];
       if (!data || data.length === 0) {
-        return MOCK_CITIES[pId] || [];
+        rawCities = MOCK_CITIES[pId] || [];
+      } else {
+        rawCities = data.map((c: any) => ({
+          id: c.id,
+          province_id: c.province_id || pId,
+          name: c.name
+        }));
       }
 
-      return data.map((c: any) => ({
-        id: c.id,
-        province_id: c.province_id || pId,
-        name: c.name
-      })) as City[];
+      // Simplify city list:
+      // 1. Remove "Bandung Barat"
+      // 2. Merge Jakarta variants ("Jakarta Barat", "Jakarta Pusat", "Jakarta Selatan", "Jakarta Timur", "Jakarta Utara") into single "DKI Jakarta"
+      const processedCities: City[] = [];
+      let addedJakarta = false;
+
+      for (const city of rawCities) {
+        const cityName = city.name.trim();
+
+        if (cityName === "Bandung Barat") {
+          continue;
+        }
+
+        const isJakartaVariant = 
+          cityName === "Jakarta Barat" ||
+          cityName === "Jakarta Pusat" ||
+          cityName === "Jakarta Selatan" ||
+          cityName === "Jakarta Timur" ||
+          cityName === "Jakarta Utara" ||
+          cityName === "DKI Jakarta";
+
+        if (isJakartaVariant) {
+          if (!addedJakarta) {
+            processedCities.push({
+              ...city,
+              name: "DKI Jakarta"
+            });
+            addedJakarta = true;
+          }
+        } else {
+          processedCities.push(city);
+        }
+      }
+
+      return processedCities;
     } catch (e) {
       console.warn('getCitiesByProvinceId fallback to mock data:', e);
       const pId = typeof provinceId === 'string' ? parseInt(provinceId, 10) : provinceId;
-      return MOCK_CITIES[pId] || [];
+      const rawMock = MOCK_CITIES[pId] || [];
+      const processedCities: City[] = [];
+      let addedJakarta = false;
+
+      for (const city of rawMock) {
+        const cityName = city.name.trim();
+
+        if (cityName === "Bandung Barat") {
+          continue;
+        }
+
+        const isJakartaVariant = 
+          cityName === "Jakarta Barat" ||
+          cityName === "Jakarta Pusat" ||
+          cityName === "Jakarta Selatan" ||
+          cityName === "Jakarta Timur" ||
+          cityName === "Jakarta Utara" ||
+          cityName === "DKI Jakarta";
+
+        if (isJakartaVariant) {
+          if (!addedJakarta) {
+            processedCities.push({
+              ...city,
+              name: "DKI Jakarta"
+            });
+            addedJakarta = true;
+          }
+        } else {
+          processedCities.push(city);
+        }
+      }
+      return processedCities;
     }
   }
 
