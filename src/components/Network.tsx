@@ -238,13 +238,13 @@ export const Network: React.FC = () => {
       } else {
         // Rollback on server error
         setFollowingIds(previousFollowingIds);
-        showToast("Gagal mengubah status mengikuti.");
+        showToast(t("common.toast.followError") || "Gagal mengubah status mengikuti.");
       }
     } catch (e) {
       console.error(e);
       // Rollback on network exception
       setFollowingIds(previousFollowingIds);
-      showToast("Koneksi bermasalah. Batal mengubah status mengikuti.");
+      showToast(t("common.toast.networkError") || "Koneksi bermasalah. Batal mengubah status mengikuti.");
     }
   };
 

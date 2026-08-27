@@ -189,13 +189,13 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
       } else {
         // Rollback on server error
         setFollowingIds(previousFollowingIds);
-        showToast("Gagal mengubah status mengikuti.");
+        showToast(t("common.toast.followError") || "Gagal mengubah status mengikuti.");
       }
     } catch (err) {
       console.error("Failed to follow member:", err);
       // Rollback on network error
       setFollowingIds(previousFollowingIds);
-      showToast("Koneksi bermasalah. Batal mengubah status mengikuti.");
+      showToast(t("common.toast.networkError") || "Koneksi bermasalah. Batal mengubah status mengikuti.");
     }
   };
 
@@ -585,7 +585,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
     if (!newPostContent.trim() && !newPostImage) return;
 
     if (!currentUser) {
-      showToast("Silakan login terlebih dahulu untuk membuat postingan.");
+      showToast(t("common.toast.loginFirst") || "Silakan login terlebih dahulu untuk membuat postingan.");
       return;
     }
 
@@ -662,7 +662,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
         setNewPostContent(savedContent);
         setNewPostImage(savedImage);
         setNewPostSentiment(savedSentiment);
-        showToast("Gagal memposting. Silakan coba lagi.");
+        showToast(t("common.toast.postError") || "Gagal memposting. Silakan coba lagi.");
       }
     } catch (err) {
       console.error("Failed to create group post:", err);
@@ -671,7 +671,7 @@ export const GroupView: React.FC<GroupViewProps> = ({ initialGroupId, onBack }) 
       setNewPostContent(savedContent);
       setNewPostImage(savedImage);
       setNewPostSentiment(savedSentiment);
-      showToast("Koneksi bermasalah. Batal memposting.");
+      showToast(t("common.toast.postNetworkError") || "Koneksi bermasalah. Batal memposting.");
     } finally {
       setIsSubmitting(false);
     }

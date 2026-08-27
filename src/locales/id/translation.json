@@ -423,7 +423,8 @@
     "gpsDesc": "Temukan dan bangun jaringan dengan trader profesional di sekitar Anda. Membutuhkan izin GPS.",
     "activateGps": "Aktifkan Pemindaian GPS",
     "expandGps": "Perluas Pemindaian GPS",
-    "expandGpsDesc": "Aktifkan pemindaian lokasi atau perluas radius untuk menemukan trader di wilayah Anda."
+    "expandGpsDesc": "Aktifkan pemindaian lokasi atau perluas radius untuk menemukan trader di wilayah Anda.",
+    "suggestedFollowBack": "Saran Follow Back"
   },
   "admin": {}
 }

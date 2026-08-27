@@ -149,7 +149,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
         // Rollback
         setIsFollowing(!nextIsFollowing);
         setCurrentUser({ ...currentUser, followingCount: oldCurrentUserFollowingCount });
-        showToast("Gagal mengubah status mengikuti.");
+        showToast(t("common.toast.followError") || "Gagal mengubah status mengikuti.");
       }
     } catch (e) {
       console.error(e);

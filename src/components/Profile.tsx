@@ -422,7 +422,7 @@ export const Profile: React.FC = () => {
           {/* Hover Overlay Hint */}
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1.5 z-15">
             <Image size={14} className="animate-pulse" />
-            <span>Ubah Background Profile</span>
+            <span>{t('profile.changeBackground') || 'Change Background'}</span>
           </div>
           
           {/* Settings & Language float toggles */}
