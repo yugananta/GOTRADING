@@ -881,7 +881,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, onPostUpdated }) => 
                 : 'bg-rose-100 text-rose-700 border border-rose-200'
             }`}>
               {post.marketBias === 'Bullish' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-              {post.marketBias}
+              {post.marketBias === 'Bullish' ? t('feed.bullish') : t('feed.bearish')}
             </span>
           </div>
         )}

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.tsx';
 import { Send, Paperclip, Video as VideoIcon, Calendar, Image, Smile, TrendingUp, TrendingDown, Pin, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,6 +17,7 @@ interface AttachedMediaItem {
 }
 
 export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
+  const { t } = useTranslation();
   const { currentUser, viewUserProfile, showToast, logApiDiagnostic, setPosts } = useApp();
   const [content, setContent] = useState('');
   const [attachedMedia, setAttachedMedia] = useState<AttachedMediaItem[]>([]);
@@ -291,7 +293,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={`Write a post or share your market analysis with members...`}
+              placeholder={t('feed.writePostPlaceholder')}
               className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none min-h-[50px]"
             />
 
@@ -350,14 +352,14 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
                     onClick={() => setNewPostSentiment(newPostSentiment === 'Bullish' ? null : 'Bullish')}
                     className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 shrink-0 ${newPostSentiment === 'Bullish' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
                   >
-                    <TrendingUp size={12} className="shrink-0" /> Bullish
+                    <TrendingUp size={12} className="shrink-0" /> {t('feed.bullish')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewPostSentiment(newPostSentiment === 'Bearish' ? null : 'Bearish')}
                     className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 shrink-0 ${newPostSentiment === 'Bearish' ? 'bg-rose-500 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
                   >
-                    <TrendingDown size={12} className="shrink-0" /> Bearish
+                    <TrendingDown size={12} className="shrink-0" /> {t('feed.bearish')}
                   </button>
                 </div>
               </div>
@@ -369,7 +371,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100 cursor-pointer shrink-0 ml-auto"
               >
                 <Send size={14} className="shrink-0" />
-                <span>Posting</span>
+                <span>{t('feed.postButton')}</span>
               </button>
             </div>
           </div>

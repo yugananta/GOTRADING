@@ -1,4 +1,5 @@
 import React, { useState, memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, X, Trash2, Eye, ChevronUp } from 'lucide-react';
 import { useApp } from './AppContext.tsx';
 import { StoryCreation } from './StoryCreation.tsx';
@@ -17,6 +18,7 @@ function formatViewedTime(isoString?: string): string {
 }
 
 const StoriesListComponent: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser, stories, addStory, fetchStories, recordStoryView, showToast } = useApp();
   const [isCreating, setIsCreating] = useState(false);
   const [viewingStory, setViewingStory] = useState<Story | null>(null);
@@ -102,7 +104,7 @@ const StoriesListComponent: React.FC = () => {
                 <Plus size={14} strokeWidth={3} />
               </div>
             </div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-gray-400">Cerita Anda</span>
+            <span className="text-[11px] font-medium text-slate-500 dark:text-gray-400">{t('feed.yourStory')}</span>
           </div>
         )}
 
@@ -121,7 +123,7 @@ const StoriesListComponent: React.FC = () => {
                 )}
               </div>
             </div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-gray-400">Cerita Anda</span>
+            <span className="text-[11px] font-medium text-slate-500 dark:text-gray-400">{t('feed.yourStory')}</span>
           </div>
         )}
 

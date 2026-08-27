@@ -1562,7 +1562,7 @@ function MainAppLayout() {
             <div className="bg-white lg:bg-transparent flex flex-col">
               
               <div className="flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-slate-100 lg:border lg:border-slate-200 lg:rounded-2xl lg:shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-2 lg:mb-4">
-                <span className="text-xs font-black uppercase text-slate-700 tracking-wider">Trading Feed</span>
+                <span className="text-xs font-black uppercase text-slate-700 tracking-wider">{t('feed.title')}</span>
                 <SponsoredBadge />
               </div>
 
@@ -1587,7 +1587,7 @@ function MainAppLayout() {
                   }`}
                 >
                   <Clock size={13} className="shrink-0" />
-                  <span className="whitespace-nowrap">Latest Posts</span>
+                  <span className="whitespace-nowrap">{t('feed.latestPosts')}</span>
                 </button>
                 <button
                   onClick={() => setFeedFilter('top')}
@@ -1598,7 +1598,7 @@ function MainAppLayout() {
                   }`}
                 >
                   <TrendingUp size={13} className="shrink-0" />
-                  <span className="whitespace-nowrap">Top Discussions</span>
+                  <span className="whitespace-nowrap">{t('feed.topDiscussions')}</span>
                 </button>
                 <button
                   onClick={() => setFeedFilter('milestones')}
@@ -1609,7 +1609,7 @@ function MainAppLayout() {
                   }`}
                 >
                   <Award size={13} className="shrink-0" />
-                  <span className="truncate whitespace-nowrap">Member Milestones</span>
+                  <span className="truncate whitespace-nowrap">{t('feed.memberMilestones')}</span>
                 </button>
               </div>
 
@@ -2251,7 +2251,7 @@ function MainAppLayout() {
             <div className="h-[22px] flex items-center justify-center relative">
               <LayoutDashboard size={18} />
             </div>
-            <span className="text-[9px] font-black">Home</span>
+            <span className="text-[9px] font-black">{t('nav.feed')}</span>
             {activeView === 'feed' && (
               <motion.div
                 layoutId="activeBottomTabPill"
