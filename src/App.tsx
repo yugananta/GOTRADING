@@ -810,7 +810,7 @@ function MainAppLayout() {
                                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                               >
                                 <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                                <span>Connect MetaTrader</span>
+                                <span>{t('nav.account')}</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -1155,7 +1155,7 @@ function MainAppLayout() {
                     className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition cursor-pointer"
                   >
                     <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
-                    <span>Connect MetaTrader</span>
+                    <span>{t('nav.account')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -2251,7 +2251,7 @@ function MainAppLayout() {
             <div className="h-[22px] flex items-center justify-center relative">
               <LayoutDashboard size={18} />
             </div>
-            <span className="text-[9px] font-black">Home</span>
+            <span className="text-[9px] font-black">{t('nav.home')}</span>
             {activeView === 'feed' && (
               <motion.div
                 layoutId="activeBottomTabPill"
