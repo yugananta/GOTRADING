@@ -1,4 +1,4 @@
-package com.tarapti.app;
+package id.gotrading.app;
 
 import com.getcapacitor.BridgeActivity;
 

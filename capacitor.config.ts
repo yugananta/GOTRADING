@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tarapti.app',
-  appName: 'Tarapti',
+  appId: 'id.gotrading.app',
+  appName: 'GoTrading',
   webDir: 'dist'
 };
 
