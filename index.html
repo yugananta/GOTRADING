@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error("GLOBAL ERROR:", e.message);
+        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">' + e.message + '</div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error("GLOBAL UNHANDLED REJECTION:", e.reason);
+        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">Unhandled Rejection: ' + e.reason + '</div>';
+      });
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

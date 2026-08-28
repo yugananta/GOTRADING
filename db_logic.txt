@@ -1,0 +1,124 @@
+const DB_FILE = path.join(process.cwd(), "db_store.json");
+
+let globalDb: any = (global as any).globalDb || null;
+
+// Helper to load database
+function loadDb() {
+  if (globalDb) return globalDb;
+
+  if (!fs.existsSync(DB_FILE)) {
+    // Seed database
+    const initialDb = {
+      users: [
+        {
+          id: "user_budi",
+          firstName: "Budi",
+          lastName: "Santoso",
+          username: "budisantoso",
+          email: "budi@tarapti.com",
+          avatar: "BS",
+          tradingExperience: "Pro Trader",
+          tradingAsset: "Forex",
+          city: "Tasikmalaya",
+          country: "Indonesia",
+          reputationPoints: 250
+        },
+        {
+          id: "user_siti",
+          firstName: "Siti",
+          lastName: "Rahma",
+          username: "sitirahma",
+          email: "siti@tarapti.com",
+          avatar: "SR",
+          tradingExperience: "Expert",
+          tradingAsset: "Gold (XAUUSD)",
+          city: "Bandung",
+          country: "Indonesia",
+          reputationPoints: 420
+        }
+      ],
+      posts: [
+        {
+          id: "post_sample_1",
+          userId: "user_budi",
+          authorName: "Budi Santoso",
+          authorUsername: "budisantoso",
+          authorAvatar: "BS",
+          authorRole: "Pro Trader",
+          authorCity: "Tasikmalaya",
+          authorCountry: "Indonesia",
+          content: "[Bullish] Analisa XAUUSD hari ini potensi rebound dari area support 2380. Target profit di 2415. Tetap gunakan risk management yang ketat! #XAUUSD #Forex",
+          images: [],
+          likesCount: 14,
+          commentsCount: 3,
+          bookmarksCount: 5,
+          repostsCount: 2,
+          likedBy: [],
+          bookmarkedBy: [],
+          repostedBy: [],
+          timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+          tags: ["XAUUSD", "Forex"],
+          isOfficial: false,
+          isPinned: false
+        }
+      ],
+      comments: [],
+      follows: [],
+      notifications: [],
+      messages: [],
+      connections: [],
+      bookmarks: [],
+      reposts: [],
+      pushSubscriptions: [],
+      countries: [
+        { "id": 1, "name": "Indonesia", "iso2": "ID", "phone_code": "+62", "is_supported": true, "sort_order": 1 },
+        { "id": 2, "name": "Malaysia", "iso2": "MY", "phone_code": "+60", "is_supported": true, "sort_order": 2 },
+        { "id": 3, "name": "Singapore", "iso2": "SG", "phone_code": "+65", "is_supported": true, "sort_order": 3 }
+      ],
+      provinces: [],
+      cities: [],
+      profiles: [],
+      sessions: [],
+      email_verifications: [],
+      password_resets: [],
+      login_history: [],
+      audit_logs: []
+    };
+    fs.writeFileSync(DB_FILE, JSON.stringify(initialDb, null, 2));
+    (global as any).taraptiDb = initialDb; globalDb = initialDb;
+    return initialDb;
+  }
+  
+  if (!globalDb) {
+    try {
+      const data = fs.readFileSync(DB_FILE, "utf-8");
+      if (data && data.trim()) {
+        globalDb = JSON.parse(data);
+      }
+    } catch (err) {
+      console.error("Error reading/parsing db_store.json, creating empty:", err);
+      globalDb = {};
+    }
+  }
+
+  const db = globalDb || {};
+  if (!db.users) db.users = [];
+  if (!db.posts) db.posts = [];
+  if (!db.comments) db.comments = [];
+  if (!db.follows) db.follows = [];
+  if (!db.notifications) db.notifications = [];
+  if (!db.messages) db.messages = [];
+  if (!db.connections) db.connections = [];
+  if (!db.bookmarks) db.bookmarks = [];
+  if (!db.reposts) db.reposts = [];
+  if (!db.pushSubscriptions) db.pushSubscriptions = [];
+  if (!db.countries) db.countries = [];
+  if (!db.provinces) db.provinces = [];
+  if (!db.cities) db.cities = [];
+  if (!db.profiles) db.profiles = [];
+  if (!db.sessions) db.sessions = [];
+  if (!db.email_verifications) db.email_verifications = [];
+  if (!db.password_resets) db.password_resets = [];
+  if (!db.login_history) db.login_history = [];
+  if (!db.audit_logs) db.audit_logs = [];
+  return db;
