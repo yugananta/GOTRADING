@@ -1798,7 +1798,7 @@ process.on("unhandledRejection", (reason, promise) => {
 process.on("uncaughtException", (err, origin) => {
   console.error("GLOBAL UNCAUGHT EXCEPTION caught gracefully:", err, "at origin:", origin);
 });
-var PORT = Number(process.env.PORT) || 8080;
+var PORT = Number(process.env.PORT) || 3e3;
 function calculateReputationGain(currentRep, basePoints) {
   const factor = 300 / (300 + Math.max(0, currentRep));
   const gain = basePoints * factor;
