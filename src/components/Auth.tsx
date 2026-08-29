@@ -737,13 +737,6 @@ export const Auth: React.FC = () => {
                 </div>
               </div>
 
-              {referralCode && (
-                <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-between text-[11px] animate-in fade-in">
-                  <span className="text-slate-400 font-medium">Sponsor Referral:</span>
-                  <span className="font-mono font-bold text-indigo-300">{referrerInfo?.name ? `${referrerInfo.name} (${referralCode})` : referralCode}</span>
-                </div>
-              )}
-
               <div className="pt-2 flex gap-2.5">
                 <button
                   type="button"
