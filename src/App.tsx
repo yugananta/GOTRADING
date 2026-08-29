@@ -744,8 +744,8 @@ function MainAppLayout() {
         
         {/* Top Header Row: Branding + Web Nav centered, Action Tray on Right */}
         <div className="flex items-center justify-between w-full relative gap-2 sm:gap-4">
-          <div className="flex items-center shrink-0 h-[48px]">
-            <TaraptiLogo height={44} className="cursor-pointer" />
+          <div className="flex items-center shrink-0 min-h-[56px] sm:min-h-[64px] py-1">
+            <TaraptiLogo height={64} className="cursor-pointer scale-105 sm:scale-110 origin-left transition-transform hover:scale-115" />
           </div>
 
           {/* DESKTOP ONLY: Navigation Menu in Header Center */}
