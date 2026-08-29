@@ -34,7 +34,6 @@ var import_vite = require("vite");
 var import_supabase_js = require("@supabase/supabase-js");
 var import_meta = {};
 var supabaseClient = null;
-var warnLogged = false;
 var quotaExceeded = false;
 var getSupabase = () => {
   if (quotaExceeded) return null;
@@ -62,35 +61,15 @@ var getSupabase = () => {
   }
   const DEFAULT_SUPABASE_URL = "https://lsjqoznizsshpbvvzzam.supabase.co";
   const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzanFvem5penNzaHBidnZ6emFtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI1NDg3MiwiZXhwIjoyMDk5ODMwODcyfQ.9CMuqhXNPo4EALqeNX9UyTj35CbgzT7LWDrb1imqAGs";
-  let supabaseUrl = getEnv("SUPABASE_URL") || getEnv("VITE_SUPABASE_URL") || viteUrl || DEFAULT_SUPABASE_URL;
-  let supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY") || getEnv("SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_SERVICE_ROLE_KEY") || getEnv("SUPABASE_KEY") || viteServiceRoleKey || viteAnonKey || DEFAULT_SUPABASE_KEY;
-  const databaseUrl = getEnv("DATABASE_URL");
-  if (!supabaseUrl && databaseUrl) {
-    const dbUrl = databaseUrl;
-    const supabaseCoMatch = dbUrl.match(/@db\.([a-z0-9]+)\.supabase\.co/) || dbUrl.match(/db\.([a-z0-9]+)\.supabase\.co/);
-    const poolerMatch = dbUrl.match(/postgres\.([a-z0-9]+):/);
-    if (supabaseCoMatch && supabaseCoMatch[1]) {
-      supabaseUrl = `https://${supabaseCoMatch[1]}.supabase.co`;
-    } else if (poolerMatch && poolerMatch[1]) {
-      supabaseUrl = `https://${poolerMatch[1]}.supabase.co`;
-    }
+  let rawUrl = getEnv("SUPABASE_URL") || getEnv("VITE_SUPABASE_URL") || viteUrl;
+  let rawKey = getEnv("SUPABASE_SERVICE_ROLE_KEY") || getEnv("SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_SERVICE_ROLE_KEY") || getEnv("SUPABASE_KEY") || viteServiceRoleKey || viteAnonKey;
+  let supabaseUrl = rawUrl;
+  let supabaseServiceRoleKey = rawKey;
+  if (!supabaseUrl || !supabaseUrl.startsWith("http")) {
+    supabaseUrl = DEFAULT_SUPABASE_URL;
   }
-  if (supabaseUrl && (supabaseUrl.startsWith("postgresql://") || supabaseUrl.startsWith("postgres://"))) {
-    const match = supabaseUrl.match(/@db\.([a-z0-9]+)\.supabase\.co/) || supabaseUrl.match(/db\.([a-z0-9]+)\.supabase\.co/) || supabaseUrl.match(/postgres\.([a-z0-9]+):/);
-    if (match && match[1]) {
-      const ref = match[1];
-      supabaseUrl = `https://${ref}.supabase.co`;
-    }
-  }
-  if (supabaseUrl && supabaseUrl.startsWith("http://")) {
-    supabaseUrl = supabaseUrl.replace("http://", "https://");
-  }
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    if (!warnLogged) {
-      console.warn("Supabase credentials missing or incomplete. Operating in robust local/mock fallback mode.");
-      warnLogged = true;
-    }
-    return null;
+  if (!supabaseServiceRoleKey || supabaseServiceRoleKey.length < 20) {
+    supabaseServiceRoleKey = DEFAULT_SUPABASE_KEY;
   }
   try {
     supabaseClient = (0, import_supabase_js.createClient)(supabaseUrl, supabaseServiceRoleKey, {
@@ -104,7 +83,16 @@ var getSupabase = () => {
     });
     return supabaseClient;
   } catch (err) {
-    return null;
+    console.error("Failed to initialize Supabase with custom URL, falling back to default:", err?.message || err);
+    try {
+      supabaseClient = (0, import_supabase_js.createClient)(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+      return supabaseClient;
+    } catch (fallbackErr) {
+      console.error("Fatal: Default Supabase initialization failed:", fallbackErr);
+      return null;
+    }
   }
 };
 var createMockChain = () => {
@@ -133,20 +121,6 @@ var createMockChain = () => {
 };
 var supabase = new Proxy({}, {
   get(_target, prop) {
-    if (quotaExceeded) {
-      if (prop === "from") {
-        return () => createMockChain();
-      }
-      if (prop === "auth") {
-        return {
-          getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-          getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-          signInWithPassword: () => Promise.resolve({ data: null, error: { message: "Quota exceeded" } }),
-          signOut: () => Promise.resolve({ error: null })
-        };
-      }
-      return () => Promise.resolve({ data: null, error: null });
-    }
     const client = getSupabase();
     if (!client) {
       if (prop === "from") {
@@ -156,26 +130,7 @@ var supabase = new Proxy({}, {
     }
     const value = client[prop];
     if (typeof value === "function") {
-      return (...args) => {
-        const result = value.apply(client, args);
-        if (result && typeof result.then === "function") {
-          return result.then((res) => {
-            if (res && res.error && typeof res.error.message === "string" && (res.error.message.includes("exceed_egress_quota") || res.error.message.includes("quota"))) {
-              quotaExceeded = true;
-              console.warn("Supabase quota exceeded detected. Switching to robust local/mock fallback mode.");
-              return { data: [], error: null };
-            }
-            return res;
-          }).catch((err) => {
-            if (err && (String(err?.message || err).includes("exceed_egress_quota") || String(err?.message || err).includes("quota"))) {
-              quotaExceeded = true;
-              console.warn("Supabase quota exceeded detected. Switching to robust local/mock fallback mode.");
-            }
-            return { data: [], error: null };
-          });
-        }
-        return result;
-      };
+      return value.bind(client);
     }
     return value;
   }
@@ -2770,11 +2725,11 @@ async function startServer() {
   });
   app.get("/api/health-db", async (req, res) => {
     try {
-      const urlConfigured = !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.DATABASE_URL);
+      const urlConfigured = !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL);
       const keyConfigured = !!(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
-      const { data: postsData, error: postError } = await supabase.from("Post").select("id, authorName, content").limit(3);
-      const { data: usersData, error: userError } = await supabase.from("User").select("id, username, email").limit(3);
-      const { data: rawUsersData, error: rawUserError } = await supabase.from("users").select("id, email, full_name").limit(3);
+      const { data: postsData, error: postError, count: postCount } = await supabase.from("Post").select("id, authorName, content", { count: "exact" }).limit(5);
+      const { data: usersData, error: userError, count: userCount } = await supabase.from("User").select("id, username, email", { count: "exact" }).limit(5);
+      const { data: rawUsersData, error: rawUserError, count: rawUserCount } = await supabase.from("users").select("id, email, full_name", { count: "exact" }).limit(5);
       const isMock = (!postsData || postsData.length === 0) && (!usersData || usersData.length === 0) && (!urlConfigured || !keyConfigured);
       res.json({
         status: isMock ? "warning_mock_mode" : "ok",
@@ -2788,12 +2743,15 @@ async function startServer() {
           nodeEnv: process.env.NODE_ENV || "development"
         },
         supabase: {
+          exactPostCount: postCount !== void 0 && postCount !== null ? postCount : postsData?.length || 0,
           postsCountFound: postsData?.length || 0,
           samplePosts: postsData || [],
           postError: postError ? postError.message : null,
+          exactUserCount: userCount !== void 0 && userCount !== null ? userCount : usersData?.length || 0,
           usersCountFound: usersData?.length || 0,
           sampleUsers: usersData || [],
           userError: userError ? userError.message : null,
+          exactRawUsersCount: rawUserCount !== void 0 && rawUserCount !== null ? rawUserCount : rawUsersData?.length || 0,
           rawUsersCount: rawUsersData?.length || 0,
           rawUserError: rawUserError ? rawUserError.message : null
         }

@@ -34,48 +34,25 @@ export const getSupabase = (): SupabaseClient | null => {
   const DEFAULT_SUPABASE_URL = 'https://lsjqoznizsshpbvvzzam.supabase.co';
   const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzanFvem5penNzaHBidnZ6emFtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI1NDg3MiwiZXhwIjoyMDk5ODMwODcyfQ.9CMuqhXNPo4EALqeNX9UyTj35CbgzT7LWDrb1imqAGs';
 
-  let supabaseUrl = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || viteUrl || DEFAULT_SUPABASE_URL;
-  let supabaseServiceRoleKey = 
+  let rawUrl = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || viteUrl;
+  let rawKey = 
     getEnv('SUPABASE_SERVICE_ROLE_KEY') || 
     getEnv('SUPABASE_ANON_KEY') || 
     getEnv('VITE_SUPABASE_ANON_KEY') || 
     getEnv('VITE_SUPABASE_SERVICE_ROLE_KEY') || 
     getEnv('SUPABASE_KEY') ||
     viteServiceRoleKey || 
-    viteAnonKey ||
-    DEFAULT_SUPABASE_KEY;
+    viteAnonKey;
 
-  const databaseUrl = getEnv('DATABASE_URL');
-  if (!supabaseUrl && databaseUrl) {
-    const dbUrl = databaseUrl;
-    const supabaseCoMatch = dbUrl.match(/@db\.([a-z0-9]+)\.supabase\.co/) || dbUrl.match(/db\.([a-z0-9]+)\.supabase\.co/);
-    const poolerMatch = dbUrl.match(/postgres\.([a-z0-9]+):/);
+  let supabaseUrl = rawUrl;
+  let supabaseServiceRoleKey = rawKey;
 
-    if (supabaseCoMatch && supabaseCoMatch[1]) {
-      supabaseUrl = `https://${supabaseCoMatch[1]}.supabase.co`;
-    } else if (poolerMatch && poolerMatch[1]) {
-      supabaseUrl = `https://${poolerMatch[1]}.supabase.co`;
-    }
+  // Validate that supabaseUrl is actually an HTTP/HTTPS url, not postgres connection string
+  if (!supabaseUrl || !supabaseUrl.startsWith('http')) {
+    supabaseUrl = DEFAULT_SUPABASE_URL;
   }
-
-  if (supabaseUrl && (supabaseUrl.startsWith('postgresql://') || supabaseUrl.startsWith('postgres://'))) {
-    const match = supabaseUrl.match(/@db\.([a-z0-9]+)\.supabase\.co/) || supabaseUrl.match(/db\.([a-z0-9]+)\.supabase\.co/) || supabaseUrl.match(/postgres\.([a-z0-9]+):/);
-    if (match && match[1]) {
-      const ref = match[1];
-      supabaseUrl = `https://${ref}.supabase.co`;
-    }
-  }
-
-  if (supabaseUrl && supabaseUrl.startsWith('http://')) {
-    supabaseUrl = supabaseUrl.replace('http://', 'https://');
-  }
-
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    if (!warnLogged) {
-      console.warn('Supabase credentials missing or incomplete. Operating in robust local/mock fallback mode.');
-      warnLogged = true;
-    }
-    return null;
+  if (!supabaseServiceRoleKey || supabaseServiceRoleKey.length < 20) {
+    supabaseServiceRoleKey = DEFAULT_SUPABASE_KEY;
   }
 
   try {
@@ -89,8 +66,17 @@ export const getSupabase = (): SupabaseClient | null => {
       }
     });
     return supabaseClient;
-  } catch (err) {
-    return null;
+  } catch (err: any) {
+    console.error('Failed to initialize Supabase with custom URL, falling back to default:', err?.message || err);
+    try {
+      supabaseClient = createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+      return supabaseClient;
+    } catch (fallbackErr) {
+      console.error('Fatal: Default Supabase initialization failed:', fallbackErr);
+      return null;
+    }
   }
 };
 
@@ -122,20 +108,6 @@ const createMockChain = () => {
 
 export const supabase = new Proxy({} as any, {
   get(_target, prop) {
-    if (quotaExceeded) {
-      if (prop === 'from') {
-        return () => createMockChain();
-      }
-      if (prop === 'auth') {
-        return {
-          getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-          getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-          signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Quota exceeded' } }),
-          signOut: () => Promise.resolve({ error: null })
-        };
-      }
-      return () => Promise.resolve({ data: null, error: null });
-    }
     const client = getSupabase();
     if (!client) {
       if (prop === 'from') {
@@ -145,26 +117,7 @@ export const supabase = new Proxy({} as any, {
     }
     const value = (client as any)[prop];
     if (typeof value === 'function') {
-      return (...args: any[]) => {
-        const result = value.apply(client, args);
-        if (result && typeof result.then === 'function') {
-          return result.then((res: any) => {
-            if (res && res.error && typeof res.error.message === 'string' && (res.error.message.includes('exceed_egress_quota') || res.error.message.includes('quota'))) {
-              quotaExceeded = true;
-              console.warn('Supabase quota exceeded detected. Switching to robust local/mock fallback mode.');
-              return { data: [], error: null };
-            }
-            return res;
-          }).catch((err: any) => {
-            if (err && (String(err?.message || err).includes('exceed_egress_quota') || String(err?.message || err).includes('quota'))) {
-              quotaExceeded = true;
-              console.warn('Supabase quota exceeded detected. Switching to robust local/mock fallback mode.');
-            }
-            return { data: [], error: null };
-          });
-        }
-        return result;
-      };
+      return value.bind(client);
     }
     return value;
   }

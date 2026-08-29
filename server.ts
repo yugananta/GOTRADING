@@ -1047,12 +1047,12 @@ async function startServer() {
   // API: Health Supabase Diagnostic
   app.get("/api/health-db", async (req, res) => {
     try {
-      const urlConfigured = !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.DATABASE_URL);
+      const urlConfigured = !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL);
       const keyConfigured = !!(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
 
-      const { data: postsData, error: postError } = await supabase.from('Post').select('id, authorName, content').limit(3);
-      const { data: usersData, error: userError } = await supabase.from('User').select('id, username, email').limit(3);
-      const { data: rawUsersData, error: rawUserError } = await supabase.from('users').select('id, email, full_name').limit(3);
+      const { data: postsData, error: postError, count: postCount } = await supabase.from('Post').select('id, authorName, content', { count: 'exact' }).limit(5);
+      const { data: usersData, error: userError, count: userCount } = await supabase.from('User').select('id, username, email', { count: 'exact' }).limit(5);
+      const { data: rawUsersData, error: rawUserError, count: rawUserCount } = await supabase.from('users').select('id, email, full_name', { count: 'exact' }).limit(5);
 
       const isMock = (!postsData || postsData.length === 0) && (!usersData || usersData.length === 0) && (!urlConfigured || !keyConfigured);
 
@@ -1068,12 +1068,15 @@ async function startServer() {
           nodeEnv: process.env.NODE_ENV || 'development'
         },
         supabase: {
+          exactPostCount: postCount !== undefined && postCount !== null ? postCount : (postsData?.length || 0),
           postsCountFound: postsData?.length || 0,
           samplePosts: postsData || [],
           postError: postError ? postError.message : null,
+          exactUserCount: userCount !== undefined && userCount !== null ? userCount : (usersData?.length || 0),
           usersCountFound: usersData?.length || 0,
           sampleUsers: usersData || [],
           userError: userError ? userError.message : null,
+          exactRawUsersCount: rawUserCount !== undefined && rawUserCount !== null ? rawUserCount : (rawUsersData?.length || 0),
           rawUsersCount: rawUsersData?.length || 0,
           rawUserError: rawUserError ? rawUserError.message : null
         }
