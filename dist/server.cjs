@@ -60,8 +60,10 @@ var getSupabase = () => {
     viteServiceRoleKey = import_meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "";
   } catch (e) {
   }
-  let supabaseUrl = getEnv("SUPABASE_URL") || getEnv("VITE_SUPABASE_URL") || viteUrl;
-  let supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY") || getEnv("SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_SERVICE_ROLE_KEY") || viteServiceRoleKey || viteAnonKey;
+  const DEFAULT_SUPABASE_URL = "https://lsjqoznizsshpbvvzzam.supabase.co";
+  const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzanFvem5penNzaHBidnZ6emFtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI1NDg3MiwiZXhwIjoyMDk5ODMwODcyfQ.9CMuqhXNPo4EALqeNX9UyTj35CbgzT7LWDrb1imqAGs";
+  let supabaseUrl = getEnv("SUPABASE_URL") || getEnv("VITE_SUPABASE_URL") || viteUrl || DEFAULT_SUPABASE_URL;
+  let supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY") || getEnv("SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_ANON_KEY") || getEnv("VITE_SUPABASE_SERVICE_ROLE_KEY") || getEnv("SUPABASE_KEY") || viteServiceRoleKey || viteAnonKey || DEFAULT_SUPABASE_KEY;
   const databaseUrl = getEnv("DATABASE_URL");
   if (!supabaseUrl && databaseUrl) {
     const dbUrl = databaseUrl;
@@ -185,9 +187,44 @@ var UserRepository = class {
   async findByEmail(email) {
     try {
       const { data, error } = await supabase.from("User").select("*").eq("email", email).maybeSingle();
-      if (error) throw error;
-      if (!data) return null;
-      return data;
+      if (!error && data) return data;
+      const { data: rawData, error: rawError } = await supabase.from("users").select("*").eq("email", email).maybeSingle();
+      if (!rawError && rawData) {
+        const parts = (rawData.full_name || "").split(" ");
+        return {
+          id: rawData.id,
+          firstName: parts[0] || "",
+          lastName: parts.slice(1).join(" ") || "",
+          username: rawData.username || email.split("@")[0],
+          email: rawData.email,
+          password: rawData.password_hash || "",
+          whatsappNumber: rawData.whatsapp || null,
+          country: rawData.country || "",
+          province: rawData.province || "",
+          city: rawData.city || "",
+          avatar: rawData.avatar_url || "https://i.pravatar.cc/150?u=default",
+          coverPhoto: null,
+          headline: null,
+          bio: rawData.bio || null,
+          tradingExperience: "Beginner",
+          tradingAsset: "Forex",
+          onlineStatus: "online",
+          followersCount: 0,
+          followingCount: 0,
+          reputationPoints: 0,
+          role: rawData.role || "user",
+          createdAt: rawData.created_at || (/* @__PURE__ */ new Date()).toISOString(),
+          updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          mt5Connected: false,
+          isVerified: rawData.verification_status === "verified",
+          mt5Server: null,
+          mt5Login: null,
+          mt5Password: null,
+          mt5Port: null,
+          mt5Status: "disconnected"
+        };
+      }
+      return null;
     } catch (e) {
       console.error("Supabase findByEmail failed:", e?.message || e);
       return null;
@@ -196,9 +233,44 @@ var UserRepository = class {
   async findById(id) {
     try {
       const { data, error } = await supabase.from("User").select("*").eq("id", id).maybeSingle();
-      if (error) throw error;
-      if (!data) return null;
-      return data;
+      if (!error && data) return data;
+      const { data: rawData, error: rawError } = await supabase.from("users").select("*").eq("id", id).maybeSingle();
+      if (!rawError && rawData) {
+        const parts = (rawData.full_name || "").split(" ");
+        return {
+          id: rawData.id,
+          firstName: parts[0] || "",
+          lastName: parts.slice(1).join(" ") || "",
+          username: rawData.username || rawData.email?.split("@")[0] || "trader",
+          email: rawData.email,
+          password: rawData.password_hash || "",
+          whatsappNumber: rawData.whatsapp || null,
+          country: rawData.country || "",
+          province: rawData.province || "",
+          city: rawData.city || "",
+          avatar: rawData.avatar_url || "https://i.pravatar.cc/150?u=default",
+          coverPhoto: null,
+          headline: null,
+          bio: rawData.bio || null,
+          tradingExperience: "Beginner",
+          tradingAsset: "Forex",
+          onlineStatus: "online",
+          followersCount: 0,
+          followingCount: 0,
+          reputationPoints: 0,
+          role: rawData.role || "user",
+          createdAt: rawData.created_at || (/* @__PURE__ */ new Date()).toISOString(),
+          updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          mt5Connected: false,
+          isVerified: rawData.verification_status === "verified",
+          mt5Server: null,
+          mt5Login: null,
+          mt5Password: null,
+          mt5Port: null,
+          mt5Status: "disconnected"
+        };
+      }
+      return null;
     } catch (e) {
       console.error("Supabase findById failed:", e?.message || e);
       return null;

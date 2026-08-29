@@ -31,14 +31,19 @@ export const getSupabase = (): SupabaseClient | null => {
     viteServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '';
   } catch (e) {}
 
-  let supabaseUrl = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || viteUrl;
+  const DEFAULT_SUPABASE_URL = 'https://lsjqoznizsshpbvvzzam.supabase.co';
+  const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzanFvem5penNzaHBidnZ6emFtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI1NDg3MiwiZXhwIjoyMDk5ODMwODcyfQ.9CMuqhXNPo4EALqeNX9UyTj35CbgzT7LWDrb1imqAGs';
+
+  let supabaseUrl = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || viteUrl || DEFAULT_SUPABASE_URL;
   let supabaseServiceRoleKey = 
     getEnv('SUPABASE_SERVICE_ROLE_KEY') || 
     getEnv('SUPABASE_ANON_KEY') || 
     getEnv('VITE_SUPABASE_ANON_KEY') || 
     getEnv('VITE_SUPABASE_SERVICE_ROLE_KEY') || 
+    getEnv('SUPABASE_KEY') ||
     viteServiceRoleKey || 
-    viteAnonKey;
+    viteAnonKey ||
+    DEFAULT_SUPABASE_KEY;
 
   const databaseUrl = getEnv('DATABASE_URL');
   if (!supabaseUrl && databaseUrl) {

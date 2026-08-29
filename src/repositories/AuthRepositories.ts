@@ -12,9 +12,51 @@ export class UserRepository implements IUserRepository {
         .eq('email', email)
         .maybeSingle();
       
-      if (error) throw error;
-      if (!data) return null;
-      return data as User;
+      if (!error && data) return data as User;
+
+      // Fallback check in users table
+      const { data: rawData, error: rawError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!rawError && rawData) {
+        const parts = (rawData.full_name || '').split(' ');
+        return {
+          id: rawData.id,
+          firstName: parts[0] || '',
+          lastName: parts.slice(1).join(' ') || '',
+          username: rawData.username || email.split('@')[0],
+          email: rawData.email,
+          password: rawData.password_hash || '',
+          whatsappNumber: rawData.whatsapp || null,
+          country: rawData.country || '',
+          province: rawData.province || '',
+          city: rawData.city || '',
+          avatar: rawData.avatar_url || 'https://i.pravatar.cc/150?u=default',
+          coverPhoto: null,
+          headline: null,
+          bio: rawData.bio || null,
+          tradingExperience: 'Beginner',
+          tradingAsset: 'Forex',
+          onlineStatus: 'online',
+          followersCount: 0,
+          followingCount: 0,
+          reputationPoints: 0,
+          role: rawData.role || 'user',
+          createdAt: rawData.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          mt5Connected: false,
+          isVerified: rawData.verification_status === 'verified',
+          mt5Server: null,
+          mt5Login: null,
+          mt5Password: null,
+          mt5Port: null,
+          mt5Status: 'disconnected'
+        } as User;
+      }
+      return null;
     } catch (e: any) {
       console.error('Supabase findByEmail failed:', e?.message || e);
       return null;
@@ -29,9 +71,51 @@ export class UserRepository implements IUserRepository {
         .eq('id', id)
         .maybeSingle();
       
-      if (error) throw error;
-      if (!data) return null;
-      return data as User;
+      if (!error && data) return data as User;
+
+      // Fallback check in users table
+      const { data: rawData, error: rawError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!rawError && rawData) {
+        const parts = (rawData.full_name || '').split(' ');
+        return {
+          id: rawData.id,
+          firstName: parts[0] || '',
+          lastName: parts.slice(1).join(' ') || '',
+          username: rawData.username || rawData.email?.split('@')[0] || 'trader',
+          email: rawData.email,
+          password: rawData.password_hash || '',
+          whatsappNumber: rawData.whatsapp || null,
+          country: rawData.country || '',
+          province: rawData.province || '',
+          city: rawData.city || '',
+          avatar: rawData.avatar_url || 'https://i.pravatar.cc/150?u=default',
+          coverPhoto: null,
+          headline: null,
+          bio: rawData.bio || null,
+          tradingExperience: 'Beginner',
+          tradingAsset: 'Forex',
+          onlineStatus: 'online',
+          followersCount: 0,
+          followingCount: 0,
+          reputationPoints: 0,
+          role: rawData.role || 'user',
+          createdAt: rawData.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          mt5Connected: false,
+          isVerified: rawData.verification_status === 'verified',
+          mt5Server: null,
+          mt5Login: null,
+          mt5Password: null,
+          mt5Port: null,
+          mt5Status: 'disconnected'
+        } as User;
+      }
+      return null;
     } catch (e: any) {
       console.error('Supabase findById failed:', e?.message || e);
       return null;
