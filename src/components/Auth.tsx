@@ -94,6 +94,13 @@ export const Auth: React.FC = () => {
   const [referralCode, setReferralCode] = useState('');
   const [referrerInfo, setReferrerInfo] = useState<{ name?: string; code?: string } | null>(null);
 
+  // Helper to validate real referral codes (avoid '000', 'null', 'undefined')
+  const isValidRefCode = (code?: string | null): boolean => {
+    if (!code) return false;
+    const trimmed = code.trim();
+    return trimmed !== '' && trimmed !== '000' && trimmed !== 'null' && trimmed !== 'undefined' && trimmed !== '0';
+  };
+
   // Initialize and capture referral code from URL or storage
   useEffect(() => {
     try {
@@ -101,8 +108,8 @@ export const Auth: React.FC = () => {
       const urlRef = searchParams.get('ref') || searchParams.get('refCode') || searchParams.get('r');
       const isRegisterPath = window.location.pathname.startsWith('/register') || searchParams.has('register');
 
-      if (urlRef) {
-        const cleanRef = urlRef.trim();
+      if (isValidRefCode(urlRef)) {
+        const cleanRef = urlRef!.trim();
         setReferralCode(cleanRef);
         localStorage.setItem('gotrading_referral', cleanRef);
         localStorage.setItem('tarapti_referral', cleanRef);
@@ -122,8 +129,8 @@ export const Auth: React.FC = () => {
         const storedRef = sessionStorage.getItem('gotrading_referral') || 
                           localStorage.getItem('gotrading_referral') || 
                           localStorage.getItem('tarapti_referral');
-        if (storedRef) {
-          const cleanRef = storedRef.trim();
+        if (isValidRefCode(storedRef)) {
+          const cleanRef = storedRef!.trim();
           setReferralCode(cleanRef);
           apiFetch(`/api/auth/check-referral?code=${encodeURIComponent(cleanRef)}`)
             .then(res => res.json())
@@ -133,6 +140,12 @@ export const Auth: React.FC = () => {
               }
             })
             .catch(() => {});
+        } else {
+          // Clean up invalid placeholder values like "000" from storage if present
+          sessionStorage.removeItem('gotrading_referral');
+          localStorage.removeItem('gotrading_referral');
+          localStorage.removeItem('tarapti_referral');
+          setReferralCode('');
         }
         if (isRegisterPath) {
           setMode('register_1');
@@ -276,10 +289,11 @@ export const Auth: React.FC = () => {
 
     setIsSubmitting(true);
     const normalizedWhatsapp = normalizePhoneNumber(dialCode, whatsappLocalNumber);
-    const activeRef = referralCode.trim() || 
-                      sessionStorage.getItem('gotrading_referral') || 
-                      localStorage.getItem('gotrading_referral') || 
-                      localStorage.getItem('tarapti_referral') || '';
+    const rawRef = referralCode.trim() || 
+                   sessionStorage.getItem('gotrading_referral') || 
+                   localStorage.getItem('gotrading_referral') || 
+                   localStorage.getItem('tarapti_referral') || '';
+    const activeRef = isValidRefCode(rawRef) ? rawRef.trim() : '';
 
     const requestPayload = {
       firstName,
@@ -648,9 +662,12 @@ export const Auth: React.FC = () => {
                   onChange={(e) => {
                     const val = e.target.value;
                     setReferralCode(val);
-                    if (val) {
+                    if (isValidRefCode(val)) {
                       localStorage.setItem('gotrading_referral', val.trim());
                       localStorage.setItem('tarapti_referral', val.trim());
+                    } else if (!val.trim()) {
+                      localStorage.removeItem('gotrading_referral');
+                      localStorage.removeItem('tarapti_referral');
                     }
                   }}
                   className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/20 rounded-xl px-3.5 py-2 text-xs text-indigo-300 font-mono placeholder-slate-400/40 focus:outline-none focus:border-indigo-400/80 focus:ring-1 focus:ring-indigo-500/40 focus:bg-white/[0.14] transition-all disabled:opacity-40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_1px_4px_rgba(0,0,0,0.3)]"
