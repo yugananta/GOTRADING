@@ -117,8 +117,8 @@ export function PortfolioReport({ trades, activeAccountInfo, loadingTrades, onBa
       return new Date(a.closeTime).getTime() - new Date(b.closeTime).getTime();
     });
 
-    const currentBalance = activeAccountInfo?.balance || 10000;
-    const estimatedInitialBalance = Math.max(1000, currentBalance - netPnL);
+    const currentBalance = activeAccountInfo?.balance || (closedTrades.length > 0 ? 1000 : 0);
+    const estimatedInitialBalance = currentBalance > 0 ? Math.max(0, currentBalance - netPnL) : 0;
 
     let runningEquity = estimatedInitialBalance;
     let peakEquity = estimatedInitialBalance;

@@ -486,9 +486,9 @@ export const Journal: React.FC = () => {
       };
     }
     return {
-      initialDepositAmount: 10000,
+      initialDepositAmount: 0,
       additionalDepositsAmount: 0,
-      totalDepositsAmount: 10000,
+      totalDepositsAmount: 0,
     };
   }, [activeAccountInfo, balanceDeals, currentEffectiveBalance, totalPnLAllTime]);
 
@@ -532,7 +532,7 @@ export const Journal: React.FC = () => {
     const peakEquityVal = typeof activeAccountInfo?.peak_equity === 'number'
       ? activeAccountInfo.peak_equity
       : (typeof activeAccountInfo?.peakEquity === 'number' ? activeAccountInfo.peakEquity : null);
-    let peak = peakEquityVal !== null && peakEquityVal > 0 ? peakEquityVal : (totalDepositsAmount > 0 ? totalDepositsAmount : (currentEffectiveBalance || 10000));
+    let peak = peakEquityVal !== null && peakEquityVal > 0 ? peakEquityVal : (totalDepositsAmount > 0 ? totalDepositsAmount : (currentEffectiveBalance || 0));
     let running = peak;
     let maxDD = 0;
     sorted.forEach(t => {
@@ -798,7 +798,7 @@ export const Journal: React.FC = () => {
 
   useEffect(() => {
     if (closedTrades.length === 0) return;
-    const baseBal = currentBalanceValue || 10000;
+    const baseBal = currentBalanceValue || (totalDepositsAmount > 0 ? totalDepositsAmount : 0);
 
     // Group closed trades by Date + Session (Asian / London / New York)
     const sessionMap: { [key: string]: { sessionName: string, dateStr: string, totalLoss: number } } = {};
@@ -1020,7 +1020,7 @@ export const Journal: React.FC = () => {
 
       // Drawdown calculation
       const sortedTrades = [...closedTrades].sort((a, b) => new Date(a.closeTime).getTime() - new Date(b.closeTime).getTime());
-      let runningEquity = activeAccountInfo?.balance ?? (currentBalanceValue > 0 ? currentBalanceValue : 10000);
+      let runningEquity = activeAccountInfo?.balance ?? (currentBalanceValue > 0 ? currentBalanceValue : (totalDepositsAmount > 0 ? totalDepositsAmount : 0));
       let peakEquity = runningEquity;
       let maxDD = 0;
       sortedTrades.forEach(t => {
@@ -2178,8 +2178,8 @@ export const Journal: React.FC = () => {
                       setActiveMonth(idx);
                       setSelectedDayDetail({
                         date: `${monthData.fullMonth} ${activeYear} Report`,
-                        startBalance: currentBalanceValue || 10000,
-                        endBalance: (currentBalanceValue || 10000) + (monthData.rawPL || 0),
+                        startBalance: currentBalanceValue || (totalDepositsAmount > 0 ? totalDepositsAmount : 0),
+                        endBalance: (currentBalanceValue || (totalDepositsAmount > 0 ? totalDepositsAmount : 0)) + (monthData.rawPL || 0),
                         netPL: monthData.rawPL || 0,
                         netPLPercent: currentBalanceValue > 0 ? ((monthData.rawPL || 0) / currentBalanceValue) * 100 : 0,
                         maxDrawdown: (monthData.rawPL || 0) < 0 ? Math.abs(monthData.rawPL || 0) : 0,
