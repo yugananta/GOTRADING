@@ -91,68 +91,17 @@ export const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [whatsappLocalNumber, setWhatsappLocalNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('');
-  const [referrerInfo, setReferrerInfo] = useState<{ name?: string; code?: string } | null>(null);
 
-  // Helper to validate real referral codes (avoid '000', 'null', 'undefined')
-  const isValidRefCode = (code?: string | null): boolean => {
-    if (!code) return false;
-    const trimmed = code.trim();
-    return trimmed !== '' && trimmed !== '000' && trimmed !== 'null' && trimmed !== 'undefined' && trimmed !== '0';
-  };
-
-  // Initialize and capture referral code from URL or storage
+  // Check if register path or parameter is present in URL
   useEffect(() => {
     try {
       const searchParams = new URLSearchParams(window.location.search);
-      const urlRef = searchParams.get('ref') || searchParams.get('refCode') || searchParams.get('r');
       const isRegisterPath = window.location.pathname.startsWith('/register') || searchParams.has('register');
-
-      if (isValidRefCode(urlRef)) {
-        const cleanRef = urlRef!.trim();
-        setReferralCode(cleanRef);
-        localStorage.setItem('gotrading_referral', cleanRef);
-        localStorage.setItem('tarapti_referral', cleanRef);
-        sessionStorage.setItem('gotrading_referral', cleanRef);
+      if (isRegisterPath) {
         setMode('register_1');
-
-        // Optional check referrer details
-        apiFetch(`/api/auth/check-referral?code=${encodeURIComponent(cleanRef)}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.valid) {
-              setReferrerInfo({ name: data.referrerName, code: data.referralCode });
-            }
-          })
-          .catch(() => {});
-      } else {
-        const storedRef = sessionStorage.getItem('gotrading_referral') || 
-                          localStorage.getItem('gotrading_referral') || 
-                          localStorage.getItem('tarapti_referral');
-        if (isValidRefCode(storedRef)) {
-          const cleanRef = storedRef!.trim();
-          setReferralCode(cleanRef);
-          apiFetch(`/api/auth/check-referral?code=${encodeURIComponent(cleanRef)}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.valid) {
-                setReferrerInfo({ name: data.referrerName, code: data.referralCode });
-              }
-            })
-            .catch(() => {});
-        } else {
-          // Clean up invalid placeholder values like "000" from storage if present
-          sessionStorage.removeItem('gotrading_referral');
-          localStorage.removeItem('gotrading_referral');
-          localStorage.removeItem('tarapti_referral');
-          setReferralCode('');
-        }
-        if (isRegisterPath) {
-          setMode('register_1');
-        }
       }
     } catch (e) {
-      console.warn('Failed to parse referral code from URL/storage:', e);
+      console.warn('Failed to parse register path from URL:', e);
     }
   }, []);
 
@@ -289,11 +238,6 @@ export const Auth: React.FC = () => {
 
     setIsSubmitting(true);
     const normalizedWhatsapp = normalizePhoneNumber(dialCode, whatsappLocalNumber);
-    const rawRef = referralCode.trim() || 
-                   sessionStorage.getItem('gotrading_referral') || 
-                   localStorage.getItem('gotrading_referral') || 
-                   localStorage.getItem('tarapti_referral') || '';
-    const activeRef = isValidRefCode(rawRef) ? rawRef.trim() : '';
 
     const requestPayload = {
       firstName,
@@ -304,10 +248,7 @@ export const Auth: React.FC = () => {
       whatsappNumber: normalizedWhatsapp,
       country: selectedCountry.name,
       province: selectedProvince.name,
-      city: selectedCity.name,
-      referralCode: activeRef,
-      referral_code: activeRef,
-      ref: activeRef
+      city: selectedCity.name
     };
 
     try {
@@ -642,36 +583,6 @@ export const Auth: React.FC = () => {
                     className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/20 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-300/50 focus:outline-none focus:border-indigo-400/80 focus:ring-1 focus:ring-indigo-500/40 focus:bg-white/[0.14] transition-all disabled:opacity-40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_1px_4px_rgba(0,0,0,0.3)] font-medium"
                   />
                 </div>
-              </div>
-
-              {/* Referral / Sponsor Field */}
-              <div className="space-y-1.5 pt-0.5">
-                <div className="flex justify-between items-center">
-                  <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider">Kode Referral / Sponsor (Opsional)</label>
-                  {referrerInfo?.name && (
-                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                      <Check size={11} /> {referrerInfo.name}
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  disabled={isValidating}
-                  placeholder="Contoh: GOTRADING-BLEHKENZZ591"
-                  value={referralCode}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setReferralCode(val);
-                    if (isValidRefCode(val)) {
-                      localStorage.setItem('gotrading_referral', val.trim());
-                      localStorage.setItem('tarapti_referral', val.trim());
-                    } else if (!val.trim()) {
-                      localStorage.removeItem('gotrading_referral');
-                      localStorage.removeItem('tarapti_referral');
-                    }
-                  }}
-                  className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/20 rounded-xl px-3.5 py-2 text-xs text-indigo-300 font-mono placeholder-slate-400/40 focus:outline-none focus:border-indigo-400/80 focus:ring-1 focus:ring-indigo-500/40 focus:bg-white/[0.14] transition-all disabled:opacity-40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_1px_4px_rgba(0,0,0,0.3)]"
-                />
               </div>
 
 
