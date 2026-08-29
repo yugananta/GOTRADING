@@ -2774,13 +2774,17 @@ async function startServer() {
       const keyConfigured = !!(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
       const { data: postsData, error: postError } = await supabase.from("Post").select("id, authorName, content").limit(3);
       const { data: usersData, error: userError } = await supabase.from("User").select("id, username, email").limit(3);
+      const { data: rawUsersData, error: rawUserError } = await supabase.from("users").select("id, email, full_name").limit(3);
       const isMock = (!postsData || postsData.length === 0) && (!usersData || usersData.length === 0) && (!urlConfigured || !keyConfigured);
       res.json({
         status: isMock ? "warning_mock_mode" : "ok",
         mode: isMock ? "MOCK_PROXY (Missing Env Variables in Railway)" : "REAL_SUPABASE_CONNECTED",
+        activeSupabaseUrl: supabase?.supabaseUrl || "unknown",
+        activeKeyPrefix: (supabase?.supabaseKey || "").substring(0, 15) + "...",
         environment: {
           hasSupabaseUrl: urlConfigured,
           hasSupabaseKey: keyConfigured,
+          envSupabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || null,
           nodeEnv: process.env.NODE_ENV || "development"
         },
         supabase: {
@@ -2788,7 +2792,10 @@ async function startServer() {
           samplePosts: postsData || [],
           postError: postError ? postError.message : null,
           usersCountFound: usersData?.length || 0,
-          userError: userError ? userError.message : null
+          sampleUsers: usersData || [],
+          userError: userError ? userError.message : null,
+          rawUsersCount: rawUsersData?.length || 0,
+          rawUserError: rawUserError ? rawUserError.message : null
         }
       });
     } catch (error) {
