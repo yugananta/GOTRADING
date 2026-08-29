@@ -3,15 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <title>GoTrading Hub</title>
+    <meta name="description" content="A professional social networking platform exclusively for traders." />
+    <meta property="og:title" content="GoTrading Hub" />
+    <meta property="og:description" content="A professional social networking platform exclusively for traders." />
     <script>
+      // Self-healing: if an old chunk fails to load due to deployment hash mismatch, clear SW & reload once
       window.addEventListener('error', function(e) {
-        console.error("GLOBAL ERROR:", e.message);
-        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">' + e.message + '</div>';
-      });
-      window.addEventListener('unhandledrejection', function(e) {
-        console.error("GLOBAL UNHANDLED REJECTION:", e.reason);
-        document.body.innerHTML += '<div style="color:red;z-index:9999;position:fixed;top:0;left:0;background:white;padding:10px;border:1px solid red;">Unhandled Rejection: ' + e.reason + '</div>';
+        var msg = (e && e.message) ? e.message : '';
+        if (msg.includes('Loading chunk') || msg.includes('Unexpected token') || msg.includes('Failed to fetch dynamically imported module')) {
+          var hasRetried = sessionStorage.getItem('sw_retry');
+          if (!hasRetried) {
+            sessionStorage.setItem('sw_retry', '1');
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                for (var i = 0; i < regs.length; i++) regs[i].unregister();
+              });
+            }
+            if ('caches' in window) {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              });
+            }
+            window.location.reload();
+          }
+        }
       });
     </script>
     <script type="module" crossorigin src="/assets/index-CABW3qf_.js"></script>

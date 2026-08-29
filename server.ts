@@ -4409,7 +4409,11 @@ INSTRUCTIONS:
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    // SPA Fallback: Send index.html for any non-API route
+    // Never send index.html for missing assets/scripts/styles to prevent SyntaxError in browser
+    app.get("/assets/*", (req, res) => {
+      res.status(404).type("text/plain").send("Asset not found");
+    });
+    // SPA Fallback: Send index.html only for HTML navigation routes
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
