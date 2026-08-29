@@ -94,8 +94,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('tarapti_user');
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object' && parsed.id && (parsed.username || parsed.email)) {
+        return parsed;
+      }
+      localStorage.removeItem('tarapti_user');
+      return null;
     } catch {
+      localStorage.removeItem('tarapti_user');
       return null;
     }
   });

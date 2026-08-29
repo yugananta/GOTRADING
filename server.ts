@@ -1044,20 +1044,37 @@ async function startServer() {
     }
   });
 
-  // API: Health Supabase
+  // API: Health Supabase Diagnostic
   app.get("/api/health-db", async (req, res) => {
     try {
-      const { data, error } = await supabase.from('User').select('count').limit(1);
-      if (error) throw error;
+      const urlConfigured = !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.DATABASE_URL);
+      const keyConfigured = !!(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
+
+      const { data: postsData, error: postError } = await supabase.from('Post').select('id, authorName, content').limit(3);
+      const { data: usersData, error: userError } = await supabase.from('User').select('id, username, email').limit(3);
+
+      const isMock = (!postsData || postsData.length === 0) && (!usersData || usersData.length === 0) && (!urlConfigured || !keyConfigured);
+
       res.json({ 
-        status: "ok", 
-        message: "Successfully connected to Supabase",
-        data: data 
+        status: isMock ? "warning_mock_mode" : "ok",
+        mode: isMock ? "MOCK_PROXY (Missing Env Variables in Railway)" : "REAL_SUPABASE_CONNECTED",
+        environment: {
+          hasSupabaseUrl: urlConfigured,
+          hasSupabaseKey: keyConfigured,
+          nodeEnv: process.env.NODE_ENV || 'development'
+        },
+        supabase: {
+          postsCountFound: postsData?.length || 0,
+          samplePosts: postsData || [],
+          postError: postError ? postError.message : null,
+          usersCountFound: usersData?.length || 0,
+          userError: userError ? userError.message : null
+        }
       });
     } catch (error: any) {
       res.status(500).json({ 
         status: "error", 
-        message: "Failed to connect to Supabase", 
+        message: "Failed to query Supabase", 
         error: error.message 
       });
     }
