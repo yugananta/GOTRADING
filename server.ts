@@ -52,7 +52,7 @@ process.on('uncaughtException', (err, origin) => {
   console.error('GLOBAL UNCAUGHT EXCEPTION caught gracefully:', err, 'at origin:', origin);
 });
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 8080;
 
 // Helper to calculate dampened reputation gain to prevent ballooning (Diminishing Returns)
 function calculateReputationGain(currentRep: number, basePoints: number): number {
