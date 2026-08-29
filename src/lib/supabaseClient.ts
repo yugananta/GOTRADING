@@ -1,5 +1,15 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+// Polyfill native WebSocket in Node.js environments (e.g. Node 20 on Railway)
+if (typeof window === 'undefined' && typeof (globalThis as any).WebSocket === 'undefined') {
+  try {
+    const ws = typeof require !== 'undefined' ? require('ws') : null;
+    if (ws) {
+      (globalThis as any).WebSocket = ws;
+    }
+  } catch (e) {}
+}
+
 const DEFAULT_SUPABASE_URL = 'https://lsjqoznizsshpbvvzzam.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzanFvem5penNzaHBidnZ6emFtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI1NDg3MiwiZXhwIjoyMDk5ODMwODcyfQ.9CMuqhXNPo4EALqeNX9UyTj35CbgzT7LWDrb1imqAGs';
 

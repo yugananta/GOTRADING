@@ -22,6 +22,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 
 // server.ts
+var import_ws = __toESM(require("ws"), 1);
 var import_express_async_errors = require("express-async-errors");
 var import_config = require("dotenv/config");
 var import_express = __toESM(require("express"), 1);
@@ -33,6 +34,15 @@ var import_vite = require("vite");
 // src/lib/supabaseClient.ts
 var import_supabase_js = require("@supabase/supabase-js");
 var import_meta = {};
+if (typeof window === "undefined" && typeof globalThis.WebSocket === "undefined") {
+  try {
+    const ws2 = typeof require !== "undefined" ? require("ws") : null;
+    if (ws2) {
+      globalThis.WebSocket = ws2;
+    }
+  } catch (e) {
+  }
+}
 var DEFAULT_SUPABASE_URL = "https://lsjqoznizsshpbvvzzam.supabase.co";
 var DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzanFvem5penNzaHBidnZ6emFtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDI1NDg3MiwiZXhwIjoyMDk5ODMwODcyfQ.9CMuqhXNPo4EALqeNX9UyTj35CbgzT7LWDrb1imqAGs";
 var getEnv = (key) => {
@@ -1777,6 +1787,9 @@ var GroupRepository = class {
 
 // server.ts
 var import_genai = require("@google/genai");
+if (typeof globalThis.WebSocket === "undefined") {
+  globalThis.WebSocket = import_ws.default;
+}
 var getGeminiClient = () => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;

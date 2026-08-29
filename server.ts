@@ -1,3 +1,7 @@
+import ws from 'ws';
+if (typeof (globalThis as any).WebSocket === 'undefined') {
+  (globalThis as any).WebSocket = ws;
+}
 import 'express-async-errors';
 import 'dotenv/config';
 import express from "express";
