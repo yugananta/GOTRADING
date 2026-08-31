@@ -750,16 +750,17 @@ function MainAppLayout() {
         {isMobileFeedDropdownOpen && (
           <div className="fixed inset-0 bg-black/[0.02] z-30" onClick={() => setIsMobileFeedDropdownOpen(false)} />
         )}
-        <div className={`w-full ${isFullWidthDesktopView ? 'max-w-[1480px]' : 'max-w-[1350px]'} mx-auto px-2 sm:px-4 py-1`}>
+        <div className={`w-full ${isFullWidthDesktopView ? 'max-w-[1480px]' : 'max-w-[1350px]'} mx-auto px-2 sm:px-4 py-0`}>
         
         {/* Top Header Row: Branding + Web Nav centered, Action Tray on Right */}
         <div className="flex items-center justify-between w-full relative gap-2 sm:gap-4">
-          <div className="flex items-center shrink-0 min-h-[60px] sm:min-h-[72px] py-1">
-            <TaraptiLogo height={72} className="cursor-pointer scale-100 sm:scale-105 origin-left transition-transform hover:scale-110" />
-          </div>
+          <div className="flex items-center gap-4 lg:gap-8">
+            <div className="flex items-center shrink-0 min-h-[48px] sm:min-h-[52px] py-0.5">
+              <TaraptiLogo height={54} className="cursor-pointer scale-100 sm:scale-105 origin-left transition-transform hover:scale-110" />
+            </div>
 
-          {/* DESKTOP ONLY: Navigation Menu in Header Center */}
-          <nav className="hidden md:flex items-center justify-center gap-2 lg:gap-3 text-xs font-bold text-slate-500 select-none absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-40">
+            {/* DESKTOP ONLY: Navigation Menu in Header Center */}
+            <nav className="hidden md:flex items-center gap-2 lg:gap-3 text-xs font-bold text-slate-500 select-none z-40">
               {[
                 { id: 'feed', label: t('nav.feed'), isDropdown: true },
                 { id: 'network', label: t('nav.network') },
@@ -911,6 +912,7 @@ function MainAppLayout() {
                 );
               })}
             </nav>
+          </div>
 
           {/* Right Header Tray */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
