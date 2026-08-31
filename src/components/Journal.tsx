@@ -1,3 +1,4 @@
+import { DrawdownRiskEngine } from './DrawdownRiskEngine.tsx';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from './AppContext.js';
@@ -111,7 +112,7 @@ export const Journal: React.FC = () => {
     return () => window.removeEventListener('open-journal-tab', handleOpenTab);
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'goals' | 'ledger' | 'history'>(() => journalInitialTab || 'goals');
+  const [activeTab, setActiveTab] = useState<'goals' | 'ledger' | 'history' | 'risk'>(() => journalInitialTab || 'goals');
 
   useEffect(() => {
     if (journalInitialTab) {
@@ -1543,7 +1544,7 @@ export const Journal: React.FC = () => {
       </div>
       
       {/* 3 COMPACT CARDS SIDE-BY-SIDE (3 COLUMNS) WITHOUT GLASS EFFECT */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mt-3 mb-5">
         
         {/* CARD 1: MISSION GOAL PLAN */}
         <div
@@ -1604,6 +1605,33 @@ export const Journal: React.FC = () => {
           <div className='pt-1.5 flex items-center justify-between text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-violet-200'>
             <span>{t('common.journal.ledger')}</span>
             <span className="font-black">→</span>
+          </div>
+        </div>
+
+
+        {/* CARD 4: RISK ENGINE */}
+        <div
+          onClick={() => setActiveTab('risk')}
+          className={`group relative overflow-hidden rounded-2xl p-2.5 sm:p-3 transition-all duration-300 cursor-pointer select-none flex flex-col justify-between border ${
+            activeTab === 'risk'
+              ? 'bg-rose-600 border-rose-400 text-white shadow-[inset_0_2px_6px_rgba(255,255,255,0.3),0_6px_12px_rgba(0,0,0,0.3)] scale-[1.02] ring-2 ring-white/30 z-10'
+              : 'bg-rose-600/90 border-rose-500 text-rose-50 hover:bg-rose-600 shadow-sm opacity-85 hover:opacity-100'
+          }`}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <AlertTriangle size={13} className='text-rose-200 shrink-0' />
+                <span className='text-[10px] sm:text-[11px] font-black truncate text-white'>RISK ENGINE</span>
+              </div>
+              {activeTab === 'risk' && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
+              )}
+            </div>
+
+            <p className='text-[9px] sm:text-[10px] leading-tight font-medium line-clamp-2 text-rose-100'>
+              Live drawdown and protection.
+            </p>
           </div>
         </div>
 
@@ -2096,6 +2124,12 @@ export const Journal: React.FC = () => {
         </div>
         );
       })()}
+      
+      {/* TAB 4: RISK ENGINE */}
+      {activeTab === 'risk' && (
+        <DrawdownRiskEngine />
+      )}
+
       {/* TAB 2: TRADING JOURNAL */}
       {activeTab === 'ledger' && (
         <div className="space-y-4">
