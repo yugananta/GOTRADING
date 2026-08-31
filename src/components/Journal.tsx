@@ -102,6 +102,15 @@ export const Journal: React.FC = () => {
   } = useApp();
   
   // Tabs: 'goals' | 'ledger' | 'history'
+  
+  useEffect(() => {
+    const handleOpenTab = (e) => {
+      if (e.detail) setActiveTab(e.detail);
+    };
+    window.addEventListener('open-journal-tab', handleOpenTab);
+    return () => window.removeEventListener('open-journal-tab', handleOpenTab);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'goals' | 'ledger' | 'history'>(() => journalInitialTab || 'goals');
 
   useEffect(() => {

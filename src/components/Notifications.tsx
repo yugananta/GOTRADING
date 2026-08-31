@@ -79,7 +79,9 @@ export const Notifications: React.FC = () => {
       case 'profit_target_weekly':
       case 'drawdown_daily':
       case 'drawdown_weekly':
+      case 'drawdown_risk':
         setActiveView('journal');
+        setTimeout(() => window.dispatchEvent(new CustomEvent('open-journal-tab', { detail: 'risk' })), 100);
         break;
 
       case 'market_pulse':
@@ -373,6 +375,12 @@ export const Notifications: React.FC = () => {
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-lg border border-emerald-200 dark:border-emerald-800/60 shadow-xs transition cursor-pointer"
               >
                 🎯 Target Profit
+              </button>
+                            <button
+                onClick={() => triggerTestNotification('drawdown_risk')}
+                className="px-2.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-400 text-xs font-medium rounded-lg border border-rose-200 dark:border-rose-800/60 shadow-xs transition cursor-pointer"
+              >
+                ⚠️ Risiko Drawdown
               </button>
               <button
                 onClick={() => triggerTestNotification('high_news')}

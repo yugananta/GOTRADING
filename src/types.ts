@@ -234,3 +234,27 @@ export type AuthErrorCode =
   | 'AUTH_RATE_LIMIT'
   | 'AUTH_INTERNAL_ERROR';
 
+
+export interface DailyBriefEvent {
+  id: string;
+  time: string; // e.g., "14:30 WIB"
+  title: string; // e.g., "US CPI"
+  currency: string; // e.g., "USD"
+  impact: 'HIGH IMPACT' | 'MEDIUM IMPACT' | 'LOW IMPACT';
+  forecast?: string;
+  previous?: string;
+  actual?: string;
+}
+
+export interface DailyBrief {
+  id: string;
+  userId: string;
+  date: string; // YYYY-MM-DD
+  timezone: string;
+  marketContext: string;
+  highImpactEvents: DailyBriefEvent[];
+  traderContext: string;
+  watchItems: string[];
+  advice: string;
+  generatedAt: string;
+}

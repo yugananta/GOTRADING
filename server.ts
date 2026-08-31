@@ -1,3 +1,5 @@
+import { DrawdownRiskService } from './src/services/DrawdownRiskService.ts';
+import { DrawdownNotificationService } from './src/services/DrawdownNotificationService.ts';
 import ws from 'ws';
 if (typeof (globalThis as any).WebSocket === 'undefined') {
   (globalThis as any).WebSocket = ws;
@@ -2101,6 +2103,44 @@ INSTRUCTIONS:
   });
 
   // API: Users List with Filters & High-Performance Pagination
+  
+  app.get("/api/users/:userId/drawdown-risk", async (req, res) => {
+    try {
+      const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'https://be-gotrading-production.up.railway.app').replace(/\/+$/, '');
+      const headers = {};
+      if (req.headers.authorization) headers['authorization'] = req.headers.authorization;
+      if (req.headers.cookie) headers['cookie'] = req.headers.cookie;
+
+      const accountRes = await fetch(`${BACKEND_API_URL}/api/metatrader/account`, { headers });
+      if (!accountRes.ok) {
+         return res.status(accountRes.status).json({ success: false, error: 'Failed to fetch account info' });
+      }
+      const accountData = await accountRes.json();
+      const accountInfo = accountData.data || accountData;
+
+      const tradesRes = await fetch(`${BACKEND_API_URL}/api/metatrader/trades?period=all`, { headers });
+      if (!tradesRes.ok) {
+         return res.status(tradesRes.status).json({ success: false, error: 'Failed to fetch trades' });
+      }
+      const tradesData = await tradesRes.json();
+      const trades = tradesData.data?.data || tradesData.data || [];
+
+      const result = DrawdownRiskService.calculateDrawdownRisk(req.params.userId, trades, accountInfo);
+
+      try {
+         const accountRules = { maxDrawdown: 100 };
+         await DrawdownNotificationService.evaluateDrawdownNotification(req.params.userId, result, accountRules);
+      } catch (notifErr) {
+         console.error('Error in DrawdownNotificationService:', notifErr);
+      }
+
+      res.json({ success: true, data: result });
+    } catch (err) {
+      console.error('Error in drawdown risk:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   app.get("/api/users", async (req: any, res) => {
     const { search, country, province, city, experience, asset, online, lat, lng, radius, page, limit, paginated, format } = req.query;
     console.log(`GET /api/users - City: ${city}, Province: ${province}, Search: ${search}, Page: ${page}, Limit: ${limit}`);
@@ -4207,6 +4247,19 @@ INSTRUCTIONS:
         fromUserAvatar: "🚨",
         type: "drawdown_weekly",
         message: "🚨 Batas Max Drawdown Mingguan Reached! Drawdown -5.1% tercapai. Proteksi posisi otomatis aktif.",
+        isRead: false,
+        timestamp: new Date().toISOString()
+      };
+      eventName = "NOTIFICATION";
+    } else if (eventType === 'drawdown_risk') {
+      notification = {
+        id: "notify_test_" + Date.now(),
+        toUserId: userId,
+        fromUserId: "tarapti_official_admin",
+        fromUserName: "Risk Engine",
+        fromUserAvatar: "🔴",
+        type: "drawdown_risk",
+        message: "🔴 New Drawdown High: Current drawdown of 14.8% exceeds your historical maximum of 11.2%.",
         isRead: false,
         timestamp: new Date().toISOString()
       };

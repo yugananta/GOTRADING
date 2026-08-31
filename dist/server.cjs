@@ -21,15 +21,256 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// server.ts
-var import_ws = __toESM(require("ws"), 1);
-var import_express_async_errors = require("express-async-errors");
-var import_config = require("dotenv/config");
-var import_express = __toESM(require("express"), 1);
-var import_http = require("http");
-var import_path = __toESM(require("path"), 1);
+// src/services/DrawdownRiskService.ts
+var DrawdownRiskService = class {
+  static calculateDrawdownRisk(userId, trades, accountInfo) {
+    const sortedTrades = [...trades || []].sort((a, b) => {
+      const timeA = a.closeTime ? new Date(a.closeTime).getTime() : 0;
+      const timeB = b.closeTime ? new Date(b.closeTime).getTime() : 0;
+      return timeA - timeB;
+    });
+    let peakEquity = accountInfo?.peak_equity || accountInfo?.peakEquity || 0;
+    const balance = accountInfo?.balance || 0;
+    let startingBalance = balance;
+    if (peakEquity <= 0) {
+      const totalPnL = sortedTrades.reduce((acc, t) => acc + (t.pl || 0), 0);
+      startingBalance = balance - totalPnL;
+      if (startingBalance <= 0) startingBalance = balance > 0 ? balance : 1e3;
+      peakEquity = startingBalance;
+    }
+    let runningEquity = startingBalance;
+    let maxDD = 0;
+    const ddHistory = [];
+    let previousDD = 0;
+    const recentDDs = [];
+    sortedTrades.forEach((t) => {
+      runningEquity += t.pl || 0;
+      if (runningEquity > peakEquity) {
+        peakEquity = runningEquity;
+      }
+      const ddAmount = peakEquity - runningEquity;
+      const ddPercent = peakEquity > 0 ? ddAmount / peakEquity * 100 : 0;
+      if (ddPercent > maxDD) {
+        maxDD = ddPercent;
+      }
+      if (ddPercent > 0.1) {
+        ddHistory.push(ddPercent);
+      }
+      recentDDs.push(ddPercent);
+    });
+    const currentEquity = accountInfo?.equity || runningEquity;
+    if (currentEquity > peakEquity) {
+      peakEquity = currentEquity;
+    }
+    const currentDDAmount = peakEquity - currentEquity;
+    const currentDrawdown = peakEquity > 0 ? Math.max(0, currentDDAmount / peakEquity * 100) : 0;
+    if (currentDrawdown > maxDD) {
+      maxDD = currentDrawdown;
+    }
+    recentDDs.push(currentDrawdown);
+    if (currentDrawdown > 0.1) {
+      ddHistory.push(currentDrawdown);
+    }
+    ddHistory.sort((a, b) => a - b);
+    let medianDrawdown = 0;
+    let typicalDrawdown = 0;
+    if (ddHistory.length > 0) {
+      const mid = Math.floor(ddHistory.length / 2);
+      medianDrawdown = ddHistory.length % 2 !== 0 ? ddHistory[mid] : (ddHistory[mid - 1] + ddHistory[mid]) / 2;
+      const upperHalf = ddHistory.slice(mid);
+      typicalDrawdown = upperHalf.length > 0 ? upperHalf.reduce((a, b) => a + b, 0) / upperHalf.length : medianDrawdown;
+    }
+    const historicalMaxDrawdown = maxDD;
+    let confidence = "RELIABLE";
+    if (sortedTrades.length < 10) confidence = "INSUFFICIENT DATA";
+    else if (sortedTrades.length < 30) confidence = "EARLY BASELINE";
+    if (confidence === "INSUFFICIENT DATA") {
+      typicalDrawdown = 0;
+      medianDrawdown = 0;
+    }
+    let currentCondition = "NORMAL";
+    let currentConditionScore = 100;
+    if (confidence === "INSUFFICIENT DATA") {
+      currentCondition = "NORMAL";
+      currentConditionScore = 50;
+    } else {
+      const diff = currentDrawdown - typicalDrawdown;
+      if (currentDrawdown > historicalMaxDrawdown && currentDrawdown > typicalDrawdown + 5) {
+        currentCondition = "NEW HISTORICAL MAX";
+        currentConditionScore = 0;
+      } else if (currentDrawdown >= historicalMaxDrawdown * 0.9 && currentDrawdown > 5) {
+        currentCondition = "NEAR HISTORICAL MAX";
+        currentConditionScore = 20;
+      } else if (diff > 15) {
+        currentCondition = "EXTREMELY ABOVE NORMAL";
+        currentConditionScore = 10;
+      } else if (diff > 8) {
+        currentCondition = "SIGNIFICANTLY ABOVE NORMAL";
+        currentConditionScore = 30;
+      } else if (diff > 3) {
+        currentCondition = "SLIGHTLY ABOVE NORMAL";
+        currentConditionScore = 60;
+      } else if (currentDrawdown < typicalDrawdown - 2) {
+        currentCondition = "BELOW NORMAL";
+        currentConditionScore = 100;
+      } else {
+        currentCondition = "NORMAL";
+        currentConditionScore = 80;
+      }
+    }
+    let absoluteSeverity = "LOW";
+    let absoluteSeverityScore = 100;
+    if (currentDrawdown > 50) {
+      absoluteSeverity = "SEVERE / EXTREME";
+      absoluteSeverityScore = 0;
+    } else if (currentDrawdown > 30) {
+      absoluteSeverity = "EXTREME";
+      absoluteSeverityScore = 10;
+    } else if (currentDrawdown > 20) {
+      absoluteSeverity = "VERY HIGH";
+      absoluteSeverityScore = 30;
+    } else if (currentDrawdown > 10) {
+      absoluteSeverity = "HIGH";
+      absoluteSeverityScore = 50;
+    } else if (currentDrawdown > 5) {
+      absoluteSeverity = "MODERATE";
+      absoluteSeverityScore = 75;
+    } else {
+      absoluteSeverity = "LOW";
+      absoluteSeverityScore = 100;
+    }
+    let historicalRiskProfile = "LOW EXPOSURE";
+    let historicalRiskProfileScore = 100;
+    if (confidence !== "INSUFFICIENT DATA") {
+      const riskMetric = (typicalDrawdown * 2 + historicalMaxDrawdown) / 3;
+      if (riskMetric > 30) {
+        historicalRiskProfile = "EXTREME EXPOSURE";
+        historicalRiskProfileScore = 10;
+      } else if (riskMetric > 20) {
+        historicalRiskProfile = "VERY HIGH EXPOSURE";
+        historicalRiskProfileScore = 30;
+      } else if (riskMetric > 10) {
+        historicalRiskProfile = "HIGH EXPOSURE";
+        historicalRiskProfileScore = 50;
+      } else if (riskMetric > 5) {
+        historicalRiskProfile = "MODERATE EXPOSURE";
+        historicalRiskProfileScore = 75;
+      } else {
+        historicalRiskProfile = "LOW EXPOSURE";
+        historicalRiskProfileScore = 100;
+      }
+    } else {
+      historicalRiskProfileScore = 50;
+      historicalRiskProfile = "MODERATE EXPOSURE";
+    }
+    let drawdownTrend = "STABLE";
+    let accelerationScore = 80;
+    if (recentDDs.length >= 5) {
+      const last5 = recentDDs.slice(-5);
+      const start = last5[0];
+      const end = last5[4];
+      const diff = end - start;
+      if (diff > 5) {
+        drawdownTrend = "RAPIDLY INCREASING";
+        accelerationScore = 20;
+      } else if (diff > 2) {
+        drawdownTrend = "INCREASING";
+        accelerationScore = 40;
+      } else if (diff < -2) {
+        drawdownTrend = "IMPROVING";
+        accelerationScore = 100;
+      } else {
+        drawdownTrend = "STABLE";
+        accelerationScore = 80;
+      }
+    } else {
+      accelerationScore = 50;
+    }
+    let drawdownDurationMinutes = 0;
+    let durationRecoveryScore = 80;
+    let timeSincePeak = 0;
+    if (sortedTrades.length > 0 && currentDrawdown > 1) {
+      let lastPeakTime = new Date(sortedTrades[0].closeTime).getTime();
+      let tempEq = startingBalance;
+      let tempPeak = startingBalance;
+      for (const t of sortedTrades) {
+        tempEq += t.pl || 0;
+        if (tempEq >= tempPeak) {
+          tempPeak = tempEq;
+          lastPeakTime = new Date(t.closeTime).getTime();
+        }
+      }
+      timeSincePeak = Date.now() - lastPeakTime;
+      drawdownDurationMinutes = Math.floor(timeSincePeak / 6e4);
+      if (drawdownDurationMinutes > 7 * 24 * 60) durationRecoveryScore = 30;
+      else if (drawdownDurationMinutes > 24 * 60) durationRecoveryScore = 50;
+      else durationRecoveryScore = 70;
+    }
+    const recoveryRequired = currentDrawdown >= 100 ? 0 : currentDrawdown / (100 - currentDrawdown) * 100;
+    let score = currentConditionScore * 0.3 + absoluteSeverityScore * 0.3 + historicalRiskProfileScore * 0.25 + accelerationScore * 0.1 + durationRecoveryScore * 0.05;
+    if (absoluteSeverity === "SEVERE / EXTREME" || absoluteSeverity === "EXTREME") {
+      if (score > 39) score = 39;
+    } else if (absoluteSeverity === "VERY HIGH") {
+      if (score > 59) score = 59;
+    }
+    let category = "HEALTHY";
+    if (score >= 90) category = "VERY HEALTHY";
+    else if (score >= 75) category = "HEALTHY";
+    else if (score >= 60) category = "WATCH";
+    else if (score >= 40) category = "ELEVATED RISK";
+    else if (score >= 20) category = "HIGH RISK";
+    else category = "CRITICAL";
+    let explanation = "";
+    let advice = "";
+    if (currentCondition === "NORMAL" || currentCondition === "SLIGHTLY ABOVE NORMAL" || currentCondition === "BELOW NORMAL") {
+      if (absoluteSeverityScore < 60) {
+        explanation = `Your current drawdown is not unusual compared with your historical trading pattern. However, the drawdown itself is very deep, and your historical data shows that deep drawdowns are a recurring characteristic of your trading.`;
+        advice = `Your current DD may be consistent with your historical behavior, but the depth of your drawdowns suggests that risk exposure should be reviewed. Consider reviewing position sizing and overall risk exposure.`;
+      } else {
+        explanation = `Your current drawdown remains within your normal historical range and is relatively low.`;
+        advice = `Maintain your current risk management practices. Your execution remains consistent.`;
+      }
+    } else {
+      if (absoluteSeverityScore < 60) {
+        explanation = `Your current drawdown is substantially higher than your historical range and has reached a very deep level.`;
+        advice = `You are experiencing an unusually deep drawdown. It is highly recommended to pause trading, step back, and review your current strategy.`;
+      } else {
+        explanation = `Your current drawdown is significantly higher than your historical trading range, although not yet at critical absolute levels.`;
+        advice = `Monitor your performance closely. You are deviating from your typical risk profile.`;
+      }
+    }
+    return {
+      score: Math.round(score),
+      category,
+      confidence,
+      currentDrawdown,
+      typicalDrawdown,
+      medianDrawdown,
+      historicalMaxDrawdown,
+      currentCondition,
+      absoluteSeverity,
+      historicalRiskProfile,
+      drawdownTrend,
+      drawdownAcceleration: drawdownTrend,
+      // alias
+      drawdownDuration: drawdownDurationMinutes,
+      recoveryRequired,
+      explanation,
+      advice,
+      components: {
+        currentConditionScore,
+        absoluteSeverityScore,
+        historicalRiskProfileScore,
+        accelerationScore,
+        durationRecoveryScore
+      }
+    };
+  }
+};
+
+// src/services/DrawdownNotificationService.ts
 var import_fs = __toESM(require("fs"), 1);
-var import_vite = require("vite");
+var import_path = __toESM(require("path"), 1);
 
 // src/lib/supabaseClient.ts
 var import_supabase_js = require("@supabase/supabase-js");
@@ -79,6 +320,296 @@ var supabase = (0, import_supabase_js.createClient)(supabaseUrl, supabaseService
     }
   }
 });
+
+// src/repositories/NotificationRepository.ts
+var NotificationRepository = class _NotificationRepository {
+  static {
+    this.memoryNotifications = [];
+  }
+  async list() {
+    try {
+      const { data, error } = await supabase.from("Notification").select("*").order("timestamp", { ascending: false });
+      if (!error && data) {
+        _NotificationRepository.memoryNotifications = data;
+        return data;
+      }
+    } catch (e) {
+      console.error("Failed to list notifications from Supabase, using memory fallback:", e);
+    }
+    return [..._NotificationRepository.memoryNotifications].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+  async listByUserId(userId) {
+    try {
+      const { data, error } = await supabase.from("Notification").select("*").eq("toUserId", userId).order("timestamp", { ascending: false });
+      if (!error && data) {
+        const otherUserNotifs = _NotificationRepository.memoryNotifications.filter((n) => n.toUserId !== userId);
+        _NotificationRepository.memoryNotifications = [...otherUserNotifs, ...data];
+        return { data, meta: { stale: false, source: "supabase" } };
+      }
+    } catch (e) {
+      console.error("Failed to list notifications by user from Supabase, using memory fallback:", e?.message || e);
+    }
+    const cached = _NotificationRepository.memoryNotifications.filter((n) => n.toUserId === userId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return { data: cached, meta: { stale: true, source: "memory_cache" } };
+  }
+  async findById(id) {
+    try {
+      const { data, error } = await supabase.from("Notification").select("*").eq("id", id).maybeSingle();
+      if (!error && data) {
+        const idx = _NotificationRepository.memoryNotifications.findIndex((n) => n.id === id);
+        if (idx !== -1) {
+          _NotificationRepository.memoryNotifications[idx] = data;
+        } else {
+          _NotificationRepository.memoryNotifications.push(data);
+        }
+        return data;
+      }
+    } catch (e) {
+      console.error("Failed to find notification by id from Supabase:", e);
+    }
+    const memNotif = _NotificationRepository.memoryNotifications.find((n) => n.id === id);
+    return memNotif || null;
+  }
+  async create(notification) {
+    const id = notification.id || "notify_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+    let validFromUserId = notification.fromUserId || "tarapti_official_admin";
+    if (validFromUserId === "system" || validFromUserId.startsWith("system_") || validFromUserId === "user_sim") {
+      validFromUserId = "tarapti_official_admin";
+    }
+    const newNotif = {
+      id,
+      toUserId: notification.toUserId,
+      fromUserId: validFromUserId,
+      fromUserName: notification.fromUserName || "Tarapti Alert",
+      fromUserAvatar: notification.fromUserAvatar || "\u{1F6A8}",
+      type: notification.type,
+      message: notification.message,
+      isRead: notification.isRead || false,
+      timestamp: notification.timestamp || (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const existingIdx = _NotificationRepository.memoryNotifications.findIndex((n) => n.id === id);
+    if (existingIdx >= 0) {
+      _NotificationRepository.memoryNotifications[existingIdx] = newNotif;
+    } else {
+      _NotificationRepository.memoryNotifications.unshift(newNotif);
+    }
+    try {
+      const { data, error } = await supabase.from("Notification").upsert([newNotif]).select().single();
+      if (!error && data) {
+        return data;
+      }
+      if (error) {
+        if (error.code === "23503") {
+          newNotif.fromUserId = "tarapti_official_admin";
+          const retry = await supabase.from("Notification").upsert([newNotif]).select().single();
+          if (!retry.error && retry.data) {
+            return retry.data;
+          }
+        }
+        throw error;
+      }
+    } catch (e) {
+      console.error("Failed to persist notification in Supabase, using memory fallback:", e);
+    }
+    return newNotif;
+  }
+  async markAllAsRead(userId) {
+    _NotificationRepository.memoryNotifications.filter((n) => n.toUserId === userId).forEach((n) => n.isRead = true);
+    try {
+      await supabase.from("Notification").update({ isRead: true }).eq("toUserId", userId);
+    } catch (e) {
+      console.error("Failed to mark notifications as read in Supabase:", e);
+    }
+  }
+  async delete(id) {
+    _NotificationRepository.memoryNotifications = _NotificationRepository.memoryNotifications.filter((n) => n.id !== id);
+    try {
+      await supabase.from("Notification").delete().eq("id", id);
+    } catch (e) {
+      console.error("Failed to delete notification in Supabase:", e);
+    }
+  }
+  async update(id, updates) {
+    const memNotif = _NotificationRepository.memoryNotifications.find((n) => n.id === id);
+    if (memNotif) {
+      Object.assign(memNotif, updates);
+    }
+    try {
+      await supabase.from("Notification").update(updates).eq("id", id);
+    } catch (e) {
+      console.error("Failed to update notification in Supabase:", e);
+    }
+  }
+};
+
+// src/services/DrawdownNotificationService.ts
+var STATE_FILE = import_path.default.join(process.cwd(), "data", "drawdown_notification_state.json");
+var DrawdownNotificationService = class {
+  static getStateMap() {
+    try {
+      if (import_fs.default.existsSync(STATE_FILE)) {
+        return JSON.parse(import_fs.default.readFileSync(STATE_FILE, "utf8"));
+      }
+    } catch (e) {
+    }
+    return {};
+  }
+  static saveStateMap(map) {
+    try {
+      if (!import_fs.default.existsSync(import_path.default.dirname(STATE_FILE))) {
+        import_fs.default.mkdirSync(import_path.default.dirname(STATE_FILE), { recursive: true });
+      }
+      import_fs.default.writeFileSync(STATE_FILE, JSON.stringify(map, null, 2));
+    } catch (e) {
+    }
+  }
+  static async evaluateDrawdownNotification(userId, currentAssessment, accountRules = null) {
+    const map = this.getStateMap();
+    const previousState = map[userId] || {
+      category: "HEALTHY",
+      score: 100,
+      currentDrawdown: 0,
+      historicalMaxDrawdown: 0,
+      lastNotifiedAt: 0,
+      lastNotifiedCategory: "HEALTHY"
+    };
+    const now = Date.now();
+    const cooldownMs = 6 * 60 * 60 * 1e3;
+    let shouldNotify = false;
+    let priority = 99;
+    let alertType = "DRAWDOWN_RISK";
+    let severity = "LOW";
+    let title = "";
+    let body = "";
+    let cta = "Review Analysis";
+    let triggerReason = "";
+    if (accountRules && accountRules.maxDrawdown && currentAssessment.currentDrawdown >= accountRules.maxDrawdown * 0.8) {
+      shouldNotify = true;
+      priority = 0;
+      alertType = "ACCOUNT_RULE";
+      severity = "CRITICAL";
+      title = "\u{1F534} Account Drawdown Warning";
+      body = `Your drawdown is ${currentAssessment.currentDrawdown.toFixed(1)}% against the account's ${accountRules.maxDrawdown}% maximum drawdown rule.`;
+      cta = "Review Account Risk";
+      triggerReason = "ACCOUNT_MAX_DD_APPROACH";
+    }
+    if (priority > 4 && currentAssessment.absoluteSeverity === "SEVERE / EXTREME") {
+      shouldNotify = true;
+      priority = 4;
+      severity = "CRITICAL";
+      title = "\u{1F534} High Drawdown";
+      if (["NORMAL", "BELOW NORMAL", "SLIGHTLY ABOVE NORMAL"].includes(currentAssessment.currentCondition)) {
+        body = `Your current drawdown is ${currentAssessment.currentDrawdown.toFixed(1)}%. While this is within your historical pattern, the drawdown itself is very deep.`;
+      } else {
+        body = `Your current drawdown has reached ${currentAssessment.currentDrawdown.toFixed(1)}%. This is a very deep drawdown level.`;
+      }
+      triggerReason = "EXTREME_ABSOLUTE_DRAWDOWN";
+    }
+    if (priority > 3 && currentAssessment.drawdownAcceleration === "RAPIDLY INCREASING") {
+      shouldNotify = true;
+      priority = 3;
+      severity = "HIGH";
+      title = "\u{1F534} Rapid Drawdown Increase";
+      body = `Your drawdown has increased rapidly and is now significantly above your normal trading range.`;
+      triggerReason = "RAPID_DRAWDOWN_ACCELERATION";
+    }
+    if (priority > 2 && currentAssessment.currentCondition === "NEW HISTORICAL MAX" && currentAssessment.currentDrawdown > previousState.historicalMaxDrawdown) {
+      if (currentAssessment.currentDrawdown > 5) {
+        shouldNotify = true;
+        priority = 2;
+        severity = "HIGH";
+        title = "\u{1F534} New Drawdown High";
+        body = `Your current drawdown of ${currentAssessment.currentDrawdown.toFixed(1)}% is now higher than your previous historical maximum of ${previousState.historicalMaxDrawdown > 0 ? previousState.historicalMaxDrawdown.toFixed(1) : currentAssessment.typicalDrawdown.toFixed(1)}%.`;
+        triggerReason = "NEW_HISTORICAL_MAX";
+      }
+    }
+    const catSeverity = {
+      "VERY HEALTHY": 0,
+      "HEALTHY": 1,
+      "WATCH": 2,
+      "ELEVATED RISK": 3,
+      "HIGH RISK": 4,
+      "CRITICAL": 5
+    };
+    const prevCatIndex = catSeverity[previousState.lastNotifiedCategory] || 0;
+    const currCatIndex = catSeverity[currentAssessment.category] || 0;
+    if (priority > 6 && currCatIndex > prevCatIndex) {
+      shouldNotify = true;
+      priority = 6;
+      severity = currentAssessment.category === "CRITICAL" ? "CRITICAL" : "HIGH";
+      if (currCatIndex >= 3) {
+        title = "\u26A0\uFE0F Drawdown Risk Increased";
+        body = `Your current drawdown risk category has deteriorated to ${currentAssessment.category}. Your drawdown is significantly above your historical range.`;
+      } else {
+        title = "\u26A0\uFE0F Drawdown Risk Alert";
+        body = `Your current drawdown risk category has shifted to ${currentAssessment.category}.`;
+      }
+      triggerReason = "RISK_CATEGORY_DETERIORATION";
+    }
+    let actuallyNotify = false;
+    if (shouldNotify) {
+      if (now - previousState.lastNotifiedAt > cooldownMs) {
+        actuallyNotify = true;
+      } else {
+        if (currCatIndex > prevCatIndex && currCatIndex >= 3) {
+          actuallyNotify = true;
+        } else if (priority <= 2) {
+          if (currentAssessment.currentDrawdown > previousState.currentDrawdown + 2) {
+            actuallyNotify = true;
+          }
+        }
+      }
+    }
+    if (actuallyNotify) {
+      const notifRepo = new NotificationRepository();
+      await notifRepo.create({
+        toUserId: userId,
+        fromUserId: "system",
+        fromUserName: "Risk Engine",
+        fromUserAvatar: priority <= 2 ? "\u{1F534}" : "\u26A0\uFE0F",
+        type: "drawdown_risk",
+        message: `${title}: ${body}`
+      });
+      previousState.lastNotifiedAt = now;
+      previousState.lastNotifiedCategory = currentAssessment.category;
+      previousState.currentDrawdown = currentAssessment.currentDrawdown;
+    }
+    if (currentAssessment.currentDrawdown > previousState.historicalMaxDrawdown) {
+      previousState.historicalMaxDrawdown = currentAssessment.currentDrawdown;
+    }
+    if (!actuallyNotify && currCatIndex < prevCatIndex) {
+      previousState.lastNotifiedCategory = currentAssessment.category;
+      previousState.currentDrawdown = currentAssessment.currentDrawdown;
+    }
+    previousState.category = currentAssessment.category;
+    previousState.score = currentAssessment.score;
+    map[userId] = previousState;
+    this.saveStateMap(map);
+    return {
+      shouldNotify: actuallyNotify,
+      alertType,
+      priority,
+      severity,
+      title,
+      body,
+      cta,
+      previousState: previousState.category,
+      currentState: currentAssessment.category,
+      triggerReason,
+      cooldownUntil: previousState.lastNotifiedAt + cooldownMs
+    };
+  }
+};
+
+// server.ts
+var import_ws = __toESM(require("ws"), 1);
+var import_express_async_errors = require("express-async-errors");
+var import_config = require("dotenv/config");
+var import_express = __toESM(require("express"), 1);
+var import_http = require("http");
+var import_path2 = __toESM(require("path"), 1);
+var import_fs2 = __toESM(require("fs"), 1);
+var import_vite = require("vite");
 
 // src/repositories/AuthRepositories.ts
 var import_crypto = __toESM(require("crypto"), 1);
@@ -876,127 +1407,6 @@ var MessageRepository = class {
       await supabase.from("community_messages").delete().eq("id", id);
     } catch (e) {
       console.warn("Failed to delete message in Supabase:", e?.message || e);
-    }
-  }
-};
-
-// src/repositories/NotificationRepository.ts
-var NotificationRepository = class _NotificationRepository {
-  static {
-    this.memoryNotifications = [];
-  }
-  async list() {
-    try {
-      const { data, error } = await supabase.from("Notification").select("*").order("timestamp", { ascending: false });
-      if (!error && data) {
-        _NotificationRepository.memoryNotifications = data;
-        return data;
-      }
-    } catch (e) {
-      console.error("Failed to list notifications from Supabase, using memory fallback:", e);
-    }
-    return [..._NotificationRepository.memoryNotifications].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }
-  async listByUserId(userId) {
-    try {
-      const { data, error } = await supabase.from("Notification").select("*").eq("toUserId", userId).order("timestamp", { ascending: false });
-      if (!error && data) {
-        const otherUserNotifs = _NotificationRepository.memoryNotifications.filter((n) => n.toUserId !== userId);
-        _NotificationRepository.memoryNotifications = [...otherUserNotifs, ...data];
-        return { data, meta: { stale: false, source: "supabase" } };
-      }
-    } catch (e) {
-      console.error("Failed to list notifications by user from Supabase, using memory fallback:", e?.message || e);
-    }
-    const cached = _NotificationRepository.memoryNotifications.filter((n) => n.toUserId === userId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    return { data: cached, meta: { stale: true, source: "memory_cache" } };
-  }
-  async findById(id) {
-    try {
-      const { data, error } = await supabase.from("Notification").select("*").eq("id", id).maybeSingle();
-      if (!error && data) {
-        const idx = _NotificationRepository.memoryNotifications.findIndex((n) => n.id === id);
-        if (idx !== -1) {
-          _NotificationRepository.memoryNotifications[idx] = data;
-        } else {
-          _NotificationRepository.memoryNotifications.push(data);
-        }
-        return data;
-      }
-    } catch (e) {
-      console.error("Failed to find notification by id from Supabase:", e);
-    }
-    const memNotif = _NotificationRepository.memoryNotifications.find((n) => n.id === id);
-    return memNotif || null;
-  }
-  async create(notification) {
-    const id = notification.id || "notify_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
-    let validFromUserId = notification.fromUserId || "tarapti_official_admin";
-    if (validFromUserId === "system" || validFromUserId.startsWith("system_") || validFromUserId === "user_sim") {
-      validFromUserId = "tarapti_official_admin";
-    }
-    const newNotif = {
-      id,
-      toUserId: notification.toUserId,
-      fromUserId: validFromUserId,
-      fromUserName: notification.fromUserName || "Tarapti Alert",
-      fromUserAvatar: notification.fromUserAvatar || "\u{1F6A8}",
-      type: notification.type,
-      message: notification.message,
-      isRead: notification.isRead || false,
-      timestamp: notification.timestamp || (/* @__PURE__ */ new Date()).toISOString()
-    };
-    const existingIdx = _NotificationRepository.memoryNotifications.findIndex((n) => n.id === id);
-    if (existingIdx >= 0) {
-      _NotificationRepository.memoryNotifications[existingIdx] = newNotif;
-    } else {
-      _NotificationRepository.memoryNotifications.unshift(newNotif);
-    }
-    try {
-      const { data, error } = await supabase.from("Notification").upsert([newNotif]).select().single();
-      if (!error && data) {
-        return data;
-      }
-      if (error) {
-        if (error.code === "23503") {
-          newNotif.fromUserId = "tarapti_official_admin";
-          const retry = await supabase.from("Notification").upsert([newNotif]).select().single();
-          if (!retry.error && retry.data) {
-            return retry.data;
-          }
-        }
-        throw error;
-      }
-    } catch (e) {
-      console.error("Failed to persist notification in Supabase, using memory fallback:", e);
-    }
-    return newNotif;
-  }
-  async markAllAsRead(userId) {
-    _NotificationRepository.memoryNotifications.filter((n) => n.toUserId === userId).forEach((n) => n.isRead = true);
-    try {
-      await supabase.from("Notification").update({ isRead: true }).eq("toUserId", userId);
-    } catch (e) {
-      console.error("Failed to mark notifications as read in Supabase:", e);
-    }
-  }
-  async delete(id) {
-    _NotificationRepository.memoryNotifications = _NotificationRepository.memoryNotifications.filter((n) => n.id !== id);
-    try {
-      await supabase.from("Notification").delete().eq("id", id);
-    } catch (e) {
-      console.error("Failed to delete notification in Supabase:", e);
-    }
-  }
-  async update(id, updates) {
-    const memNotif = _NotificationRepository.memoryNotifications.find((n) => n.id === id);
-    if (memNotif) {
-      Object.assign(memNotif, updates);
-    }
-    try {
-      await supabase.from("Notification").update(updates).eq("id", id);
-    } catch (e) {
-      console.error("Failed to update notification in Supabase:", e);
     }
   }
 };
@@ -1873,21 +2283,21 @@ async function startServer() {
   const httpServer = (0, import_http.createServer)(app);
   try {
     const logoFiles = ["logo_gotrading.png", "logo_login.png", "gotrading_logo.png", "chat_logo.png", "login_logo.png", "company_logo.png"];
-    const assetsDir = import_path.default.join(process.cwd(), "assets");
-    const publicDir = import_path.default.join(process.cwd(), "public");
-    const distDir = import_path.default.join(process.cwd(), "dist");
-    if (!import_fs.default.existsSync(publicDir)) {
-      import_fs.default.mkdirSync(publicDir, { recursive: true });
+    const assetsDir = import_path2.default.join(process.cwd(), "assets");
+    const publicDir = import_path2.default.join(process.cwd(), "public");
+    const distDir = import_path2.default.join(process.cwd(), "dist");
+    if (!import_fs2.default.existsSync(publicDir)) {
+      import_fs2.default.mkdirSync(publicDir, { recursive: true });
     }
     logoFiles.forEach((file) => {
-      const assetPath = import_path.default.join(assetsDir, file);
-      if (import_fs.default.existsSync(assetPath)) {
-        const pubPath = import_path.default.join(publicDir, file);
-        import_fs.default.copyFileSync(assetPath, pubPath);
+      const assetPath = import_path2.default.join(assetsDir, file);
+      if (import_fs2.default.existsSync(assetPath)) {
+        const pubPath = import_path2.default.join(publicDir, file);
+        import_fs2.default.copyFileSync(assetPath, pubPath);
         console.log(`[BOOT] Restored ${file} from assets/ to public/`);
-        if (import_fs.default.existsSync(distDir)) {
-          const distPath = import_path.default.join(distDir, file);
-          import_fs.default.copyFileSync(assetPath, distPath);
+        if (import_fs2.default.existsSync(distDir)) {
+          const distPath = import_path2.default.join(distDir, file);
+          import_fs2.default.copyFileSync(assetPath, distPath);
           console.log(`[BOOT] Restored ${file} from assets/ to dist/`);
         }
       }
@@ -3040,13 +3450,13 @@ INSTRUCTIONS:
       } else if (type === "login") {
         fileName = "login_logo.png";
       }
-      const pubPath = import_path.default.join(process.cwd(), "public", fileName);
-      const distPath = import_path.default.join(process.cwd(), "dist", fileName);
-      const assetsPath = import_path.default.join(process.cwd(), "assets", fileName);
-      import_fs.default.writeFileSync(pubPath, base64Data, { encoding: "base64" });
-      import_fs.default.writeFileSync(assetsPath, base64Data, { encoding: "base64" });
-      if (import_fs.default.existsSync(import_path.default.join(process.cwd(), "dist"))) {
-        import_fs.default.writeFileSync(distPath, base64Data, { encoding: "base64" });
+      const pubPath = import_path2.default.join(process.cwd(), "public", fileName);
+      const distPath = import_path2.default.join(process.cwd(), "dist", fileName);
+      const assetsPath = import_path2.default.join(process.cwd(), "assets", fileName);
+      import_fs2.default.writeFileSync(pubPath, base64Data, { encoding: "base64" });
+      import_fs2.default.writeFileSync(assetsPath, base64Data, { encoding: "base64" });
+      if (import_fs2.default.existsSync(import_path2.default.join(process.cwd(), "dist"))) {
+        import_fs2.default.writeFileSync(distPath, base64Data, { encoding: "base64" });
       }
       res.json({ success: true });
     } catch (err) {
@@ -3063,12 +3473,12 @@ INSTRUCTIONS:
       } else if (type === "login") {
         fileName = "login_logo.png";
       }
-      const pubPath = import_path.default.join(process.cwd(), "public", fileName);
-      const distPath = import_path.default.join(process.cwd(), "dist", fileName);
-      const assetsPath = import_path.default.join(process.cwd(), "assets", fileName);
-      if (import_fs.default.existsSync(pubPath)) import_fs.default.unlinkSync(pubPath);
-      if (import_fs.default.existsSync(distPath)) import_fs.default.unlinkSync(distPath);
-      if (import_fs.default.existsSync(assetsPath)) import_fs.default.unlinkSync(assetsPath);
+      const pubPath = import_path2.default.join(process.cwd(), "public", fileName);
+      const distPath = import_path2.default.join(process.cwd(), "dist", fileName);
+      const assetsPath = import_path2.default.join(process.cwd(), "assets", fileName);
+      if (import_fs2.default.existsSync(pubPath)) import_fs2.default.unlinkSync(pubPath);
+      if (import_fs2.default.existsSync(distPath)) import_fs2.default.unlinkSync(distPath);
+      if (import_fs2.default.existsSync(assetsPath)) import_fs2.default.unlinkSync(assetsPath);
       res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -3577,6 +3987,37 @@ INSTRUCTIONS:
     } catch (e) {
       console.error("Failed to update language preference:", e);
       res.status(500).json({ error: e?.message || "Internal server error" });
+    }
+  });
+  app.get("/api/users/:userId/drawdown-risk", async (req, res) => {
+    try {
+      const BACKEND_API_URL2 = (process.env.BACKEND_API_URL || "https://be-gotrading-production.up.railway.app").replace(/\/+$/, "");
+      const headers = {};
+      if (req.headers.authorization) headers["authorization"] = req.headers.authorization;
+      if (req.headers.cookie) headers["cookie"] = req.headers.cookie;
+      const accountRes = await fetch(`${BACKEND_API_URL2}/api/metatrader/account`, { headers });
+      if (!accountRes.ok) {
+        return res.status(accountRes.status).json({ success: false, error: "Failed to fetch account info" });
+      }
+      const accountData = await accountRes.json();
+      const accountInfo = accountData.data || accountData;
+      const tradesRes = await fetch(`${BACKEND_API_URL2}/api/metatrader/trades?period=all`, { headers });
+      if (!tradesRes.ok) {
+        return res.status(tradesRes.status).json({ success: false, error: "Failed to fetch trades" });
+      }
+      const tradesData = await tradesRes.json();
+      const trades = tradesData.data?.data || tradesData.data || [];
+      const result = DrawdownRiskService.calculateDrawdownRisk(req.params.userId, trades, accountInfo);
+      try {
+        const accountRules = { maxDrawdown: 100 };
+        await DrawdownNotificationService.evaluateDrawdownNotification(req.params.userId, result, accountRules);
+      } catch (notifErr) {
+        console.error("Error in DrawdownNotificationService:", notifErr);
+      }
+      res.json({ success: true, data: result });
+    } catch (err) {
+      console.error("Error in drawdown risk:", err);
+      res.status(500).json({ success: false, error: err.message });
     }
   });
   app.get("/api/users", async (req, res) => {
@@ -5314,6 +5755,19 @@ ${originalPost.content}`,
         timestamp: (/* @__PURE__ */ new Date()).toISOString()
       };
       eventName = "NOTIFICATION";
+    } else if (eventType === "drawdown_risk") {
+      notification = {
+        id: "notify_test_" + Date.now(),
+        toUserId: userId,
+        fromUserId: "tarapti_official_admin",
+        fromUserName: "Risk Engine",
+        fromUserAvatar: "\u{1F534}",
+        type: "drawdown_risk",
+        message: "\u{1F534} New Drawdown High: Current drawdown of 14.8% exceeds your historical maximum of 11.2%.",
+        isRead: false,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      eventName = "NOTIFICATION";
     } else if (eventType === "high_news") {
       notification = {
         id: "notify_test_" + Date.now(),
@@ -5479,8 +5933,8 @@ ${originalPost.content}`,
     console.error("Global express error:", err);
     res.status(500).json({ success: false, error: err.message || "Internal Server Error" });
   });
-  app.use(import_express.default.static(import_path.default.join(process.cwd(), "public")));
-  const isProduction = process.env.NODE_ENV === "production" || import_fs.default.existsSync(import_path.default.join(process.cwd(), "dist"));
+  app.use(import_express.default.static(import_path2.default.join(process.cwd(), "public")));
+  const isProduction = process.env.NODE_ENV === "production" || import_fs2.default.existsSync(import_path2.default.join(process.cwd(), "dist"));
   if (!isProduction) {
     const vite = await (0, import_vite.createServer)({
       server: {
@@ -5492,13 +5946,13 @@ ${originalPost.content}`,
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = import_path.default.join(process.cwd(), "dist");
+    const distPath = import_path2.default.join(process.cwd(), "dist");
     app.use(import_express.default.static(distPath));
     app.get("/assets/*", (req, res) => {
       res.status(404).type("text/plain").send("Asset not found");
     });
     app.get("*", (req, res) => {
-      res.sendFile(import_path.default.join(distPath, "index.html"));
+      res.sendFile(import_path2.default.join(distPath, "index.html"));
     });
   }
   httpServer.listen(PORT, "0.0.0.0", () => {
