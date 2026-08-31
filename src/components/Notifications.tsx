@@ -84,6 +84,10 @@ export const Notifications: React.FC = () => {
         setTimeout(() => window.dispatchEvent(new CustomEvent('open-journal-tab', { detail: 'risk' })), 100);
         break;
 
+      case 'daily_brief':
+        // We'll open the daily brief modal/view
+        setTimeout(() => window.dispatchEvent(new CustomEvent('open-daily-brief')), 100);
+        break;
       case 'market_pulse':
       case 'high_news':
         setActiveView('outlook');
@@ -376,7 +380,13 @@ export const Notifications: React.FC = () => {
               >
                 🎯 Target Profit
               </button>
-                            <button
+                                          <button
+                onClick={() => triggerTestNotification('daily_brief')}
+                className="px-2.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-800/60 shadow-xs transition cursor-pointer"
+              >
+                🤖 AI Daily Brief
+              </button>
+              <button
                 onClick={() => triggerTestNotification('drawdown_risk')}
                 className="px-2.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-400 text-xs font-medium rounded-lg border border-rose-200 dark:border-rose-800/60 shadow-xs transition cursor-pointer"
               >

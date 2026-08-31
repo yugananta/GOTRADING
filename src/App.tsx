@@ -25,6 +25,7 @@ import { Journal } from './components/Journal.tsx';
 import { Auth } from './components/Auth.tsx';
 import { formatMessageDate, parseUTCDate } from './utils/dateUtils.ts';
 import { ConnectModal } from './components/ConnectModal.tsx';
+import { AIDailyBriefModal } from './components/AIDailyBriefModal.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { GroupView } from './components/GroupView.tsx';
 import { AdminPortal } from './components/AdminPortal.tsx';
@@ -103,6 +104,14 @@ function MainAppLayout() {
   const prevLangRef = useRef<string>(i18n.language);
 
   useEffect(() => {
+    const handleOpenDailyBrief = () => {
+      setIsDailyBriefModalOpen(true);
+    };
+    window.addEventListener('open-daily-brief', handleOpenDailyBrief);
+    return () => window.removeEventListener('open-daily-brief', handleOpenDailyBrief);
+  }, []);
+
+  useEffect(() => {
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
     }
@@ -175,6 +184,7 @@ function MainAppLayout() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [isDailyBriefModalOpen, setIsDailyBriefModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDirectLangOpen, setIsDirectLangOpen] = useState(false);
   const [isSidebarLangOpen, setIsSidebarLangOpen] = useState(false);
@@ -2380,6 +2390,8 @@ function MainAppLayout() {
         isOpen={isConnectModalOpen} 
         onClose={() => setIsConnectModalOpen(false)} 
       />
+
+      <AIDailyBriefModal isOpen={isDailyBriefModalOpen} onClose={() => setIsDailyBriefModalOpen(false)} />
 
       {/* Performance Chart Modal (Slide-over) */}
       <AnimatePresence>

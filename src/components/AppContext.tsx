@@ -84,7 +84,7 @@ interface AppContextType {
   viewUserProfile: (userId: string) => void;
   latestRealtimeEvent: { id: string; type: string; notification: Notification; timestamp: number } | null;
   clearRealtimeEvent: () => void;
-  triggerTestNotification: (eventType: 'friend_request' | 'friend_accepted' | 'new_message' | 'like' | 'profit_target_daily' | 'profit_target_weekly' | 'drawdown_daily' | 'drawdown_weekly' | 'drawdown_risk' | 'high_news') => Promise<void>;
+  triggerTestNotification: (eventType: 'friend_request' | 'friend_accepted' | 'new_message' | 'like' | 'profit_target_daily' | 'profit_target_weekly' | 'drawdown_daily' | 'drawdown_weekly' | 'drawdown_risk' | 'high_news' | 'daily_brief') => Promise<void>;
   logApiDiagnostic: (actionName: string, req: { url: string; method: string; headers?: any; body?: any }, res?: Response, data?: any, err?: any) => void;
 }
 
@@ -418,7 +418,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     lastUnreadCount.current = count;
   }, [notifications]);
 
-  const triggerTestNotification = async (eventType: 'friend_request' | 'friend_accepted' | 'new_message' | 'like' | 'profit_target_daily' | 'profit_target_weekly' | 'drawdown_daily' | 'drawdown_weekly' | 'drawdown_risk' | 'high_news') => {
+  const triggerTestNotification = async (eventType: 'friend_request' | 'friend_accepted' | 'new_message' | 'like' | 'profit_target_daily' | 'profit_target_weekly' | 'drawdown_daily' | 'drawdown_weekly' | 'drawdown_risk' | 'high_news' | 'daily_brief') => {
     if (!currentUser) return;
     try {
       const res = await apiFetch('/api/notifications/test-trigger', {

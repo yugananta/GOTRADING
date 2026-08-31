@@ -1,5 +1,6 @@
 import { DrawdownRiskService } from './src/services/DrawdownRiskService.ts';
 import { DrawdownNotificationService } from './src/services/DrawdownNotificationService.ts';
+import { DailyBriefService } from './src/services/DailyBriefService.ts';
 import ws from 'ws';
 if (typeof (globalThis as any).WebSocket === 'undefined') {
   (globalThis as any).WebSocket = ws;
@@ -4140,6 +4141,22 @@ INSTRUCTIONS:
   });
 
   // API: Test Real-time Notification Trigger
+  
+  app.get("/api/users/:userId/daily-brief", async (req, res) => {
+    try {
+      const { localDate, timezone } = req.query;
+      if (!localDate || !timezone) {
+        return res.status(400).json({ error: 'localDate and timezone are required' });
+      }
+      
+      const brief = await DailyBriefService.generateBrief(req.params.userId, String(localDate), String(timezone));
+      res.json({ success: true, data: brief });
+    } catch (err: any) {
+      console.error('Error fetching daily brief:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   app.post("/api/notifications/test-trigger", async (req: any, res) => {
     const { userId, eventType } = req.body;
     if (!userId) return res.status(400).json({ error: "userId is required" });
@@ -4260,6 +4277,19 @@ INSTRUCTIONS:
         fromUserAvatar: "🔴",
         type: "drawdown_risk",
         message: "🔴 New Drawdown High: Current drawdown of 14.8% exceeds your historical maximum of 11.2%.",
+        isRead: false,
+        timestamp: new Date().toISOString()
+      };
+      eventName = "NOTIFICATION";
+    } else if (eventType === 'daily_brief') {
+      notification = {
+        id: "notify_test_" + Date.now(),
+        toUserId: userId,
+        fromUserId: "system_ai_brief",
+        fromUserName: "AI Daily Brief",
+        fromUserAvatar: "🤖",
+        type: "daily_brief",
+        message: "3 high-impact economic events are scheduled today, including major USD releases.",
         isRead: false,
         timestamp: new Date().toISOString()
       };

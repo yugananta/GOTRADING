@@ -601,14 +601,114 @@ var DrawdownNotificationService = class {
   }
 };
 
+// src/services/DailyBriefService.ts
+var import_fs2 = __toESM(require("fs"), 1);
+var import_path2 = __toESM(require("path"), 1);
+var STATE_FILE2 = import_path2.default.join(process.cwd(), "data", "daily_briefs.json");
+var DailyBriefService = class {
+  static getBriefs() {
+    try {
+      if (import_fs2.default.existsSync(STATE_FILE2)) {
+        return JSON.parse(import_fs2.default.readFileSync(STATE_FILE2, "utf8"));
+      }
+    } catch (e) {
+    }
+    return {};
+  }
+  static saveBriefs(map) {
+    try {
+      if (!import_fs2.default.existsSync(import_path2.default.dirname(STATE_FILE2))) {
+        import_fs2.default.mkdirSync(import_path2.default.dirname(STATE_FILE2), { recursive: true });
+      }
+      import_fs2.default.writeFileSync(STATE_FILE2, JSON.stringify(map, null, 2));
+    } catch (e) {
+    }
+  }
+  static async generateBrief(userId, localDate, timezone, traderContextInput) {
+    const briefs = this.getBriefs();
+    const key = `${userId}_${localDate}`;
+    if (briefs[key]) {
+      return briefs[key];
+    }
+    let marketContext = "Today's calendar is concentrated around major USD economic releases.";
+    let traderContext = "Personal trading context is not yet available.";
+    let watchItems = [
+      "US CPI \u2014 14:30",
+      "USD volatility around the release",
+      "Keep risk exposure in perspective"
+    ];
+    let advice = "Major USD events are scheduled today. Be mindful of risk exposure around the releases.";
+    if (traderContextInput && traderContextInput.currentDrawdown > 5) {
+      traderContext = "Your current drawdown remains elevated compared with your recent baseline.";
+      watchItems[2] = "Current drawdown remains elevated";
+      advice = "Major USD events are scheduled today while your drawdown remains elevated. Be especially mindful of risk exposure around the releases.";
+    } else if (traderContextInput) {
+      traderContext = "Your recent trading conditions appear relatively stable.";
+    }
+    const newBrief = {
+      id: `brief_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      userId,
+      date: localDate,
+      timezone,
+      marketContext,
+      highImpactEvents: [
+        {
+          id: "evt_1",
+          time: "14:30",
+          // Ideally converted to local timezone, but we'll leave it as a string for now
+          title: "US CPI",
+          currency: "USD",
+          impact: "HIGH IMPACT",
+          forecast: "3.1%",
+          previous: "3.2%"
+        },
+        {
+          id: "evt_2",
+          time: "19:00",
+          title: "FOMC Speaker",
+          currency: "USD",
+          impact: "HIGH IMPACT"
+        }
+      ],
+      traderContext,
+      watchItems,
+      advice,
+      generatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    briefs[key] = newBrief;
+    this.saveBriefs(briefs);
+    return newBrief;
+  }
+  static async sendPushNotification(userId, briefId) {
+    const briefs = this.getBriefs();
+    const brief = Object.values(briefs).find((b) => b.id === briefId && b.userId === userId);
+    if (brief) {
+      const notifRepo = new NotificationRepository();
+      await notifRepo.create({
+        toUserId: userId,
+        fromUserId: "system_ai_brief",
+        // System sender
+        fromUserName: "AI Daily Brief",
+        fromUserAvatar: "\u{1F916}",
+        type: "daily_brief",
+        message: "3 high-impact economic events are scheduled today, including major USD releases.",
+        isRead: false,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      return true;
+    }
+    return false;
+  }
+};
+
 // server.ts
 var import_ws = __toESM(require("ws"), 1);
 var import_express_async_errors = require("express-async-errors");
 var import_config = require("dotenv/config");
 var import_express = __toESM(require("express"), 1);
 var import_http = require("http");
-var import_path2 = __toESM(require("path"), 1);
-var import_fs2 = __toESM(require("fs"), 1);
+var import_path3 = __toESM(require("path"), 1);
+var import_fs3 = __toESM(require("fs"), 1);
 var import_vite = require("vite");
 
 // src/repositories/AuthRepositories.ts
@@ -2283,21 +2383,21 @@ async function startServer() {
   const httpServer = (0, import_http.createServer)(app);
   try {
     const logoFiles = ["logo_gotrading.png", "logo_login.png", "gotrading_logo.png", "chat_logo.png", "login_logo.png", "company_logo.png"];
-    const assetsDir = import_path2.default.join(process.cwd(), "assets");
-    const publicDir = import_path2.default.join(process.cwd(), "public");
-    const distDir = import_path2.default.join(process.cwd(), "dist");
-    if (!import_fs2.default.existsSync(publicDir)) {
-      import_fs2.default.mkdirSync(publicDir, { recursive: true });
+    const assetsDir = import_path3.default.join(process.cwd(), "assets");
+    const publicDir = import_path3.default.join(process.cwd(), "public");
+    const distDir = import_path3.default.join(process.cwd(), "dist");
+    if (!import_fs3.default.existsSync(publicDir)) {
+      import_fs3.default.mkdirSync(publicDir, { recursive: true });
     }
     logoFiles.forEach((file) => {
-      const assetPath = import_path2.default.join(assetsDir, file);
-      if (import_fs2.default.existsSync(assetPath)) {
-        const pubPath = import_path2.default.join(publicDir, file);
-        import_fs2.default.copyFileSync(assetPath, pubPath);
+      const assetPath = import_path3.default.join(assetsDir, file);
+      if (import_fs3.default.existsSync(assetPath)) {
+        const pubPath = import_path3.default.join(publicDir, file);
+        import_fs3.default.copyFileSync(assetPath, pubPath);
         console.log(`[BOOT] Restored ${file} from assets/ to public/`);
-        if (import_fs2.default.existsSync(distDir)) {
-          const distPath = import_path2.default.join(distDir, file);
-          import_fs2.default.copyFileSync(assetPath, distPath);
+        if (import_fs3.default.existsSync(distDir)) {
+          const distPath = import_path3.default.join(distDir, file);
+          import_fs3.default.copyFileSync(assetPath, distPath);
           console.log(`[BOOT] Restored ${file} from assets/ to dist/`);
         }
       }
@@ -3450,13 +3550,13 @@ INSTRUCTIONS:
       } else if (type === "login") {
         fileName = "login_logo.png";
       }
-      const pubPath = import_path2.default.join(process.cwd(), "public", fileName);
-      const distPath = import_path2.default.join(process.cwd(), "dist", fileName);
-      const assetsPath = import_path2.default.join(process.cwd(), "assets", fileName);
-      import_fs2.default.writeFileSync(pubPath, base64Data, { encoding: "base64" });
-      import_fs2.default.writeFileSync(assetsPath, base64Data, { encoding: "base64" });
-      if (import_fs2.default.existsSync(import_path2.default.join(process.cwd(), "dist"))) {
-        import_fs2.default.writeFileSync(distPath, base64Data, { encoding: "base64" });
+      const pubPath = import_path3.default.join(process.cwd(), "public", fileName);
+      const distPath = import_path3.default.join(process.cwd(), "dist", fileName);
+      const assetsPath = import_path3.default.join(process.cwd(), "assets", fileName);
+      import_fs3.default.writeFileSync(pubPath, base64Data, { encoding: "base64" });
+      import_fs3.default.writeFileSync(assetsPath, base64Data, { encoding: "base64" });
+      if (import_fs3.default.existsSync(import_path3.default.join(process.cwd(), "dist"))) {
+        import_fs3.default.writeFileSync(distPath, base64Data, { encoding: "base64" });
       }
       res.json({ success: true });
     } catch (err) {
@@ -3473,12 +3573,12 @@ INSTRUCTIONS:
       } else if (type === "login") {
         fileName = "login_logo.png";
       }
-      const pubPath = import_path2.default.join(process.cwd(), "public", fileName);
-      const distPath = import_path2.default.join(process.cwd(), "dist", fileName);
-      const assetsPath = import_path2.default.join(process.cwd(), "assets", fileName);
-      if (import_fs2.default.existsSync(pubPath)) import_fs2.default.unlinkSync(pubPath);
-      if (import_fs2.default.existsSync(distPath)) import_fs2.default.unlinkSync(distPath);
-      if (import_fs2.default.existsSync(assetsPath)) import_fs2.default.unlinkSync(assetsPath);
+      const pubPath = import_path3.default.join(process.cwd(), "public", fileName);
+      const distPath = import_path3.default.join(process.cwd(), "dist", fileName);
+      const assetsPath = import_path3.default.join(process.cwd(), "assets", fileName);
+      if (import_fs3.default.existsSync(pubPath)) import_fs3.default.unlinkSync(pubPath);
+      if (import_fs3.default.existsSync(distPath)) import_fs3.default.unlinkSync(distPath);
+      if (import_fs3.default.existsSync(assetsPath)) import_fs3.default.unlinkSync(assetsPath);
       res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -5648,6 +5748,19 @@ ${originalPost.content}`,
     await userRepo.delete(userId);
     res.json({ success: true, message: "User deleted successfully" });
   });
+  app.get("/api/users/:userId/daily-brief", async (req, res) => {
+    try {
+      const { localDate, timezone } = req.query;
+      if (!localDate || !timezone) {
+        return res.status(400).json({ error: "localDate and timezone are required" });
+      }
+      const brief = await DailyBriefService.generateBrief(req.params.userId, String(localDate), String(timezone));
+      res.json({ success: true, data: brief });
+    } catch (err) {
+      console.error("Error fetching daily brief:", err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
   app.post("/api/notifications/test-trigger", async (req, res) => {
     const { userId, eventType } = req.body;
     if (!userId) return res.status(400).json({ error: "userId is required" });
@@ -5764,6 +5877,19 @@ ${originalPost.content}`,
         fromUserAvatar: "\u{1F534}",
         type: "drawdown_risk",
         message: "\u{1F534} New Drawdown High: Current drawdown of 14.8% exceeds your historical maximum of 11.2%.",
+        isRead: false,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      eventName = "NOTIFICATION";
+    } else if (eventType === "daily_brief") {
+      notification = {
+        id: "notify_test_" + Date.now(),
+        toUserId: userId,
+        fromUserId: "system_ai_brief",
+        fromUserName: "AI Daily Brief",
+        fromUserAvatar: "\u{1F916}",
+        type: "daily_brief",
+        message: "3 high-impact economic events are scheduled today, including major USD releases.",
         isRead: false,
         timestamp: (/* @__PURE__ */ new Date()).toISOString()
       };
@@ -5933,8 +6059,8 @@ ${originalPost.content}`,
     console.error("Global express error:", err);
     res.status(500).json({ success: false, error: err.message || "Internal Server Error" });
   });
-  app.use(import_express.default.static(import_path2.default.join(process.cwd(), "public")));
-  const isProduction = process.env.NODE_ENV === "production" || import_fs2.default.existsSync(import_path2.default.join(process.cwd(), "dist"));
+  app.use(import_express.default.static(import_path3.default.join(process.cwd(), "public")));
+  const isProduction = process.env.NODE_ENV === "production" || import_fs3.default.existsSync(import_path3.default.join(process.cwd(), "dist"));
   if (!isProduction) {
     const vite = await (0, import_vite.createServer)({
       server: {
@@ -5946,13 +6072,13 @@ ${originalPost.content}`,
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = import_path2.default.join(process.cwd(), "dist");
+    const distPath = import_path3.default.join(process.cwd(), "dist");
     app.use(import_express.default.static(distPath));
     app.get("/assets/*", (req, res) => {
       res.status(404).type("text/plain").send("Asset not found");
     });
     app.get("*", (req, res) => {
-      res.sendFile(import_path2.default.join(distPath, "index.html"));
+      res.sendFile(import_path3.default.join(distPath, "index.html"));
     });
   }
   httpServer.listen(PORT, "0.0.0.0", () => {
