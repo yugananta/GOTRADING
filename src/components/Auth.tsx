@@ -751,6 +751,13 @@ export const Auth: React.FC = () => {
               >
                 Confirm Reset
               </button>
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setErrorMsg(''); }}
+                className="w-full text-center text-[10px] text-slate-400 hover:text-white pt-1.5 block font-black transition-colors"
+              >
+                Return to Login
+              </button>
             </form>
           )}
 

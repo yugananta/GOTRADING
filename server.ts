@@ -1991,18 +1991,45 @@ INSTRUCTIONS:
   app.post("/api/auth/forgot-password", async (req: any, res) => {
     try {
       const { email } = req.body;
+      if (!email) return res.status(400).json({ error: "Email is required" });
+      const userRepo = new UserRepository();
+      const user = await userRepo.findByEmail(email);
+      if (!user) {
+        return res.status(404).json({ error: "Email address not found in registered accounts." });
+      }
       await authService.forgotPassword(email);
-      res.json({ success: true, message: "Reset code sent to your registered email & WhatsApp." });
+      res.json({ success: true, message: "Reset instructions dispatched to your registered email & WhatsApp." });
     } catch (error: any) {
-      res.status(400).json({ error: error.message || "Email not found" });
+      res.status(400).json({ error: error.message || "Email address not found." });
     }
   });
 
   app.post("/api/auth/reset-password", async (req: any, res) => {
     try {
-      const { token, newPassword } = req.body; // Assuming token is used for reset
-      await authService.resetPassword(token, newPassword);
-      res.json({ success: true, message: "Password updated successfully." });
+      const { token, email, newPassword } = req.body;
+      if (!newPassword) {
+        return res.status(400).json({ error: "New password is required" });
+      }
+
+      if (token) {
+        await authService.resetPassword(token, newPassword);
+        return res.json({ success: true, message: "Password updated successfully." });
+      }
+
+      // If resetting via verified email flow directly
+      if (email) {
+        const userRepo = new UserRepository();
+        const user = await userRepo.findByEmail(email);
+        if (!user) {
+          return res.status(404).json({ error: "Account not found" });
+        }
+        const bcrypt = (await import('bcryptjs')).default;
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+        await userRepo.updatePassword(user.id, passwordHash);
+        return res.json({ success: true, message: "Password updated successfully." });
+      }
+
+      return res.status(400).json({ error: "Token or email is required" });
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to reset password" });
     }

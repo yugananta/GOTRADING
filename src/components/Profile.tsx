@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useApp } from './AppContext.tsx';
-import { LanguageSelector } from './LanguageSelector.tsx';
 import { useTranslation } from 'react-i18next';
 import { Post } from '../types.js';
 import { PostCard } from './PostCard.tsx';
@@ -617,8 +616,6 @@ export const Profile: React.FC = () => {
         {activeTab === 'settings' && (
           <div className="bg-[#f4f6fa] rounded-[24px] p-5 mb-8">
             <div className="mb-6 space-y-4">
-              <LanguageSelector />
-              
               {/* 24-Hour Time Format Setting */}
               <div className="bg-white border border-slate-200 rounded-[20px] p-4 flex items-center justify-between shadow-2xs">
                 <div className="flex items-center gap-3">
@@ -1058,63 +1055,6 @@ export const Profile: React.FC = () => {
                   </button>
                 </div>
 
-              </div>
-            </div>
-          </div>
-
-          {/* GoTrading Logo & 'G' Emblem Showcase */}
-          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
-            <div className="bg-white dark:bg-[#181d28] border border-slate-200 dark:border-slate-800 rounded-[24px] p-6 space-y-5 shadow-xs">
-              <div className="space-y-1">
-                <h4 className="text-sm font-black text-slate-950 dark:text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                  {t('profile.gallery_logo_title')}
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                  {t('profile.gallery_logo_desc')}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Logo 1: GoTrading Full Logo */}
-                <div className="bg-slate-50 dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center p-2 shrink-0 shadow-xs">
-                    <img 
-                      src="/logo_gotrading.png" 
-                      alt="GoTrading Logo" 
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/gotrading_logo.png';
-                      }}
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="space-y-1 min-w-0">
-                    <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">{t('profile.gallery_logo_main_badge')}</span>
-                    <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">{t('profile.gallery_logo_main_title')}</h5>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{t('profile.gallery_logo_main_desc')}</p>
-                  </div>
-                </div>
-
-                {/* Logo 2: Emblem 'G' / App Icon */}
-                <div className="bg-slate-50 dark:bg-[#121620] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center p-2 shrink-0 shadow-xs">
-                    <img 
-                      src="/tarapti_logo_1784421680053.jpg" 
-                      alt="GoTrading 'G' Emblem" 
-                      className="w-full h-full object-cover rounded-lg"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/company_logo.png';
-                      }}
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="space-y-1 min-w-0">
-                    <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">{t('profile.gallery_logo_emblem_badge')}</span>
-                    <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">{t('profile.gallery_logo_emblem_title')}</h5>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{t('profile.gallery_logo_emblem_desc')}</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
